@@ -1,0 +1,241 @@
+[Debug]
+
+Debug-Log-Enable = true
+  
+[RayCastConfig]
+
+########################################################################################################################
+#   Ray cast enabled        FUNCTIONAL                                                                                           #
+#                                                                                                                      #
+# Use ray casting to detect where grass shouldn't grow (inside rocks or roads).                                        #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Ray-cast-enabled = false 
+
+########################################################################################################################
+#   Ray cast height               FUNCTIONAL                                                                                     #
+#                                                                                                                      #
+# The distance above grass that must be free. 200 is slightly more than player height.                                 #
+#                                                                                                                      #
+#    Type: (float)                                                                                                     #
+########################################################################################################################
+
+Ray-cast-height = 150.0
+
+########################################################################################################################
+#   Ray cast depth              FUNCTIONAL                                                                                       #
+#                                                                                                                      #
+# The distance below grass that must be free.                                                                          #
+#                                                                                                                      #
+#    Type: (float)                                                                                                     #
+########################################################################################################################
+
+Ray-cast-depth = 5.0
+
+########################################################################################################################
+#   Ray cast collision layers               FUNCTIONAL                                                                           #
+#                                                                                                                      #
+# Which collision layers to check when raycasting. Not recommended to change unless you know what you're doing. These  #
+# are collision layer index from CK separated by space.                                                                #
+#                                                                                                                      #
+#    Type: (string)                                                                                                    #
+########################################################################################################################
+
+Ray-cast-collision-layers = "1 2 13 20 31"
+
+########################################################################################################################
+#   Ray cast ignore forms                FUNCTIONAL?                                                                              #
+#                                                                                                                      #
+# Which objects will raycast ignore. This can be useful if you want grass to still grow from some objects (such as     #
+# roads). The format is formid:formfile separated by ; for example "1812A:Skyrim.esm;1812D:Skyrim.esm" would add       #
+# RoadChunkL01 and RoadChunkL02 forms to ignore list. Base forms go here not object references!                        #
+#                                                                                                                      #
+#    Type: (string)                                                                                                    #
+########################################################################################################################
+
+Ray-cast-ignore-forms = ""
+
+[GrassConfig]
+
+########################################################################################################################
+#   Super dense grass                   FUNCTIONAL                                                                               #
+#                                                                                                                      #
+# Enable much more grass without having to change mod files.                                                           #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Super-dense-grass = false
+
+########################################################################################################################
+#   Super dense mode                                FUNCTIONAL                                                                   #
+#                                                                                                                      #
+# How the super dense mode is achieved. Not recommended to change for normal play. This does nothing unless you enable #
+# SuperDenseGrass setting. 7 is normal game (meaning nothing is actually changed), 6 or less would be much less grass, #
+# 8 is dense, 9 is ?, 10+ is probably crash city.                                                                      #
+#                                                                                                                      #
+#    Type: (int32)                                                                                                     #
+########################################################################################################################
+
+Super-dense-mode =  8
+
+########################################################################################################################
+#   Profiler report                                      FUNCTIONAL                                                              #
+#                                                                                                                      #
+# Whether to track how much time is taken to generate grass. Whenever you open console the result is reported. Try     #
+# disabling all settings except profiler, go to game and in main menu 'coc riverwood', after loading open console to   #
+# see normal game time. Then enable settings and check again how it changed. Remember to coc from main menu instead of #
+# loading save because it might not be accurate otherwise.                                                             #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Profiler-report = false
+
+########################################################################################################################
+#   Use grass cache                                                                                                    #
+#                                                                                                                      #
+# This will generate cache files in /Data/Grass/ and use those when we have them. Any time you change anything with    #
+# your mod setup you must delete the contents of that directory so new cache can be generated or you will have bugs    #
+# like floating grass or still grass in objects (that were changed by mods).                                           #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Use-grass-cache = true
+
+########################################################################################################################
+#   Extend grass distance                                                                                              #
+#                                                                                                                      #
+# Set true if you want to enable extended grass distance mode. This will allow grass to appear outside of loaded       #
+# cells. Relevant ini settings:                                                                                        #
+# SkyrimPrefs.ini [Grass] fGrassStartFadeDistance                                                                      #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Extend-grass-distance = true
+
+########################################################################################################################
+#   Extend grass count                                     WORKS                                                            #
+#                                                                                                                      #
+# Allow more grass to be made in total. This is needed if you use very dense grass or have large draw distance.        #
+# Otherwise it will reach a limit and just stop making grass leaving weird empty squares.                              #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Extend-grass-count = false
+
+########################################################################################################################
+#   Ensure max grass types setting                           WORKS                                                          #
+#                                                                                                                      #
+# Makes sure that the max grass types per texture setting is set to at least this much. Can be useful to make sure     #
+# your INI isn't being overwritten by anything. Most grass replacer mods require this. Set 0 to disable any            #
+# verification.                                                                                                        #
+#                                                                                                                      #
+#    Type: (int32)                                                                                                     #
+########################################################################################################################
+
+Ensure-max-grass-types-setting = 0
+
+########################################################################################################################
+#   Overwrite grass distance                        ONE HOOK DOESNT WORK  WORKS W COMMONLIB                                                                 #
+#                                                                                                                      #
+# Overwrite fGrassStartFadeDistance from any INI. If this is zero or higher then the grass distance will always be     #
+# taken from this configuration instead of any INI. This can be useful if you have a million things overwriting your   #
+# INI files and don't know what to edit, so you can just set it here. For example 7000 is vanilla highest in-game      #
+# grass slider. If you want to set higher you need to enable ExtendGrassDistance setting as well or it will not look   #
+# right in-game. What the setting actually means is that grass will start to fade out at this distance. Actual total   #
+# grass distance is this value + fade range value.                                                                     #
+#                                                                                                                      #
+#    Type: (float)                                                                                                     #
+########################################################################################################################
+
+Overwrite-grass-distance = -1.0
+
+########################################################################################################################
+#   Overwrite grass fade range           WORKS                                                                              #
+#                                                                                                                      #
+# Overwrite fGrassFadeRange from any INI. If this is zero or higher then the grass fade range will always be taken     #
+# from this configuration instead of any INI. This determines the distance it takes for grass to completely fade out   #
+# starting from OverwriteGrassDistance (or fGrassStartFadeDistance if you didn't use the overwrite). If you want the   #
+# grass fade out to not be so sudden then increase this value. Probably recommended to keep this at least half of the  #
+# other setting.                                                                                                       #
+#                                                                                                                      #
+#    Type: (float)                                                                                                     #
+########################################################################################################################
+
+Overwrite-grass-fade-range =  -1.0
+
+########################################################################################################################
+#   Overwrite min grass size                       SAME AS OVERRIDE DISTANCE      WORKS W COMMONLIB                                                              #
+#                                                                                                                      #
+# Overwrite iMinGrassSize from any INI. If this is zero or higher then the grass density setting (iMinGrassSize) will  #
+# be taken from here instead of INI files. Lower values means more dense grass. 50 or 60 is normal mode with somewhat  #
+# sparse grass (good performance). Lowering the value increases density! 20 is very high density. You should probably  #
+# not set lower than 20 if you decide to change it. The grass form density setting itself still mostly controls the    #
+# actual density of grass, think of iMinGrassSize more of as a cap for that setting.                                   #
+#                                                                                                                      #
+#    Type: (int32)                                                                                                     #
+########################################################################################################################
+
+Overwrite-min-grass-size = -1
+
+########################################################################################################################
+#   Global grass scale                                                                                                 #
+#                                                                                                                      #
+# Apply this scale to every piece of grass everywhere. For example 0.5 makes all grass pieces half the size it should  #
+# be.                                                                                                                  #
+#                                                                                                                      #
+#    Type: (float)                                                                                                     #
+########################################################################################################################
+
+Global-grass-scale = 1.0
+
+########################################################################################################################
+#   Only load from cache                              WORKS                                                                 #
+#                                                                                                                      #
+# This will change how grass works. It means grass can only ever be loaded from files and not generated during play.   #
+#                                                                                                                      #
+#    Type: (boolean)                                                                                                   #
+########################################################################################################################
+
+Only-load-from-cache = true
+
+########################################################################################################################
+#   Skip pregenerate world spaces                           WORKS?                                                           #
+#                                                                                                                      #
+# When pre-generating grass then skip worldspaces with this editor IDs. This can greatly speed up generating if we     #
+# know the worldspace will not need grass at all.                                                                      #
+#                                                                                                                      #
+#    Type: (string)                                                                                                    #
+########################################################################################################################
+
+Skip-pregenerate-world-spaces = "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace"
+
+########################################################################################################################
+#   Only pregenerate world spaces                           WORKS?                                                           #
+#                                                                                                                      #
+# If this is not empty then skip every worldspace that isn't in this list.                                             #
+#                                                                                                                      #
+#    Type: (string)                                                                                                    #
+########################################################################################################################
+
+Only-pregenerate-world-spaces = ""
+
+########################################################################################################################
+#   DynDOLOD Grass Mode                             WORKS                                                                   #
+#                                                                                                                      #
+# Enable grass compatibility mode with DynDOLOD Grass LODs. Valid values:                                              #
+# 0 = Disabled                                                                                                         #
+# 1 = Display grass only in active cells (without fade) and let DynDOLOD handle inactive cell Grass                    #
+# 2 = Display grass only in active cells and large ref loaded cells (without fade) and let DynDOLOD handle grass       #
+# outside of large ref cells                                                                                           #
+#                                                                                                                      #
+#    Type: (int32)                                                                                                     #
+########################################################################################################################
+
+DynDOLOD-Grass-Mode = 0
