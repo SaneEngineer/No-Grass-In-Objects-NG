@@ -1,4 +1,4 @@
-This is a very crude attempt to port NGIO to Commonlib-NG. It uses toml for config. Raycasting is functional along with all other smaller features. Extended Grass distance is not functional, but is close maybe 80%, only needs debugging for all grass being removed. Caching doesn't work, needs debugging. 
+This is a incomplete attempt to port NGIO to Commonlib-NG. Currently hooks are only for SE, very little work has been done towards AE. The config is different and uses toml++. Raycasting is functional along with all other smaller features. Extended Grass distance is not functional, but is around 80% finished, l the hooks are implimented but is currently not functional and causes grass to not be rendered. All hooks for caching are implemented, but no files are created. 
 
 ## Requirements
 * [CMake](https://cmake.org/)
