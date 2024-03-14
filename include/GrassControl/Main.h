@@ -96,12 +96,12 @@ namespace GrassControl
 			
 			static void Install()
 			{
-				stl::write_thunk_call<MainUpdate_Nullsub>(REL::RelocationID(35565, 36564).address() + REL::Relocate(0x748, 0xC26));
+				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET(0x748, 0xC26));
 				if (*Config::ProfilerReport) {
-					stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + REL::Relocate(334, 0));
-					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x905, 0));
-					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0));
-					stl::write_thunk_call<GrassCreationEnd>(RELOCATION_ID(227915, 175016).address() + REL::Relocate(3037, 0));
+					stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET(334, 0));
+					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + OFFSET(0x905, 0));
+					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + OFFSET(0xF, 0));
+					stl::write_thunk_call<GrassCreationEnd>(RELOCATION_ID(227915, 175016).address() + OFFSET(3037, 0));
 				}
 			}
 		};

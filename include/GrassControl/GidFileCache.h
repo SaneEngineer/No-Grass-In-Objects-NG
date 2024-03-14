@@ -63,7 +63,12 @@ namespace GrassControl
 
 		static void apply();
 
+		static void IncrementHook();
+
+		static void ExchangeHook();
+
 		static void ProgressHook(RE::TESObjectCELL* cell);
+
 
 		static int DoneWS;
 		static int TotalWS;
@@ -160,12 +165,11 @@ namespace GrassControl
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
 
-
 			static void Install()
 			{
 				if (*Config::UseGrassCache) {
-					stl::write_thunk_call<MainUpdate_Nullsub>(REL::RelocationID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
-					stl::write_thunk_call<GrassCountIncrement>(REL::RelocationID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0x0));
+					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
+					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0x0));
 				}
 			}
 		};

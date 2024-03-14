@@ -1,9 +1,8 @@
-#include "GrassControl/Config.h"
+#include "GrassControl/Util.h"
 
-
-namespace GrassControl
+namespace Util
 {
-	CachedFormList::CachedFormList() = default;
+    CachedFormList::CachedFormList() = default;
 
 	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
 	{
@@ -25,7 +24,7 @@ namespace GrassControl
 			int ix = x.find(L':');
 			if (ix <= 0) {
 				if (!dontWriteAnythingToLog) {
-					logger::info("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`.");
+					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`."));
 				}
 
 				delete ls;
@@ -35,9 +34,9 @@ namespace GrassControl
 			idstr = x.substr(0, ix);
 			fileName = x.substr(ix + 1);
 
-			if (!std::all_of(idstr.begin(), idstr.end(), [](wchar_t q) { return (q >= L'0' && q <= L'9') || (q >= L'a' && q <= L'f') || (q >= L'A' && q <= L'F'); })) {
+			if (!std::ranges::all_of(idstr.begin(), idstr.end(), [](wchar_t q) { return (q >= L'0' && q <= L'9') || (q >= L'a' && q <= L'f') || (q >= L'A' && q <= L'F'); })) {
 				if (!dontWriteAnythingToLog) {
-					logger::info("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`.");
+					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -46,7 +45,7 @@ namespace GrassControl
 
 			if (fileName.empty()) {
 				if (!dontWriteAnythingToLog) {
-					logger::info("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Missing file name.");
+					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Missing file name."));
 				}
 
 				delete ls;
@@ -63,7 +62,7 @@ namespace GrassControl
 			}
 			if (!sucess) {
 				if (!dontWriteAnythingToLog) {
-					logger::info("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`.");
+					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -74,7 +73,7 @@ namespace GrassControl
 			if (auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName); file) {
 				if (!file->IsFormInMod(id)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
-						logger::info("Failed to find form " + settingNameForLog + " for " + pluginForLog + "! Form ID was " + std::to_string(id) + " and file was " + fileName + ".");
+						logger::info(fmt::runtime("Failed to find form " + settingNameForLog + " for " + pluginForLog + "! Form ID was " + std::to_string(id) + " and file was " + fileName + "."));
 					}
 					continue;
 				}
@@ -98,14 +97,11 @@ namespace GrassControl
 
 	bool CachedFormList::Contains(unsigned int formId)
 	{
-		return std::find(this->Ids.begin(), this->Ids.end(), formId) != this->Ids.end();
+		return std::ranges::find(this->Ids.begin(), this->Ids.end(), formId) != this->Ids.end();
 	}
 
 	std::vector<RE::TESForm*> CachedFormList::getAll() const
 	{
 		return this->Forms;
 	}
-
 }
-
-

@@ -236,7 +236,7 @@ namespace GrassControl
 	// Summary:
 	//     Perform ray casting.
 
-	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, CachedFormList* ignored) :
+	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored) :
 		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored)
 	{
 

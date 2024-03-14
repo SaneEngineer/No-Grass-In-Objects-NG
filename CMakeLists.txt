@@ -1,161 +1,296 @@
 cmake_minimum_required(VERSION 3.21)
-message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
+set(NAME "NGIO-NG" CACHE STRING "")
+set(VERSION 1.0.0 CACHE STRING "")
+set(VR_VERSION 2)
+set(AE_VERSION 1)
 
-########################################################################################################################
-## Define project
-########################################################################################################################
-project(
-        GrassControl
-        VERSION 1.0.0
-        DESCRIPTION "No grass on Objects ported to commonlib-ng"
-        LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
+option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 
-include(GNUInstallDirs)
+# ---- Cache build vars ----
+macro(set_from_environment VARIABLE)
+	if(NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
+		set(${VARIABLE} $ENV{${VARIABLE}})
+	endif()
+endmacro()
 
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
-        @ONLY)
+macro(find_commonlib_path)
+	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+		# Check extern
+		find_path(CommonLibPath
+			include/REL/Relocation.h
+			PATHS extern/${CommonLibName})
 
-set(PUBLIC_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-set(headers)
+		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
+			# Check path
+			set_from_environment(${CommonLibName}Path)
+			set(CommonLibPath ${${CommonLibName}Path})
+		endif()
+	endif()
+endmacro()
 
-set(sources
-      src/Config.cpp
-	  src/DistantGrass.cpp
-      src/Events.cpp
-	  src/GidFileCache.cpp
-      src/Logging.cpp
-      src/Main.cpp
-	  src/Profiler.cpp
-	  src/RaycastHelper.cpp
-      src/Shared/Utility/Memory.cpp
-      src/SmoothCam/mmath.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+set_from_environment(VCPKG_ROOT)
 
-source_group(
-        TREE ${CMAKE_CURRENT_SOURCE_DIR}
-        FILES
-        ${headers}
-        ${sources}
+if(BUILD_SKYRIMAE)
+	add_compile_definitions(SKYRIM_AE)
+	add_compile_definitions(SKYRIM_SUPPORT_AE)
+	set(CommonLibName "CommonLibSSE")
+	set_from_environment(SkyrimAEPath)
+	set(SkyrimPath ${SkyrimAEPath})
+	set(SkyrimVersion "Skyrim AE")
+	set(VERSION ${VERSION}.${AE_VERSION})
+elseif(BUILD_SKYRIMVR)
+	add_compile_definitions(SKYRIMVR)
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+	set(CommonLibName "CommonLibVR")
+	set_from_environment(SkyrimVRPath)
+	set(SkyrimPath ${SkyrimVRPath})
+	set(SkyrimVersion "Skyrim VR")
+	set(VERSION ${VERSION}.${VR_VERSION})
+else()
+	set(CommonLibName "CommonLibSSE")
+	set_from_environment(Skyrim64Path)
+	set(SkyrimPath ${Skyrim64Path})
+	set(SkyrimVersion "Skyrim SSE")
+endif()
+
+find_commonlib_path()
+message(
+	STATUS
+	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
 )
 
-#########################################################################################################################
-### Build options
-#########################################################################################################################
-message("Options:")
-option(BUILD_TESTS "Build unit tests." OFF)
-message("\tTests: ${BUILD_TESTS}")
+if(DEFINED VCPKG_ROOT)
+	set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+	set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
+else()
+	message(
+		WARNING
+		"Variable VCPKG_ROOT is not set. Continuing without vcpkg."
+	)
+endif()
 
-########################################################################################################################
-## Configure target DLL
-########################################################################################################################
-find_package(AutoTOML REQUIRED CONFIG)
-find_package(CommonLibSSE CONFIG REQUIRED)
+set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
+
+# ---- Project ----
+project(
+	${NAME}
+	VERSION ${VERSION}
+	LANGUAGES CXX
+)
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in
+	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+	@ONLY
+)
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+	${CMAKE_CURRENT_BINARY_DIR}/version.rc
+	@ONLY
+)
+
+# ---- Include guards ----
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+	message(
+		FATAL_ERROR
+		"In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+	)
+endif()
+
+# ---- Globals ----
+add_compile_definitions(
+	SKSE_SUPPORT_XBYAK
+)
+
+if(MSVC)
+	if(NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
+		add_compile_options(
+			/MP # Build with Multiple Processes
+		)
+	endif()
+endif()
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
+
+set(Boost_USE_STATIC_LIBS ON)
+
+# ---- Dependencies ----
+# dependency macros
+macro(find_dependency_path DEPENDENCY FILE)
+	# searches extern for dependencies and if not checks the environment variable
+	if(NOT ${DEPENDENCY} STREQUAL "")
+		# Check extern
+		message(
+			STATUS
+			"Searching for ${DEPENDENCY} using file ${FILE}"
+		)
+		find_path("${DEPENDENCY}Path"
+			${FILE}
+			PATHS "extern/${DEPENDENCY}"
+		)
+
+		if("${${DEPENDENCY}Path}" STREQUAL "${DEPENDENCY}Path-NOTFOUND")
+			# Check path
+			message(
+				STATUS
+				"Getting environment for ${DEPENDENCY}Path: $ENV{${DEPENDENCY}Path}"
+			)
+			set("${DEPENDENCY}Path" "$ENV{${DEPENDENCY}Path}")
+		endif()
+
+		message(
+			STATUS
+			"Found ${DEPENDENCY} in ${${DEPENDENCY}Path}; adding"
+		)
+		add_subdirectory("${${DEPENDENCY}Path}" ${DEPENDENCY})
+	endif()
+endmacro()
+
+if(DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
+	add_subdirectory(${CommonLibPath} ${CommonLibName})
+else()
+	message(
+		FATAL_ERROR
+		"Variable ${CommonLibName}Path is not set or in extern/."
+	)
+endif()
+find_dependency_path(DKUtil include/DKUtil/Logger.hpp)
 # GLM
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
+# ---- Add source files ----
+include(cmake/headerlist.cmake)
+include(cmake/sourcelist.cmake)
 
-add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${headers} ${sources})
-add_library("${PROJECT_NAME}::${PROJECT_NAME}" ALIAS "${PROJECT_NAME}")
+source_group(
+	TREE
+	${CMAKE_CURRENT_SOURCE_DIR}
+	FILES
+	${headers}
+	${sources}
+)
 
-target_include_directories(${PROJECT_NAME}
-        PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>
-        $<INSTALL_INTERFACE:src>)
+source_group(
+	TREE
+	${CMAKE_CURRENT_BINARY_DIR}
+	FILES
+	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+)
 
+# ---- Create DLL ----
+add_library(
+	${PROJECT_NAME}
+	SHARED
+	${headers}
+	${sources}
+	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+	${CMAKE_CURRENT_BINARY_DIR}/version.rc
+	.clang-format
+	.editorconfig
+)
 
-target_include_directories(${PROJECT_NAME}
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_compile_features(
+	${PROJECT_NAME}
+	PRIVATE
+	cxx_std_23
+)
 
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
-        AutoTOML::AutoTOML)
+target_compile_definitions(
+	${PROJECT_NAME}
+	PRIVATE
+	_UNICODE
+)
 
+target_include_directories(
+	${PROJECT_NAME}
+	PRIVATE
+	${CMAKE_CURRENT_BINARY_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/external/DKUtil/include
+	${CLIB_UTIL_INCLUDE_DIRS}
+)
 
-target_precompile_headers(${PROJECT_NAME}
-        PRIVATE
-        src/PCH.h)
+target_link_libraries(
+	${PROJECT_NAME}
+	PRIVATE
+	${CommonLibName}::${CommonLibName}
+	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
+	INTERFACE
+		DKUtil::DKUtil
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/Sample"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+)
 
-install(TARGETS ${PROJECT_NAME}
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+target_precompile_headers(
+	${PROJECT_NAME}
+	PRIVATE
+	include/PCH.h
+)
 
-########################################################################################################################
-## Configure unit tests
-########################################################################################################################
-if(BUILD_TESTS)
-    find_package(Catch2 CONFIG REQUIRED)
+if(MSVC)
+	target_compile_options(
+		${PROJECT_NAME}
+		PRIVATE
+		/sdl # Enable Additional Security Checks
+		/utf-8 # Set Source and Executable character sets to UTF-8
+		/Zi # Debug Information Format
 
-    include(CTest)
-    include(Catch)
+		/permissive- # Standards conformance
+		/Zc:preprocessor # Enable preprocessor conformance mode
 
-    add_executable(
-            ${PROJECT_NAME}Tests
-            ${headers}
-            ${tests})
+		/wd4200 # nonstandard extension used : zero-sized array in struct/union
 
-    target_link_libraries(
-            ${PROJECT_NAME}Tests
-            PRIVATE
-            ${PROJECT_NAME}
-            Catch2::Catch2WithMain)
+		"$<$<CONFIG:DEBUG>:>"
+		"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+	)
 
-    target_precompile_headers(${PROJECT_NAME}Tests
-            PRIVATE
-            src/PCH.h)
-
-    catch_discover_tests(${PROJECT_NAME}Tests)
-    add_test(NAME ${PROJECT_NAME}Tests COMMAND ${PROJECT_NAME}Tests)
+	target_link_options(
+		${PROJECT_NAME}
+		PRIVATE
+		"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
+		"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+	)
 endif()
 
-########################################################################################################################
-## Automatic plugin deployment
-########################################################################################################################
-# Automatic deployment to FOMOD directory.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(BUILD_NAME "Debug")
-else()
-    set(BUILD_NAME "Release")
+# ---- Post build ----
+#if(COPY_BUILD)
+#	if(DEFINED SkyrimPath)
+#		add_custom_command(
+#			TARGET ${PROJECT_NAME}
+#			POST_BUILD
+#			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+#			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+#		)
+#	else()
+#		message(
+#			WARNING
+#			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
+#		)
+#	endif()
+#endif()
+
+
+# https://gitlab.kitware.com/cmake/cmake/-/issues/24922#note_1371990
+if(MSVC_VERSION GREATER_EQUAL 1936 AND MSVC_IDE) # 17.6+
+	# When using /std:c++latest, "Build ISO C++23 Standard Library Modules" defaults to "Yes".
+	# Default to "No" instead.
+	#
+	# As of CMake 3.26.4, there isn't a way to control this property
+	# (https://gitlab.kitware.com/cmake/cmake/-/issues/24922),
+	# We'll use the MSBuild project system instead
+	# (https://learn.microsoft.com/en-us/cpp/build/reference/vcxproj-file-structure)
+	file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Directory.Build.props" CONTENT [==[
+<Project>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <BuildStlModules>false</BuildStlModules>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>
+]==] @ONLY)
 endif()
-install(DIRECTORY DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Papyrus${BUILD_NAME}/")
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Plugin${BUILD_NAME}/")
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Plugin${BUILD_NAME}/")
-if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Plugin${BUILD_NAME}/")
-endif()
-file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.dll")
-file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pdb")
-file(GLOB_RECURSE OUTPUT_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pex")
-set_property(TARGET ${PROJECT_NAME}
-        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_DLLS}")
-set_property(TARGET ${PROJECT_NAME}
-        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_PDBS}")
-set_property(TARGET ${PROJECT_NAME}
-        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
-
-# Automatic deployment to Mod Organizer 2 mod directory.
-foreach(DEPLOY_TARGET $ENV{CommonLibSSESamplePluginTargets})
-    message("Adding deployment target ${DEPLOY_TARGET}.")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")
-    if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")
-    endif()
-endforeach()
-
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-

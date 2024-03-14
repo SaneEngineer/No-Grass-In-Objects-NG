@@ -1,7 +1,5 @@
 #pragma once
 
-#include <CasualLibrary/CasualLibrary.hpp>
-
 #include <GrassControl/Config.h>
 #include <GrassControl/exceptionhelper.h>
 #include <GrassControl/Util.h>
@@ -253,7 +251,7 @@ namespace GrassControl
 			delete Ignore;
 		}
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string &layers, CachedFormList *ignored);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string &layers, Util::CachedFormList *ignored);
 
 		const int Version = 0;
 
@@ -263,7 +261,7 @@ namespace GrassControl
 
 		unsigned long long RaycastMask = 0;
 
-		CachedFormList *const Ignore = nullptr;
+		Util::CachedFormList *const Ignore = nullptr;
 
 		bool CanPlaceGrass(RE::TESObjectLAND *land, const float x, const float y,const float z);
 

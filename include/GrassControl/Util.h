@@ -1,8 +1,78 @@
 #pragma once
 
-
 namespace Util
 {
+	std::optional<bool> GetGameSettingBool(const std::string a_name);
+
+	std::optional<float> GetGameSettingFloat(const std::string a_name);
+
+	std::optional<int> GetGameSettingInt(const std::string a_name);
+
+	std::optional<std::string> GetGameSettingString(const std::string a_name);
+
+	void SetGameSettingBool(const std::string a_name, bool a_value);
+
+	void SetGameSettingFloat(const std::string a_name, float a_value);
+
+	void SetGameSettingInt(const std::string a_name, int a_value);
+
+	void SetGameSettingString(const std::string a_name, std::string a_value);
+
+	/// <summary>
+	/// Cached form list for lookups later.
+	/// </summary>
+	class CachedFormList final
+	{
+		/// <summary>
+		/// Prevents a default instance of the <see cref="CachedFormList"/> class from being created.
+		/// </summary>
+	private:
+		CachedFormList();
+
+		/// <summary>
+		/// The forms.
+		/// </summary>
+		std::vector<RE::TESForm*> Forms = std::vector<RE::TESForm*>();
+
+		/// <summary>
+		/// The ids.
+		/// </summary>
+		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
+
+		/// <summary>
+		/// Tries to parse from input. Returns null if failed.
+		/// </summary>
+		/// <param name="input">The input.</param>
+		/// <param name="pluginForLog">The plugin for log.</param>
+		/// <param name="settingNameForLog">The setting name for log.</param>
+		/// <param name="warnOnMissingForm">If set to <c>true</c> warn on missing form.</param>
+		/// <param name="dontWriteAnythingToLog">Don't write any errors to log if failed to parse.</param>
+		/// <returns></returns>
+	public:
+		static CachedFormList* TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
+
+		/// <summary>
+		/// Determines whether this list contains the specified form.
+		/// </summary>
+		/// <param name="form">The form.</param>
+		/// <returns></returns>
+		bool Contains(RE::TESForm* form);
+
+		/// <summary>
+		/// Determines whether this list contains the specified form identifier.
+		/// </summary>
+		/// <param name="formId">The form identifier.</param>
+		/// <returns></returns>
+		bool Contains(unsigned int formId);
+
+		/// <summary>
+		/// Gets all forms in this list.
+		/// </summary>
+		/// <value>
+		/// All.
+		/// </value>
+		std::vector<RE::TESForm*> getAll() const;
+	};
 	
 	// Function object for case insensitive comparison
 	struct case_insensitive_compare
@@ -16,7 +86,7 @@ namespace Util
 			return to_lower(a) < to_lower(b);
 		}
 
-		std::wstring to_lower(const std::wstring& a) const
+		static std::wstring to_lower(const std::wstring& a)
 		{
 			std::wstring s(a);
 			for (auto& c : s)
@@ -27,7 +97,7 @@ namespace Util
 			return s;
 		}
 
-		void char_to_lower(char& c) const
+		static void char_to_lower(char& c)
 		{
 			if (c >= 'A' && c <= 'Z')
 				c += ('a' - 'A');
@@ -69,14 +139,14 @@ namespace Util
 			}
 		}
 
-		static std::vector<std::string> split(const std::string& str, const std::string& regex_str, bool RemoveEmpty)
+		static std::vector<std::string> split(const std::string& str, const std::string& regex_str, const bool RemoveEmpty)
 		{
 			std::regex regexz(regex_str);
 			std::vector<std::string> list(std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
 				std::sregex_token_iterator());
 			if (RemoveEmpty) {
 				for (int i = 0; i < list.size();) {
-					if (list[i].size() == 0) {
+					if (list[i].empty()) {
 						list.erase(list.begin() + i);
 					} else
 						++i;
@@ -85,7 +155,7 @@ namespace Util
 			return list;
 		}
 
-		static std::vector<std::string> Split_at_any(const std::string& str, const std::vector<char> delims, bool RemoveEmpty)
+		static std::vector<std::string> Split_at_any(const std::string& str, const std::vector<char>& delims, const bool RemoveEmpty)
 		{
 			const std::string fixedDelim = ",";
 			std::vector<std::string> split;
@@ -112,7 +182,7 @@ namespace Util
 			}
 			if (RemoveEmpty) {
 				for (int i = 0; i < split.size();) {
-					if (split[i].size() == 0) {
+					if (split[i].empty()) {
 						split.erase(split.begin() + i);
 					} else
 						++i;

@@ -1,16 +1,13 @@
 #pragma once
 
 #include <SKSE/SKSE.h>
-#include "Util.h"
+#include "GrassControl/Util.h"
 
 namespace GrassControl
 {
 	class Config
 	{
-	
-
 	private:
-
 		using ISetting = AutoTOML::ISetting;
 
 	public:
@@ -51,7 +48,7 @@ namespace GrassControl
 					try {
 						setting->load(table);
 					} catch (const std::exception& e) {
-						logger::warn(e.what());
+						logger::warn(fmt::runtime(e.what()));
 					}
 				}
 			} catch (const toml::parse_error& e) {
@@ -60,68 +57,9 @@ namespace GrassControl
 					<< "Error parsing file \'" << *e.source().path << "\':\n"
 					<< '\t' << e.description() << '\n'
 					<< "\t\t(" << e.source().begin << ')';
-				logger::error(ss.str());
+				logger::error(fmt::runtime(ss.str()));
 				throw std::runtime_error("failed to load settings"s);
 			}
 		}
 	};
-
-
-
-	/// <summary>
-	/// Cached form list for lookups later.
-	/// </summary>
-	class CachedFormList final
-	{
-		/// <summary>
-		/// Prevents a default instance of the <see cref="CachedFormList"/> class from being created.
-		/// </summary>
-	private:
-		CachedFormList();
-
-		/// <summary>
-		/// The forms.
-		/// </summary>
-		std::vector<RE::TESForm*> Forms = std::vector<RE::TESForm*>();
-
-		/// <summary>
-		/// The ids.
-		/// </summary>
-		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
-
-		/// <summary>
-		/// Tries to parse from input. Returns null if failed.
-		/// </summary>
-		/// <param name="input">The input.</param>
-		/// <param name="pluginForLog">The plugin for log.</param>
-		/// <param name="settingNameForLog">The setting name for log.</param>
-		/// <param name="warnOnMissingForm">If set to <c>true</c> warn on missing form.</param>
-		/// <param name="dontWriteAnythingToLog">Don't write any errors to log if failed to parse.</param>
-		/// <returns></returns>
-	public:
-		static CachedFormList* TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
-
-		/// <summary>
-		/// Determines whether this list contains the specified form.
-		/// </summary>
-		/// <param name="form">The form.</param>
-		/// <returns></returns>
-		bool Contains(RE::TESForm* form);
-
-		/// <summary>
-		/// Determines whether this list contains the specified form identifier.
-		/// </summary>
-		/// <param name="formId">The form identifier.</param>
-		/// <returns></returns>
-		bool Contains(unsigned int formId);
-
-		/// <summary>
-		/// Gets all forms in this list.
-		/// </summary>
-		/// <value>
-		/// All.
-		/// </value>
-		std::vector<RE::TESForm*> getAll() const;
-	};
-	
 }

@@ -32,7 +32,9 @@
 *.app
 
 .idea/*
+.vs/*
 build/*
+buildae/*
 cmake-build-debug/*
 external/CommonLibSSE-NG/*
 external/CasualLibrary/lib/*
