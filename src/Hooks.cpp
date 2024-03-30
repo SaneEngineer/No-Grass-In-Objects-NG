@@ -282,13 +282,18 @@ namespace GrassControl
 		{
 			const float Distance = *Config::OverwriteGrassDistance;
 
-			/*
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
+			auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
+			if(!setting) {
+				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
+		        if (!setting) {
+			        logger::error("Failed to find fGrassStartFadeDistance");
+				    return;
+		        }
+			}
 			setting->data.f = *Config::OverwriteGrassDistance;
-			RE::INISettingCollection::GetSingleton()->WriteSetting(setting);
-			*/
+			
 			uintptr_t addr;
-
+			/*
 			if(addr = RELOCATION_ID(528751, 15379).address(); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(528751, 15379).address()))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
 			{
@@ -448,17 +453,23 @@ namespace GrassControl
 				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
 				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
 			}
-			
+			*/
 		}
 
 		if (*Config::OverwriteGrassFadeRange >= 0.0f)
 		{
-			/*
+			
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
+			if(!setting) {
+				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
+		        if (!setting) {
+			        logger::error("Failed to find fGrassFadeRange");
+				    return;
+		        }
+			}
 			setting->data.f = *Config::OverwriteGrassFadeRange;
-			RE::INISettingCollection::GetSingleton()->WriteSetting(setting);
-			*/
-		
+			
+		    /*
 			if(auto addr = RELOCATION_ID(15202, 15370).address() + (0xAEB - 0x890); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(15202, 15370).address() + (0xAEB - 0x890)))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
 			{
@@ -521,14 +532,20 @@ namespace GrassControl
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			}
-			
+			*/
 		}
 
 		if (*Config::OverwriteMinGrassSize >= 0)
 		{
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("iMinGrassSize:Grass");
+			if(!setting) {
+				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("iMinGrassSize:Grass");
+		        if (!setting) {
+			        logger::error("Failed to find iMinGrassSize");
+				    return;
+		        }
+			}
 			setting->data.i = *Config::OverwriteMinGrassSize;
-			RE::INISettingCollection::GetSingleton()->WriteSetting(setting);
 
 			/*
 			if(auto addr = RELOCATION_ID(15202, 15370).address() + (0x4B4E - 0x4890); REL::make_pattern<"66 0F 6E 05">().match(RELOCATION_ID(15202, 15370).address() + (0x4B4E - 0x4890)))

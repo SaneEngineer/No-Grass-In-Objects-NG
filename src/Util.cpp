@@ -15,8 +15,7 @@ namespace Util
 
 		auto ls = new CachedFormList();
 		char Char = ';';
-		std::string strChar(1, Char);
-		auto spl = Util::StringHelpers::split(input, strChar, true);
+		auto spl = StringHelpers::split(input, Char, true);
 		for (auto& x : spl) {
 			std::string idstr;
 			std::string fileName;

@@ -67,7 +67,7 @@ namespace GrassControl
 
 		static void ExchangeHook();
 
-		static void ProgressHook(RE::TESObjectCELL* cell);
+		static void ProgressHook(uintptr_t unk, RE::TESObjectCELL* cell);
 
 
 		static int DoneWS;
@@ -157,10 +157,32 @@ namespace GrassControl
 
 			struct GrassCountIncrement
 			{
-				static int thunk(RE::TESObjectCELL* cell)
+				static void thunk(RE::TESObjectCELL* cell)
 				{
 					InterlockedIncrement64(&queued_grass_counter);
-					return func(cell);
+				    func(cell);
+				}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
+			struct WriteProgress
+			{
+				static void thunk(uintptr_t GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
+				{
+					func(GrassMgr, cell, unk);
+					if(IsApplying) {
+					    if (cell != nullptr) {
+			                auto ws = cell->worldSpace;
+			                if (ws != nullptr) {
+				                std::string wsn = ws->editorID.c_str();
+				                int x = cell->GetCoordinates()->cellX;
+				                int y = cell->GetCoordinates()->cellY;
+
+				                cur_instance->WriteProgressFile(KeyCell, wsn, x, y);
+			                }
+		                }
+		                InterlockedDecrement64(&queued_grass_counter);
+					}
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
@@ -169,7 +191,8 @@ namespace GrassControl
 			{
 				if (*Config::UseGrassCache) {
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
-					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0x0));
+					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0x0)); //todo: Fix for AE
+					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0x0)); //todo: Fix for AE
 				}
 			}
 		};

@@ -7,11 +7,6 @@
 
 namespace GrassControl
 {
-	template<typename K, typename V>
-	std::vector<std::pair<K, V>> mapToVector(const std::unordered_map<K, V>& map) {
-		return std::vector<std::pair<K, V>>(map.begin(), map.end());
-	}
-
 	enum class GrassStates : unsigned char
 	{
 		None,
@@ -32,9 +27,9 @@ namespace GrassControl
 		class LoadOnlyCellInfoContainer2;
 
 	public:
-		static void GrassLoadHook(uintptr_t ws, int x, int y);
+		static void GrassLoadHook(RE::TESObjectCELL* cell, uintptr_t customArg);
 
-		static void RemoveGrassHook(uintptr_t cell, uintptr_t arg_1);
+		static void RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1);
 
 		static void CellUnloadHook(bool did, RE::TESObjectCELL* cellObj);
 
@@ -62,10 +57,15 @@ namespace GrassControl
 
 		// This is only ever called from when we are adding grass, calling from outside is not valid.
 	public:
-		static bool IsLodCell(uintptr_t cell);
+		static bool IsLodCell(RE::TESObjectCELL* cell);
+
+		static void InstallHooks()
+		{
+			Hooks::Install();
+		}
 
 	private:
-		static bool ClearCellAddGrassTask(uintptr_t cell);
+		static bool ClearCellAddGrassTask(const RE::TESObjectCELL* cell);
 
 		class cell_info final
 		{
@@ -75,7 +75,7 @@ namespace GrassControl
 			const int x;
 			const int y;
 
-			uintptr_t cell;
+			RE::TESObjectCELL* cell;
 			int self_data = 0;
 			volatile long long furtherLoad = 0;
 
@@ -93,11 +93,11 @@ namespace GrassControl
 		    std::vector<std::shared_ptr<cell_info>> grid;
 
 		public:
-			std::unordered_map<uintptr_t, std::shared_ptr<cell_info>> map = std::unordered_map<uintptr_t, std::shared_ptr<cell_info>>(1024);
+			std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>> map = std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>>(1024);
 
 			void unsafe_ForeachWithState(const std::function<bool(std::shared_ptr<cell_info>)> &action);
 
-			std::shared_ptr<cell_info> FindByCell(uintptr_t cell);
+			std::shared_ptr<cell_info> FindByCell(RE::TESObjectCELL* cell);
 		};
 	
 		static unsigned char CellLoadHook(int x, int y);
@@ -106,17 +106,17 @@ namespace GrassControl
 		//private static LoadOnlyCellInfoContainer LOMap;
 		inline static std::unique_ptr <LoadOnlyCellInfoContainer2> LO2Map;
 
-		static bool IsValidLoadedCell(uintptr_t cell, bool quickLoad);
+		static bool IsValidLoadedCell(RE::TESObjectCELL* cell, bool quickLoad);
 
-		static uintptr_t GetCurrentWorldspaceCell(uintptr_t tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
+		static RE::TESObjectCELL* GetCurrentWorldspaceCell(uintptr_t tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
 
-		static uintptr_t tryCheckCell(intptr_t cell, uintptr_t ws, int x, int y, bool quickLoad);
+		static uintptr_t tryCheckCell(RE::TESObjectCELL* cell, uintptr_t ws, int x, int y, bool quickLoad);
 
-		static void Call_AddGrassNow(uintptr_t cell, uintptr_t customArg);
+		static void Call_AddGrassNow(RE::TESObjectCELL* cell, uintptr_t customArg);
 
 		static GrassStates GetWantState(const std::shared_ptr<cell_info>& c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
 
-		static void Handle_RemoveGrassFromCell_Call(uintptr_t grassMgr, uintptr_t cell);
+		static void Handle_RemoveGrassFromCell_Call(uintptr_t grassMgr, RE::TESObjectCELL* cell);
 
 		static unsigned char CalculateLoadState(int nowX, int nowY, int x, int y, int ugrid, int ggrid);
 
@@ -189,6 +189,38 @@ namespace GrassControl
 			void Unload(const RE::TESWorldSpace *ws, int x, int y) const;
 
 			void _DoLoad(const RE::TESWorldSpace *ws, int x, int y) const;
+		};
+
+		protected:
+		struct Hooks
+		{
+			struct WriteProgress
+			{
+				static void thunk(uintptr_t GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
+				{
+						if (load_only)
+                        {
+                            if(cell != nullptr)
+                            {
+								auto ext = cell->GetCoordinates();
+								auto x = ext->cellX;
+                                auto y = ext->cellY;
+                                LO2Map->_DoLoad(cell->worldSpace, x, y);
+                            }
+                        }
+                        else {
+                            Call_AddGrassNow(cell, unk);
+                        }
+				}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
+			static void Install()
+			{
+				if (*Config::ExtendGrassDistance) {
+					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0x0)); //todo: Fix for AE
+				}
+			}
 		};
 	};
 }

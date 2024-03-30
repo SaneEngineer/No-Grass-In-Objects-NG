@@ -119,21 +119,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-#ifdef SKYRIMVR
-	try {
-		Settings::GetSingleton()->Load();
-	} catch (...) {
-		logger::error("Exception caught when loading settings! Default settings will be used");
-	}
-
-	logger::info("{:*^50}", "PRELOAD PATCH"sv);
-
-	Fixes::PreLoad::Install(a_skse->SKSEVersion());
-#endif
-
     GrassControl::Config::load();
 	GrassControl::GrassControlPlugin::InstallHooks();
 	GrassControl::GidFileGenerationTask::InstallHooks();
+	GrassControl::DistantGrass::InstallHooks();
 	InitializeMessaging();
 
 	return true;

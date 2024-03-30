@@ -139,20 +139,23 @@ namespace Util
 			}
 		}
 
-		static std::vector<std::string> split(const std::string& str, const std::string& regex_str, const bool RemoveEmpty)
+		static std::vector<std::string> split(const std::string& str, char delim, const bool RemoveEmpty)
 		{
-			std::regex regexz(regex_str);
-			std::vector<std::string> list(std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
-				std::sregex_token_iterator());
+		    std::stringstream ss(str); 
+			std::string token;
+		    std::vector<std::string> tokens; 
+		    while (getline(ss, token, delim)) { 
+                tokens.push_back(token); 
+            } 
 			if (RemoveEmpty) {
-				for (int i = 0; i < list.size();) {
-					if (list[i].empty()) {
-						list.erase(list.begin() + i);
+				for (int i = 0; i < tokens.size();) {
+					if (tokens[i].empty()) {
+						tokens.erase(tokens.begin() + i);
 					} else
 						++i;
 				}
 			}
-			return list;
+			return tokens;
 		}
 
 		static std::vector<std::string> Split_at_any(const std::string& str, const std::vector<char>& delims, const bool RemoveEmpty)
