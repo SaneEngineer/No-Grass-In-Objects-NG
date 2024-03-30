@@ -1,6 +1,8 @@
-This is a incomplete attempt to port NGIO to Commonlib-NG. Currently hooks are only for SE, very little work has been done towards AE. The config is different and uses toml++. Raycasting is functional along with all other smaller features. Extended Grass distance is not functional, but is around 80% finished, l the hooks are implimented but is currently not functional and causes grass to not be rendered. All hooks for caching are implemented, but no files are created. 
+This is a port of No Grass in Objects rewritten using Commonlib. Currently hooks are only for SE, very little work has been done towards AE. The config is roughly the same with only a change to toml. To my knowledge all features should be working in SE, but I have not done much testing. 
 
 ## Requirements
+* [Casual Library](https://github.com/CasualCoder91/CasualLibrary/)
+	* Compile or add libs from the github releases and add to `/external/CasualLibrary1.0/`
 * [CMake](https://cmake.org/)
 	* Add this to your `PATH`
 * [The Elder Scrolls V: Skyrim Special Edition](https://store.steampowered.com/app/489830)
