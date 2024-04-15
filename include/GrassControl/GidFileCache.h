@@ -191,8 +191,11 @@ namespace GrassControl
 			{
 				if (*Config::UseGrassCache) {
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
-					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0x0)); //todo: Fix for AE
-					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0x0)); //todo: Fix for AE
+					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
+
+					if(exists(std::filesystem::path(getProgressFilePath()))) {
+					    stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
+					}
 				}
 			}
 		};

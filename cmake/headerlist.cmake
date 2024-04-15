@@ -2,7 +2,6 @@ set(headers ${headers}
 	include/GrassControl/Config.h
 	include/GrassControl/DistantGrass.h
 	include/GrassControl/Events.h
-	include/GrassControl/exceptionhelper.h
 	include/GrassControl/GidFileCache.h
 	include/GrassControl/Logging.h
 	include/GrassControl/Main.h

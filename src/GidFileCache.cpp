@@ -43,7 +43,7 @@ namespace GrassControl {
 		}
 		
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + (0xB90 - 0xAE0); REL::make_pattern<"49 8D 48 08">().match(RELOCATION_ID(74601, 76329).address() + (0xB90 - 0xAE0))) {
+		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0))) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
@@ -93,7 +93,7 @@ namespace GrassControl {
 		
 		// Saving.
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = RELOCATION_ID(15204, 15374).address() + (0x5357 - 0x4D10); REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15204, 15372).address() + (0x5357 - 0x4D10))) {
+		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643))) {
 
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -143,7 +143,7 @@ namespace GrassControl {
 		
 		// Loading.
 		//HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = (RELOCATION_ID(15206, 15374).address() + 0xC4); (REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15206, 15374).address() + 0xC4))) {
+		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)))) {
 			// R13 is cell
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -159,16 +159,6 @@ namespace GrassControl {
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function
 					add(rsp, 0x20);
-
-					/*
-					test(al, al);
-					je(j_else);
-					mov(r8, CustomGrassLodFileName);
-					jmp(ptr[rip + retnLabel]);
-
-					L(j_else);
-				    mov(r8, CustomGrassFileName);
-					*/
 
 					mov(r8, rax);
 				    
@@ -192,50 +182,58 @@ namespace GrassControl {
 		}
 		
 		// Set the ini stuff.
-		/*
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + (0xAC - 0x10)); REL::make_pattern<"44 38 3D">().match(RELOCATION_ID(15204, 15372).address() + (0xAC - 0x10))) {
+	    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
+	    setting->data.b = true;
+		/* BROKEN TODO
+		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD)); REL::make_pattern<"44 38 3D">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD))) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation9);
 		}
 		*/
-		if (auto addr = (RELOCATION_ID(15202, 98143).address() + (0xBE7 - 0x890)); REL::make_pattern<"0F B6 05">().match(RELOCATION_ID(15202, 98143).address() + (0xBE7 - 0x890))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
+		/*
+		auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xBE7 - 0x890, 0x351);
+		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 
-			struct Patch : Xbyak::CodeGenerator
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(bool only_load, const std::uintptr_t a_target)
 			{
-				Patch(bool only_load, const std::uintptr_t a_target)
-				{
-					Xbyak::Label retnLabel;
+				Xbyak::Label retnLabel;
 
-					Xbyak::Label j_else;
+				Xbyak::Label j_else;
 
-					mov(al, only_load);
-					movzx(eax, al);
-					test(eax, eax);
-					jne(j_else);
-				    mov(rax, 1);
-					jmp(ptr[rip + retnLabel]);
+				mov(al, only_load);
+				movzx(eax, al);
+				test(eax, eax);
+				jne(j_else);
+				mov(rax, 1);
+				jmp(ptr[rip + retnLabel]);
 
-					L(j_else);
-					mov(rax, 0);
-					
-					jmp(ptr[rip + retnLabel]);
+				L(j_else);
+				mov(rax, 0);
+				
+				jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x7);
-				}
-			};
-			Patch patch(only_load, addr);
-			patch.ready();
+				L(retnLabel);
+				dq(a_target + 0x7);
+			}
+		};
+		Patch patch(only_load, addr);
+		patch.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+		auto& trampoline = SKSE::GetTrampoline();
+		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+	    */
+		if(!only_load) {
+		    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
+			setting->data.b = true;
+		} else {
+		    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
+			setting->data.b = false;
 		}
-		else {
-			stl::report_and_fail("Failed to set ini settings");
-		}
+
 		// Disable grass console.
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + (0x55A6 - 0x4D10)); REL::make_pattern<"48 8D 05">().match(RELOCATION_ID(15204, 15372).address() + (0x55A6 - 0x4D10))) {
+		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896))) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -247,7 +245,11 @@ namespace GrassControl {
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
+                    #ifdef SKYRIM_AE
 					dq(a_target + 0x7 + (0x5882 - 0x55AD));
+					#else
+					dq(a_target + 0x7 + (0x5882 - 0x55AD));
+                    #endif
 				}
 			};
 			Patch patch(addr);
@@ -270,7 +272,7 @@ namespace GrassControl {
 	{
 		if (cur_instance != nullptr)
 		{
-			throw InvalidOperationException();
+			stl::report_and_fail("Only one instance of GidFileGenerationTask can be created at a time!");
 		}
 
 		FileStream.open(getProgressFilePath(), std::ios::app);
@@ -324,214 +326,84 @@ namespace GrassControl {
 		InterlockedExchange64(&queued_grass_mode,0);
 	}
 
-	/*
-	void GidFileGenerationTask::ProgressHook(uintptr_t unk, RE::TESObjectCELL* cell)
-	{
-		REL::Relocation <void (*)(uintptr_t, RE::TESObjectCELL*, uintptr_t)> AddGrassNow{ RELOCATION_ID(15204, 15372) };
-	    AddGrassNow(Memory::Internal::read<uintptr_t>(addr_GrassMgr), cell, unk);
-
-		if (cell != nullptr) {
-			auto ws = cell->worldSpace;
-			if (ws != nullptr) {
-				std::string wsn = ws->editorID.c_str();
-				int x = cell->GetCoordinates()->cellX;
-				int y = cell->GetCoordinates()->cellY;
-
-				cur_instance->WriteProgressFile(KeyCell, wsn, x, y);
-			}
-		}
-		InterlockedDecrement64(&queued_grass_counter);
-	};
-	*/
-
 	void GidFileGenerationTask::apply()
 	{
 		unsigned long long addr;
 		
-		if (addr = (RELOCATION_ID(13148, 13288).address() + (0x2B25 - 0x2220)); REL::make_pattern<"E8">().match(RELOCATION_ID(13148, 13288).address() + (0x2B25 - 0x2220))) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29))) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
-		
-		/*
-		if (addr = (RELOCATION_ID(13190, 13335).address() + (0xD40 - 0xC70)); REL::make_pattern< "E8">().match(RELOCATION_ID(13190, 13335).address() + (0xD40 - 0xC70))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-			uintptr_t TESObjectCELL_Sub = RELOCATION_ID(13137, 13277).address();
 
-			struct Patch : Xbyak::CodeGenerator
+		addr = RELOCATION_ID(13190, 13335).address() + OFFSET(0x106, 0x106);
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(uintptr_t Exchange, const uintptr_t a_target)
 			{
-				Patch(uintptr_t Increment, uintptr_t TESObjectCELL_Sub, uintptr_t a_target)
-				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label counter;
-					Xbyak::Label increment;
-					Xbyak::Label retnLabel;
+				Xbyak::Label retnLabel;
+				Xbyak::Label exchange;
 
-					/
-					mov(rax, counter);
-				    lea(rax, ptr[rax]);
-					lock();
-				    inc(ptr[rax]);
-				    
+				/*
+				push(rax);
+				xor_(eax, eax);
+				mov(rcx, mode);
+				lock();
+				xchg(ptr[rcx], rax);
+				*/
 
-					sub(rsp, 0x20);
-					call(ptr[rip + increment]);
-					add(rsp, 0x20);
+				mov(rdi, ptr[rsp + 0x50]);
 
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);
-					add(rsp, 0x20);
+				sub(rsp, 0x20);
+				call(ptr[rip + exchange]);
+				add(rsp, 0x20);
 
-					jmp(ptr[rip + retnLabel]);
+				jmp(ptr[rip + retnLabel]);
 
-					L(funcLabel);
-					dq(TESObjectCELL_Sub);
+				L(retnLabel);
+				dq(a_target + 0x5);
 
-				    L(increment);
-					dq(Increment);
+				L(exchange);
+				dq(Exchange);
+			}
+		};
+		Patch patch(reinterpret_cast<uintptr_t>(&ExchangeHook), addr);
+		patch.ready();
 
-					L(counter);
-					dq(queued_grass_counter);
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-					L(retnLabel);
-					dq(a_target + 0x5);
-				}
-			};
-			Patch patch(reinterpret_cast<uintptr_t>(&IncrementHook), TESObjectCELL_Sub,  addr);
-			patch.ready();
-
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		}
-		else {
-			stl::report_and_fail("Failed to Generate Gid Files");
-		}
-		
-		*/
-		if (addr = RELOCATION_ID(13190, 13335).address() + 0x106; REL::make_pattern<"48 8B 74 24 48">().match(RELOCATION_ID(13190, 13335).address() + (0xD71 - 0xC70))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-
-			//InterlockedExchange64(&queued_grass_mode, 0);
-			struct Patch : Xbyak::CodeGenerator
+		addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x183);
+		struct Patch2 : Xbyak::CodeGenerator
+		{
+			explicit Patch2(const uintptr_t a_func, const uintptr_t a_target)
 			{
-				Patch(uintptr_t Exchange, const uintptr_t a_target)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label exchange;
+				Xbyak::Label funcLabel;
+				Xbyak::Label retnLabel;
 
-					/*
-					push(rax);
-					xor_(eax, eax);
-					mov(rcx, mode);
-					lock();
-					xchg(ptr[rcx], rax);
-					*/
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);  // call our function
+				add(rsp, 0x20);
 
-					mov(rdi, ptr[rsp + 0x50]);
+				jmp(ptr[rip + retnLabel]);
 
-					sub(rsp, 0x20);
-				    call(ptr[rip + exchange]);
-					add(rsp, 0x20);
+				L(retnLabel);
+				dq(a_target + 0x6);
 
-					jmp(ptr[rip + retnLabel]);
+				L(funcLabel);
+				dq(a_func);
+			}
+		};
+		Patch patch2(addr, reinterpret_cast<uintptr_t>(getChosenGrassGridRadius));
+		patch2.ready();
+		trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
 
-					L(retnLabel);
-					dq(a_target + 0x5);
+	    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
+	    setting->data.b = true;
 
-				    L(exchange);
-					dq(Exchange);
-				}
-			};
-			Patch patch(reinterpret_cast<uintptr_t>(&ExchangeHook), addr);
-			patch.ready();
-
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-
-			//InterlockedExchange64(queued_grass_mode, 0);
-		}
-		else {
-			stl::report_and_fail("Failed to Generate Gid Files");
-		}
-		
-		if (addr = (RELOCATION_ID(15202, 15370).address() + (0xA0E - 0x890)); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + (0xA0E - 0x890))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
-			{
-				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
-				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
-
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(retnLabel);
-					dq(a_target + 0x6);
-
-					L(funcLabel);
-					dq(a_func);
-				}
-			};
-			Patch patch(addr, reinterpret_cast<uintptr_t>(getChosenGrassGridRadius));
-			patch.ready();
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-		}
-		else {
-			stl::report_and_fail("Failed to Generate Gid Files");
-		}
-		/*
-		if (addr = RELOCATION_ID(13138, 13278).address(); REL::make_pattern<"48 8B 51 38">().match(RELOCATION_ID(13138, 13278).address())) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
-			{
-				Patch(const uintptr_t a_func, const uintptr_t a_target)
-				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
-
-					mov(rdx, ptr[rcx + 0x38]); // cellptr
-					lea(rcx, ptr[rcx + 0x48]);
-
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(a_func);
-
-					L(retnLabel);
-					dq(a_target + 0x8);
-				}
-			};
-			Patch patch(reinterpret_cast<uintptr_t>(ProgressHook), addr);
-			patch.ready();
-
-			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation8);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		}
-		else {
-			stl::report_and_fail("Failed to Generate Gid Files");
-		}
-		
-		addr = RELOCATION_ID(13138, 13278).address();
-		Memory::Internal::write<uint8_t>(addr + 8, 0xC3, true);
-		*/
-		//Update();
-		
 		IsApplying = true;
 		
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
-		if (addr = RELOCATION_ID(35565, 36564).address() + (0x216 - 0x1E0); REL::make_pattern<"74 14">().match(RELOCATION_ID(35565, 36564).address() + (0x216 - 0x1E0))) {
-			Memory::Internal::write<uint8_t>(addr, 0xEB, true);
-		}
-		
+		addr = RELOCATION_ID(35565, 36564).address() + OFFSET(0x216 - 0x1E0, 0x51);
+	    Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 
 	void GidFileGenerationTask::Update() {
@@ -937,7 +809,7 @@ namespace GrassControl {
 
 			if (cur == 0)
 			{
-				throw InvalidOperationException();
+				stl::report_and_fail("Grass generation has crashed!");
 			}
 
 			if (best == nullptr || cur > bestCount)
@@ -968,7 +840,7 @@ namespace GrassControl {
 		{
 			auto t = FindBestTodo();
 			if (t == nullptr)
-			    throw InvalidOperationException();
+			   stl::report_and_fail("Grass generation has crashed!");
 
 			if (!t->RunOne())
 			{
@@ -1027,7 +899,7 @@ namespace GrassControl {
 		}
 		else
 		{
-			throw InvalidOperationException();
+			stl::report_and_fail("Grass generation has crashed!");
 		}
 	}
 	

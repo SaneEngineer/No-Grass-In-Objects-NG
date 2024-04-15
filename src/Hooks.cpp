@@ -2,9 +2,16 @@
 
 namespace GrassControl
 {
-	bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
+	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
 	{
-		return GrassControlPlugin::Cache->CanPlaceGrass(land, x, y, z);
+		if (land != nullptr)
+        {
+            if (Cache != nullptr && !Cache->CanPlaceGrass(land, x, y, z))
+            {
+                return false;
+            }
+        }
+		return true;
 	}
 
 	std::intptr_t GrassControlPlugin::addr_MaxGrassPerTexture;
@@ -53,67 +60,7 @@ namespace GrassControl
 				cachedList = nullptr;
 			}
 			Cache = std::make_unique<RaycastHelper>(std::stof(Version::NAME.data()), *Config::RayCastHeight, *Config::RayCastDepth, *Config::RayCastCollisionLayers, cachedList);
-			logger::info("Created Cache");
-
-			if (auto addr = (RELOCATION_ID(15212, 15381).address() + (0x723A - 0x6CE0)); REL::make_pattern<"F3 0F 10 75 B8">().match(RELOCATION_ID(15212, 15381).address() + (0x723A - 0x6CE0))) {
-				//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&](std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(std::uintptr_t b_func, std::uintptr_t a_target)
-					{
-						Xbyak::Label funcLabel;
-						Xbyak::Label retnLabel;
-
-						Xbyak::Label jump;
-
-						Xbyak::Label notIf;
-
-						Xbyak::Reg64 land = rsi;
-						Xbyak::Address x = ptr[rsp + 0x40];
-						Xbyak::Address y = ptr[rsp + 0x44];
-						Xbyak::Xmm z = xmm7;
-
-						cmp(land, 0);
-						je(notIf);
-
-						if (Cache != nullptr) {
-							movss(xmm3, z);
-							movss(xmm2, y);
-							movss(xmm1, x);
-							mov(rcx, land);
-
-							sub(rsp, 0x20);
-							call(ptr[rip + funcLabel]);  // call our function
-							add(rsp, 0x20);
-
-							movzx(eax, al);
-							test(eax, eax);
-							jne(notIf);
-							jmp(ptr[rip + jump]);
-						} else {
-							jmp(notIf);
-						}
-
-						L(notIf);
-						movss(xmm6, ptr[rbp - 0x48]);
-						jmp(ptr[rip + retnLabel]);
-
-						L(jump);
-						dq(a_target + 0x5 + (0x661 - 0x23F));
-
-						L(funcLabel);
-						dq(b_func);
-
-						L(retnLabel);
-						dq(a_target + 0x5);
-					}
-				};
-				Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
+			logger::info("Created Cache for Raycasting Settings");
 		}
 
 		if (*Config::ExtendGrassDistance) {
@@ -122,15 +69,6 @@ namespace GrassControl
 			}
 		}
 	 }
-
-	auto to_vector(const float f)
-	{
-		// get vector of the right size
-		std::vector<unsigned char> data(sizeof(f));
-		// copy the bytes
-		std::memcpy(data.data(), &f, sizeof(f));
-		return data;
-	}
 
 	void GrassControlPlugin::init()
 	{
@@ -155,42 +93,105 @@ namespace GrassControl
 		{
 		case 1:
 	        {
-			    *Config::OverwriteGrassDistance = 999999.0f;
-			    *Config::OverwriteGrassFadeRange = 0.0f;
+			    *Config::OverwriteGrassDistance = 999999.0;
+			    *Config::OverwriteGrassFadeRange = 0.0;
 			    *Config::ExtendGrassDistance = false;
 	        }
 		break;
 
 		case 2:
 		    {
-			    *Config::OverwriteGrassDistance = 999999.0f;
-			    *Config::OverwriteGrassFadeRange = 0.0f;
+			    *Config::OverwriteGrassDistance = 999999.0;
+			    *Config::OverwriteGrassFadeRange = 0.0;
 			    *Config::ExtendGrassDistance = true;
 		    }
 		break;
+		}
+
+		if(*Config::RayCast) {
+		    auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET((0x723A - 0x6CE0), 0x664);
+			struct Patch : Xbyak::CodeGenerator
+			{
+				Patch(std::uintptr_t b_func, std::uintptr_t a_target)
+				{
+					Xbyak::Label funcLabel;
+					Xbyak::Label retnLabel;
+
+					Xbyak::Label jump;
+					Xbyak::Label notIf;
+
+					#ifdef SKYRIM_AE
+					movss(xmm1, ptr[rsp + 0x50]);    // x
+					movss(xmm2, ptr[rsp + 0x54]);	  // y
+				    movss(xmm3, xmm7); // z
+
+				    mov(rcx, rdi);
+					#else
+				   	movss(xmm1, ptr[rsp + 0x40]);    // x
+					movss(xmm2, ptr[rsp + 0x44]);	  // y
+				    movss(xmm3, xmm7); // z
+
+				    mov(rcx, rsi);
+                    #endif
+					
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);  // call our function
+					add(rsp, 0x20);
+					
+					test(al, al);
+					jne(notIf);
+					jmp(ptr[rip + jump]);
+
+					L(notIf);
+                    #ifdef SKYRIM_AE
+					movss(xmm6, ptr[rbp - 0x68]);
+					#else
+					movss(xmm6, ptr[rbp - 0x48]);
+					#endif
+					jmp(ptr[rip + retnLabel]);
+
+					L(jump);
+                    #ifdef SKYRIM_AE
+					dq(a_target - 0x156);
+					#else
+					dq(a_target + 0x5 + (0x661 - 0x23F));
+                    #endif
+
+					L(funcLabel);
+					dq(b_func);
+
+					L(retnLabel);
+					dq(a_target + 0x5);
+				}
+			};
+			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr);
+			patch.ready();
+
+			auto& trampoline = SKSE::GetTrampoline();
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		}
 		
 		if (*Config::SuperDenseGrass)
 		{
 			// Make amount big.
-			if(auto addr = RELOCATION_ID(15202, 15370).address() + (0xAE5 - 0x890); REL::make_pattern<"C1 E1 07">().match(RELOCATION_ID(15202, 15370).address() + (0xAE5 - 0x890)))
+			auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xAE5 - 0x890, 0x258);
+			int mode = std::max(0, std::min(12, static_cast<int>(*Config::SuperDenseMode)));
+			if (mode != 7)
 			{
-			    int mode = std::max(0, std::min(12, static_cast<int>(*Config::SuperDenseMode)));
-				if (mode != 7)
-				{
-					Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
-				}
+				Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
 			}
 		}
 
 		if (*Config::ExtendGrassCount)
 		{
 			// Create more grass shapes if one becomes full.
-			if(auto addr = RELOCATION_ID(15220, 15389).address() + (0x433 - 0x3C0); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15389).address() + (0x433 - 0x3C0)))
+		    #ifndef SKYRIM_AE // Cant find Function in AE, might not be needed
+			if(auto addr = RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x0); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x0)))
 			{
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
 			}
-			if(auto addr = RELOCATION_ID(15214, 15383).address() + (0x960 - 0x830); REL::make_pattern<"48 39 18 74 0A">().match(RELOCATION_ID(15214, 15383).address() + (0x960 - 0x830)))
+            #endif
+			if(auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129)))
 			{
 			//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
@@ -251,7 +252,7 @@ namespace GrassControl
 		{
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-			if(auto addr = RELOCATION_ID(18342, 18758).address() + (0xD63 - 0xCF0); REL::make_pattern<"44 8B 25">().match(RELOCATION_ID(18342, 18758).address() + (0xD63 - 0xCF0)))
+			if(auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68)))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
 				uint32_t max = std::max(static_cast<int>(*Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
@@ -262,7 +263,11 @@ namespace GrassControl
 					{
 						Xbyak::Label retnLabel;
 
-						mov(r12, max);
+						#ifdef SKYRIM_AE
+						mov(edi, max);
+                        #else
+						mov(r12d, max);
+                        #endif
 						jmp(ptr[rip + retnLabel]);
 
 						L(retnLabel);
@@ -278,10 +283,8 @@ namespace GrassControl
 			}
 		}
 
-		if (*Config::OverwriteGrassDistance >= 0.0f)
+		if (*Config::OverwriteGrassDistance >= 0.0)
 		{
-			const float Distance = *Config::OverwriteGrassDistance;
-
 			auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
 			if(!setting) {
 				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
@@ -291,172 +294,9 @@ namespace GrassControl
 		        }
 			}
 			setting->data.f = *Config::OverwriteGrassDistance;
-			
-			uintptr_t addr;
-			/*
-			if(addr = RELOCATION_ID(528751, 15379).address(); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(528751, 15379).address()))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-			    struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(edx, distance);
-						movd(xmm0, edx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-		
-			if(addr = RELOCATION_ID(528751, 15379).address() + (0xC10 - 0xBE0); REL::make_pattern<"F3 0F 10 15">().match(RELOCATION_ID(528751, 15379).address() + (0xC10 - 0xBE0)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(edx, distance);
-						movd(xmm2, edx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-			// WHY WONT YOU WORK
-			
-			if(addr = RELOCATION_ID(15210, 15370).address() + (0xBD - 0xA0); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(15210, 15370).address() + (0xBD - 0xA0)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(edx, distance);
-						movd(xmm0, edx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation8);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
-			
-			if(addr = RELOCATION_ID(15202, 15370).address() + (0x4B1B - 0x4890); REL::make_pattern<"F3 0F 10 15">().match(RELOCATION_ID(15202, 15370).address() + (0x4B1B - 0x4890)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(edx, distance);
-						movd(xmm2, edx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-
-			if(addr = RELOCATION_ID(15202, 15370).address() + (0x4AF3 - 0x4890); REL::make_pattern< "F3 0F 58 05">().match(RELOCATION_ID(15202, 15370).address() + (0x4AF3 - 0x4890)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						movss(xmm4, xmm1);
-						mov(eax, distance);
-						movd(xmm1, eax);
-						addss(xmm0, xmm1);
-						movss(xmm1, xmm4);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-
-			if(addr = RELOCATION_ID(15202, 15370).address() + (0x49F7 - 0x4890); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(15202, 15370).address() + (0x49F7 - 0x4890)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float distance, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(eax, distance);
-						movd(xmm0, eax);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Distance, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-			*/
 		}
 
-		if (*Config::OverwriteGrassFadeRange >= 0.0f)
+		if (*Config::OverwriteGrassFadeRange >= 0.0)
 		{
 			
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
@@ -468,71 +308,6 @@ namespace GrassControl
 		        }
 			}
 			setting->data.f = *Config::OverwriteGrassFadeRange;
-			
-		    /*
-			if(auto addr = RELOCATION_ID(15202, 15370).address() + (0xAEB - 0x890); REL::make_pattern<"F3 0F 10 05">().match(RELOCATION_ID(15202, 15370).address() + (0xAEB - 0x890)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				float Range = *Config::OverwriteGrassFadeRange;
-
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float range, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						push(rax);
-						mov(eax, range);
-						movd(xmm0, eax);
-						pop(rax);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Range, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
-
-			if(auto addr = RELOCATION_ID(528751, 15379).address() + 0xB; REL::make_pattern<"F3 0F 58 05">().match(RELOCATION_ID(528751, 15379).address() + 0xB))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8, Before = [&](std::any ctx)
-			{
-				float Range = *Config::OverwriteGrassFadeRange;
-
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(float range, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						push(rax);
-						movss(xmm4, xmm1);
-						mov(eax, range);
-						movd(xmm1, eax);
-						addss(xmm0, xmm1);
-						pop(rax);
-						movss(xmm1, xmm4);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x8);
-					}
-				};
-				Patch patch(Range, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
-			*/
 		}
 
 		if (*Config::OverwriteMinGrassSize >= 0)
@@ -546,136 +321,33 @@ namespace GrassControl
 		        }
 			}
 			setting->data.i = *Config::OverwriteMinGrassSize;
-
-			/*
-			if(auto addr = RELOCATION_ID(15202, 15370).address() + (0x4B4E - 0x4890); REL::make_pattern<"66 0F 6E 05">().match(RELOCATION_ID(15202, 15370).address() + (0x4B4E - 0x4890)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8 + 3, Before = [&](std::any ctx)
-			{
-				uint32_t Max = std::max(1, static_cast<int>(*Config::OverwriteMinGrassSize));
-
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(uint32_t max, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(edx, max);
-						movd(xmm0, edx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0xB);
-					}
-				};
-				Patch patch(Max, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			} 
-
-			if(auto addr = RELOCATION_ID(15212, 15381).address() + (0x6DBB - 0x6CE0); REL::make_pattern<"66 0F 6E 0D">().match(RELOCATION_ID(15212, 15381).address() + (0x6DBB - 0x6CE0)))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 8 + 3, Before = [&](std::any ctx)
-			{
-				uint32_t Max = std::max(1, static_cast<int>(*Config::OverwriteMinGrassSize));
-
-				struct Patch : Xbyak::CodeGenerator
-				{
-					Patch(uint32_t max, std::uintptr_t a_target)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(eax, max);
-						movd(xmm1, eax);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0xB);
-					}
-				};
-				Patch patch(Max, addr);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
-			*/
 		}
 
-		if (*Config::GlobalGrassScale != 1.0f && *Config::GlobalGrassScale > 0.0001f)
+		if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001)
 		{
-			auto floatAlloc = malloc(8);
-			Memory::Internal::write<float>(reinterpret_cast<uintptr_t>(floatAlloc), *Config::GlobalGrassScale);
-
-			unsigned long long vid = 15212;
-			int baseOffset = 0x6CE0;
-
-			std::vector<unsigned char> fcode;
+            #ifdef SKYRIM_AE 
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x754);
+			struct Patch : Xbyak::CodeGenerator
 			{
-				std::vector<unsigned char> code = { 0xF3, 0x41, 0x0F, 0x59, 0xC6, 0xF3, 0x41, 0x0F, 0x5C, 0xC3, 0xF3, 0x0F, 0x59, 0x46, 0x10, 0xF3, 0x41, 0x0F, 0x58, 0xC3, 0x48, 0xB9 };
-				auto floatPtr = static_cast<float*>(floatAlloc);
-				auto Array1 = to_vector(*floatPtr);
-				code.insert(code.end(), Array1.begin(), Array1.end());
-				auto Array2 = std::vector<unsigned char> {0xF3, 0x0F, 0x59, 0x01, 0xF3, 0x41, 0x0F, 0x5C, 0xC3, 0x48, 0xB9};
-				code.insert(code.end(), Array2.begin(), Array2.end());
-				std::vector<unsigned char> Array3;
-				if(REL::make_pattern<"E8">().match(vid + (0x7629 - baseOffset)))
+				Patch(std::uintptr_t a_target)
 				{
-					Array3 = to_vector(vid + (0x7629 - baseOffset));
+					Xbyak::Label retnLabel;
+
+					movss(xmm11, xmm0);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(retnLabel);
+					dq(a_target + 0x5);
 				}
-				code.insert(code.end(), Array3.begin(), Array3.end());
-				auto Array4 = std::vector<unsigned char> {0xFF, 0xE1};
-				code.insert(code.end(), Array4.begin(), Array4.end());
+			};
+			Patch patch(addr);
+			patch.ready();
 
-				fcode = code;
-			}
-
-			/*
-			; xmm0 is the final scale - 1.0f
-			; xmm11 is 1.0f
-
-			; original game code
-
-			mulss   xmm0, xmm14
-			subss   xmm0, xmm11
-			mulss   xmm0, dword ptr [rsi+0x10]
-
-			; our code to apply extra multiplier
-
-			addss xmm0, xmm11
-			movabs rcx, 0
-			mulss xmm0, dword ptr [rcx]
-			subss xmm0, xmm11
-
-			; continue execution in game code
-
-			movabs rcx, 0
-			jmp rcx
-			*/
-
-			auto alloc = malloc(fcode.size() + 0x10);
-
-			Utility::Memory::SafeWrite(reinterpret_cast<uintptr_t>(alloc), fcode, true);
-
-			if(auto addr = vid + (0x761A - baseOffset); REL::make_pattern<"F3 41 0F 59 C6 F3 41 0F 5C C3 F3 0F 59 46 10">().match(vid + (0x761A - baseOffset)))
-			{
-				auto wr = std::vector<unsigned char>{ 0x48, 0xB9 };
-				auto floatPtr = static_cast<float*>(alloc);
-				auto array1 = to_vector(*floatPtr);
-				wr.insert(wr.end(), array1.begin(), array1.end());
-				auto array2 = std::vector<unsigned char>{ 0xFF, 0xE1, 0x90, 0x90, 0x90 };
-				wr.insert(wr.end(), array2.begin(), array2.end());
-				//.insert(BitConverter::GetBytes((intptr_t)alloc)).insert(std::vector<unsigned char> {0xFF, 0xE1, 0x90, 0x90, 0x90});
-				if (wr.size() != 15)
-				{
-					throw std::invalid_argument("GrassControl:GlobalGrassScale (wr.Length != 15)");
-				}
-				Utility::Memory::SafeWrite(addr, wr, true);
-			}
+			auto& trampoline = SKSE::GetTrampoline();
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
+			#endif
 		}
 	}
 

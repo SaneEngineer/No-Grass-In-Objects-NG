@@ -12,6 +12,9 @@ void InitializeHooking()
 	auto& trampoline = GetTrampoline();
 	trampoline.create(2048);
 	log::trace("Trampoline initialized.");
+	GrassControl::GrassControlPlugin::InstallHooks();
+    GrassControl::GidFileGenerationTask::InstallHooks();
+    GrassControl::DistantGrass::InstallHooks();
 }
 
  void InitializeMessaging()
@@ -21,17 +24,16 @@ void InitializeHooking()
 			// Skyrim lifecycle events.
 			case MessagingInterface::kPostLoad:  // Called after all plugins have finished running SKSEPlugin_Load.
 				// It is now safe to do multithreaded operations, or operations against other plugins.
-			case MessagingInterface::kPostPostLoad:  // Called after all kPostLoad message handlers have run.
+				break;
 			case MessagingInterface::kInputLoaded:   // Called when all game data has been found.
+				GrassControl::GrassControlPlugin::init();
 				break;
 			case MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 				// It is now safe to access form data.
-				InitializeHooking();
 				MenuOpenCloseEventHandler::Register();
-				GrassControl::GrassControlPlugin::init();
 				break;
-			case MessagingInterface::kDeleteGame:  // The player deleted a saved game from within the load menu.
-				break;
+			default:
+			    break;
 			}
 		})) {
 		report_and_fail("Unable to register message listener.");
@@ -107,7 +109,7 @@ void InitializeLog() {
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-#ifdef DEBUG
+#ifndef NDEBUG
 	while (!IsDebuggerPresent()) {
 		Sleep(100);
 	}
@@ -119,10 +121,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-    GrassControl::Config::load();
-	GrassControl::GrassControlPlugin::InstallHooks();
-	GrassControl::GidFileGenerationTask::InstallHooks();
-	GrassControl::DistantGrass::InstallHooks();
+	GrassControl::Config::load();
+	InitializeHooking();
 	InitializeMessaging();
 
 	return true;

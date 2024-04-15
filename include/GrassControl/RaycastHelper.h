@@ -1,7 +1,6 @@
 #pragma once
 
 #include <GrassControl/Config.h>
-#include <GrassControl/exceptionhelper.h>
 #include <GrassControl/Util.h>
 #include "GrassControl/mmath.h"
 #include <string>
@@ -57,7 +56,7 @@ namespace Raycast
 		RE::hkpWorldRayCastOutput rayHit;  // 10
 
 		std::vector<HitResult> hits{};
-		std::vector<const RE::NiAVObject*> objectFilter;
+		std::vector<const RE::NiAVObject*> objectFilter{};
 	};
 
 #pragma warning(push)
@@ -87,12 +86,12 @@ namespace Raycast
 		// If the ray hit a character actor, this will point to it
 		RE::Character* hitCharacter = nullptr;
 		// If the ray hits a havok object, this will point to it
-		RE::NiAVObject* hitObject;
+		RE::NiAVObject* hitObject = nullptr;
 		RE::COL_LAYER CollisionLayer;
 		// The length of the ray from start to hitPos
 		float rayLength = 0.0f;
 		// A vector of hits to be iterated in original code
-		std::vector<Raycast::RayCollector::HitResult> hitArray;
+		std::vector<RayCollector::HitResult> hitArray{};
 
 		// pad to 128
 		//uint64_t _pad{};
@@ -113,131 +112,6 @@ namespace Raycast
 	//		If the ray hit something, result.hit will be true.
 	RayResult hkpCastRay(const glm::vec4& start, const glm::vec4& end) noexcept;
 	
-}
-
-namespace RayCastUtil
-{
-	/*
-	//
-	// Summary:
-	//     Contains results from raycasting.
-	class RayCastResult final
-	{
-	private:
-		float _fraction = 0;
-
-		std::vector<float> _normal;
-
-		std::vector<float> _pos;
-
-	public:
-		std::intptr_t _obj;
-
-		std::intptr_t _hkObj;
-
-		//
-		// Summary:
-		//     Gets the havok object.
-		//
-		// Value:
-		//     The havok object.
-		intptr_t getHavokObject() const;
-
-		//
-		// Summary:
-		//     Gets the object of the collision.
-		//
-		// Value:
-		//     The object.
-		RE::NiAVObject* getObject() const;
-
-		//
-		// Summary:
-		//     Gets the position of the collision.
-		//
-		// Value:
-		//     The position.
-		std::vector<float> getPosition() const;
-
-	public:
-		void setPosition(const std::vector<float>& value);
-
-		//
-		// Summary:
-		//     Gets the normal of the collision.
-		//
-		// Value:
-		//     The normal.
-		std::vector<float> getNormal() const;
-
-	public:
-		void setNormal(const std::vector<float>& value);
-
-		//
-		// Summary:
-		//     Gets the fraction.
-		//
-		// Value:
-		//     The fraction.
-		float getFraction() const;
-
-	public:
-		void setFraction(float value);
-
-		RayCastResult();
-
-		static RayCastResult* GetClosestResult(std::vector<float>& source, std::vector<RayCastResult*>& results, std::vector<RE::NiAVObject>& ignore);
-	};
-	*/
-	class RayCastParameters
-	{
-	private:
-		glm::vec4 _begin{};
-
-		glm::vec4 _end{};
-
-		RE::TESObjectCELL* _cell = nullptr;
-
-		//
-		// Summary:
-		//     Gets or sets the cell. This must be set.
-		//
-		// Value:
-		//     The cell.
-	public:
-		virtual ~RayCastParameters()
-		{
-			delete _cell;
-		}
-
-		RE::TESObjectCELL* getCell() const;
-		void setCell(RE::TESObjectCELL* value);
-
-		//
-		// Summary:
-		//     Gets or sets the end coordinate.
-		//
-		// Value:
-		//     The end.
-		glm::vec4 getEnd() const;
-		void setEnd(glm::vec4& value);
-
-		//
-		// Summary:
-		//     Gets or sets the begin coordinate.
-		//
-		// Value:
-		//     The begin.
-		glm::vec4 getBegin() const;
-		void setBegin(glm::vec4& value);
-
-		//
-		// Summary:
-		//     Initializes a new instance of the NetScriptFramework.SkyrimSE.RayCastParameters
-		//     class.
-		RayCastParameters();
-	};
-
 }
 
 namespace GrassControl
@@ -263,7 +137,7 @@ namespace GrassControl
 
 		Util::CachedFormList *const Ignore = nullptr;
 
-		bool CanPlaceGrass(RE::TESObjectLAND *land, const float x, const float y,const float z);
+		bool CanPlaceGrass(RE::TESObjectLAND *land, const float x, const float y,const float z) const;
 
 	private:
 

@@ -4,7 +4,6 @@
 #include "GrassControl/Main.h"
 #include "GrassControl/Util.h"
 
-
 namespace GrassControl
 {
 	enum class GrassStates : unsigned char
@@ -16,9 +15,9 @@ namespace GrassControl
 		Active
 	};
 
-	static std::mutex& locker()
+	static std::recursive_mutex& locker()
 	{
-		static std::mutex locker;
+		static std::recursive_mutex locker;
 		return locker;
 	}
 
@@ -27,9 +26,7 @@ namespace GrassControl
 		class LoadOnlyCellInfoContainer2;
 
 	public:
-		static void GrassLoadHook(RE::TESObjectCELL* cell, uintptr_t customArg);
-
-		static void RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1);
+	    static void RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1);
 
 		static void CellUnloadHook(bool did, RE::TESObjectCELL* cellObj);
 
@@ -48,7 +45,6 @@ namespace GrassControl
 		static bool DidApply;
 		static void CellLoadNow_Our(uintptr_t ws, int x, int y);
 
-		static uintptr_t addr_GrassManager;
 		static uintptr_t addr_uGrids;
 		static uintptr_t addr_AllowLoadFile;
 		static uintptr_t addr_DataHandler;
@@ -71,15 +67,16 @@ namespace GrassControl
 		{
 		public:
 			cell_info(int _x, int _y);
+			cell_info();
 
-			const int x;
-			const int y;
+		    int x;
+		    int y;
 
-			RE::TESObjectCELL* cell;
+			RE::TESObjectCELL* cell = nullptr;
 			int self_data = 0;
 			volatile long long furtherLoad = 0;
 
-			bool checkHasFile(const std::string &wsName, bool lod) const;
+            [[nodiscard]] bool checkHasFile(const std::string &wsName, bool lod) const;
 		};
 
 		class CellInfoContainer
@@ -87,17 +84,17 @@ namespace GrassControl
 		public:
 			CellInfoContainer();
 
-			std::shared_ptr<cell_info> GetFromGrid(int x, int y) const;
+            [[nodiscard]] std::optional<cell_info> GetFromGrid(int x, int y) const;
 
 		private:
-		    std::vector<std::shared_ptr<cell_info>> grid;
+		    std::vector<cell_info> grid{};
 
 		public:
-			std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>> map = std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>>(1024);
+			std::unordered_map<RE::TESObjectCELL*, cell_info> map = std::unordered_map<RE::TESObjectCELL*, cell_info>(1024);
 
-			void unsafe_ForeachWithState(const std::function<bool(std::shared_ptr<cell_info>)> &action);
+			void unsafe_ForeachWithState(const std::function<bool(cell_info)>& action);
 
-			std::shared_ptr<cell_info> FindByCell(RE::TESObjectCELL* cell);
+			std::optional<cell_info> FindByCell(RE::TESObjectCELL* cell);
 		};
 	
 		static unsigned char CellLoadHook(int x, int y);
@@ -108,25 +105,25 @@ namespace GrassControl
 
 		static bool IsValidLoadedCell(RE::TESObjectCELL* cell, bool quickLoad);
 
-		static RE::TESObjectCELL* GetCurrentWorldspaceCell(uintptr_t tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
+		static RE::TESObjectCELL* GetCurrentWorldspaceCell(const RE::TES* tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
 
-		static uintptr_t tryCheckCell(RE::TESObjectCELL* cell, uintptr_t ws, int x, int y, bool quickLoad);
+		static uintptr_t tryCheckCell(RE::TESObjectCELL* cell, RE::TESWorldSpace* ws, int x, int y, bool quickLoad);
 
-		static void Call_AddGrassNow(RE::TESObjectCELL* cell, uintptr_t customArg);
+		static void Call_AddGrassNow(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t customArg);
 
-		static GrassStates GetWantState(const std::shared_ptr<cell_info>& c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
+		static GrassStates GetWantState(const cell_info& c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
 
-		static void Handle_RemoveGrassFromCell_Call(uintptr_t grassMgr, RE::TESObjectCELL* cell);
+		static void Handle_RemoveGrassFromCell_Call(RE::TESObjectCELL* cell);
 
 		static unsigned char CalculateLoadState(int nowX, int nowY, int x, int y, int ugrid, int ggrid);
 
-		static void UpdateGrassGridEnsureLoad(uintptr_t ws, int nowX, int nowY);
+		static void UpdateGrassGridEnsureLoad(RE::TESWorldSpace* ws, int nowX, int nowY);
 
 		static void UpdateGrassGridQueue(int prevX, int prevY, int movedX, int movedY);
 
-		static void UpdateGrassGridNow(uintptr_t tes, int movedX, int movedY, int addType);
+		static void UpdateGrassGridNow(const RE::TES* tes, int movedX, int movedY, int addType);
 
-		static void UpdateGrassGridNow_LoadOnly(uintptr_t tes, int movedX, int movedY, int addType);
+		static void UpdateGrassGridNow_LoadOnly(const RE::TES* tes, int movedX, int movedY, int addType);
 
 		class LoadOnlyCellInfoContainer2 final
 		{
@@ -145,7 +142,7 @@ namespace GrassControl
 					Loaded = 3,
 					Abort = 4
 				};
-				_cell_states State = _cell_data::_cell_states::None;
+				_cell_states State = _cell_states::None;
 			};
 
 			struct case_insensitive_unordered_map {
@@ -172,7 +169,7 @@ namespace GrassControl
 
 			// Only used for debug message so it's fine to be slow.
 		public:
-			int GetCount() const;
+            [[nodiscard]] int GetCount() const;
 
 		private:
 			static std::string MakeKey(const std::string &ws, int x, int y);
@@ -183,7 +180,7 @@ namespace GrassControl
 			void QueueLoad(RE::TESWorldSpace *ws, int x, int y);
 
 		private:
-			void _DoUnload(const std::shared_ptr<_cell_data>& d) const;
+			void _DoUnload(std::shared_ptr<_cell_data> d) const;
 
 		public:
 			void Unload(const RE::TESWorldSpace *ws, int x, int y) const;
@@ -196,29 +193,42 @@ namespace GrassControl
 		{
 			struct WriteProgress
 			{
-				static void thunk(uintptr_t GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
+				static void thunk(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
-						if (load_only)
+					if (load_only)
+                    {
+                        if(cell != nullptr)
                         {
-                            if(cell != nullptr)
-                            {
-								auto ext = cell->GetCoordinates();
-								auto x = ext->cellX;
-                                auto y = ext->cellY;
-                                LO2Map->_DoLoad(cell->worldSpace, x, y);
-                            }
+							auto ext = cell->GetCoordinates();
+							auto x = ext->cellX;
+                            auto y = ext->cellY;
+                            LO2Map->_DoLoad(cell->worldSpace, x, y);
                         }
-                        else {
-                            Call_AddGrassNow(cell, unk);
-                        }
+                    }
+                    else {
+                        Call_AddGrassNow(GrassMgr, cell, unk);
+                    }
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
 
+			struct CellSelection
+			{
+				static void thunk(uintptr_t arg_1, uintptr_t arg_2, int arg_3, int arg_4, uintptr_t arg_5, uintptr_t arg_6)
+				{
+					func(arg_1, arg_2, arg_3 * 12, arg_4 * 12, arg_5, arg_6);
+				}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
+
 			static void Install()
 			{
 				if (*Config::ExtendGrassDistance) {
-					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0x0)); //todo: Fix for AE
+					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
+                    #ifdef SKYRIM_AE
+					stl::write_thunk_call<CellSelection>(REL_ID(15206, 15374).address() + OFFSET(0x645C - 0x6200, 0x645C - 0x6200));
+                    #endif
 				}
 			}
 		};
