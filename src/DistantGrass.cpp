@@ -192,13 +192,15 @@ namespace GrassControl
 				d->State = _cell_data::_cell_states::Abort;
 				return;
 			}
-			REL::Relocation<void (*)(uintptr_t, RE::TESObjectCELL*)> func{ RELOCATION_ID(15207, 15375) };
+			REL::Relocation<void (*)(RE::BGSGrassManager*, RE::TESObjectCELL*)> func{ RELOCATION_ID(15207, 15375) };
 
-			func(Memory::Internal::read<uintptr_t>(RELOCATION_ID(514292, 400452).address()), d->DummyCell_Ptr);
+			func(RE::BGSGrassManager::GetSingleton(), d->DummyCell_Ptr);
 			REL::Relocation<void (*)(RE::TESObjectCELL*, uintptr_t)> func2{ RELOCATION_ID(11932, 12071) };
 			func2(d->DummyCell_Ptr, 0);
 
-			delete d->DummyCell_Ptr->cellData.exterior;
+			if(d->DummyCell_Ptr->cellData.exterior != nullptr) {
+			    delete d->DummyCell_Ptr->cellData.exterior;
+			}
 			
 			d->DummyCell_Ptr = nullptr;
 			d->State = _cell_data::_cell_states::None;
@@ -244,10 +246,10 @@ namespace GrassControl
 			std::scoped_lock lock(locker());
 			if (d->State == _cell_data::_cell_states::Loaded) {
 				// This shouldn't happen
-			} else if (d->State == _cell_data::_cell_states::Loading) {
-				REL::Relocation<void (*)(uintptr_t, RE::TESObjectCELL*)> func{ RELOCATION_ID(15206, 15374) };
+ 			} else if (d->State == _cell_data::_cell_states::Loading) {
+				REL::Relocation<void (*)(RE::BGSGrassManager*, RE::TESObjectCELL*)> func{ RELOCATION_ID(15206, 15374) };
 
-				func(Memory::Internal::read<uintptr_t>(RELOCATION_ID(514292, 400452).address()), d->DummyCell_Ptr);
+				func(RE::BGSGrassManager::GetSingleton(), d->DummyCell_Ptr);
 				d->State = _cell_data::_cell_states::Loaded;
 			} else if (d->DummyCell_Ptr != nullptr) {
 
@@ -1796,8 +1798,8 @@ namespace GrassControl
 		    wsName = ws->editorID.c_str();
 		}
 
-		auto nowX = tes->unk0B0;
-		auto nowY = tes->unk0B4;
+		int nowX = tes->unk0B0;
+		int nowY = tes->unk0B4;
 
 		auto invokeList = std::vector<RE::TESObjectCELL*>();
 		if (addType <= 0)
@@ -1924,8 +1926,8 @@ namespace GrassControl
 		int grassRadius = getChosenGrassGridRadius();
 		auto ws = tes->worldSpace;
 		auto grassMgr = RE::BGSGrassManager::GetSingleton();
-		auto nowX = tes->unk0B0;
-		auto nowY = tes->unk0B4;
+		int nowX = tes->unk0B0;
+		int nowY = tes->unk0B4;
 
 		if (addType <= 0)
 		{

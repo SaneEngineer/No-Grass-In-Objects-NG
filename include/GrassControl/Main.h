@@ -119,7 +119,7 @@ namespace GrassControl
 					stl::write_thunk_call<GrassCreationEnd>(RELOCATION_ID(227915, 175016).address() + OFFSET(3037, 3037));
 				}
 				if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001) {
-					auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x74F);
+					auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x949, 0x74F);
                     #ifndef SKYRIM_AE 
 			        Utility::Memory::SafeWrite(addr + 7, Utility::Assembly::NoOperation8);
                     #endif

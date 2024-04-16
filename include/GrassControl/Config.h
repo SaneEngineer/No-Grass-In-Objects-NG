@@ -16,11 +16,11 @@ namespace GrassControl
 		using iSetting = AutoTOML::iSetting;
 		using sSetting = AutoTOML::sSetting;
 
-	    static inline bSetting DebugLogEnable{ "Debug", "Debug-Log-Enable", true };
+	    static inline bSetting DebugLogEnable{ "Debug", "Debug-Log-Enable", false };
 
 		static inline bSetting RayCast{ "RayCastConfig", "Ray-cast-enabled", true };
-		static inline fSetting RayCastHeight{ "RayCastConfig", "Ray-cast-height", 150.0f };
-		static inline fSetting RayCastDepth{ "RayCastConfig", "Ray-cast-depth", 5.0f };
+		static inline fSetting RayCastHeight{ "RayCastConfig", "Ray-cast-height", 150.0 };
+		static inline fSetting RayCastDepth{ "RayCastConfig", "Ray-cast-depth", 5.0 };
 		static inline sSetting RayCastCollisionLayers{ "RayCastConfig", "Ray-cast-collision-layers", "1 2 13 20 31" };
 		static inline sSetting RayCastIgnoreForms{ "RayCastConfig", "Ray-cast-ignore-forms", "" };
 
@@ -31,10 +31,10 @@ namespace GrassControl
 		static inline bSetting ExtendGrassDistance{ "GrassConfig", "Extend-grass-distance", false };
 		static inline bSetting ExtendGrassCount{ "GrassConfig", "Extend-grass-count", true };
 		static inline iSetting EnsureMaxGrassTypesPerTextureSetting{ "GrassConfig", "Ensure-max-grass-types-setting", 7 };
-		static inline fSetting OverwriteGrassDistance{ "GrassConfig", "Overwrite-grass-distance", 6000.0f };
-		static inline fSetting OverwriteGrassFadeRange{ "GrassConfig", "Overwrite-grass-fade-range", 3000.0f };
+		static inline fSetting OverwriteGrassDistance{ "GrassConfig", "Overwrite-grass-distance", 6000.0 };
+		static inline fSetting OverwriteGrassFadeRange{ "GrassConfig", "Overwrite-grass-fade-range", 3000.0 };
 		static inline iSetting OverwriteMinGrassSize{ "GrassConfig", "Overwrite-min-grass-size", -1 };
-		static inline fSetting GlobalGrassScale{ "GrassConfig", "Global-grass-scale", 1.0f };
+		static inline fSetting GlobalGrassScale{ "GrassConfig", "Global-grass-scale", 1.0 };
 		static inline bSetting OnlyLoadFromCache{ "GrassConfig", "Only-load-from-cache", false };
 		static inline sSetting SkipPregenerateWorldSpaces{ "GrassConfig", "Skip-pregenerate-world-spaces", "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace" };
 		static inline sSetting OnlyPregenerateWorldSpaces{ "GrassConfig", "Only-pregenerate-world-spaces", "" };

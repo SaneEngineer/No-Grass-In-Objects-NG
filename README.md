@@ -1,4 +1,4 @@
-This is a port of No Grass in Objects rewritten using Commonlib. Most hooks are working for both SE and AE. The config is roughly the same with only a change to toml. To my knowledge all features except for Super-dense and count should be working in SE, the same goes for AE with non-load only extended distance also not working. Raycast currently requires a save to be loaded twice before it take effect and extended load only seems to only work as the player moves. 
+This is a port of No Grass in Objects rewritten using Commonlib. All hooks except for extended grass distance without cache are working for both SE and AE. The config is roughly the same with only a change to toml. To my knowledge all features except for grass count should be working in SE, the same goes for AE with the additon of extended distance without cache also not working.
 
 ## Requirements
 * [Casual Library](https://github.com/CasualCoder91/CasualLibrary/)

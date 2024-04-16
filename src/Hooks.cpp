@@ -97,7 +97,7 @@ namespace GrassControl
 			    *Config::OverwriteGrassFadeRange = 0.0;
 			    *Config::ExtendGrassDistance = false;
 	        }
-		break;
+		    break;
 
 		case 2:
 		    {
@@ -105,7 +105,9 @@ namespace GrassControl
 			    *Config::OverwriteGrassFadeRange = 0.0;
 			    *Config::ExtendGrassDistance = true;
 		    }
-		break;
+		    break;
+		default:
+            break;
 		}
 
 		if(*Config::RayCast) {
@@ -185,12 +187,10 @@ namespace GrassControl
 		if (*Config::ExtendGrassCount)
 		{
 			// Create more grass shapes if one becomes full.
-		    #ifndef SKYRIM_AE // Cant find Function in AE, might not be needed
-			if(auto addr = RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x0); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x0)))
+			if(auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x68)))
 			{
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
 			}
-            #endif
 			if(auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129)))
 			{
 			//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
@@ -325,6 +325,7 @@ namespace GrassControl
 
 		if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001)
 		{
+			RE::DebugMessageBox("Grass Scale is not working properly and should be disabled by setting GlobalGrassScale = 1.0");
             #ifdef SKYRIM_AE 
 			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x754);
 			struct Patch : Xbyak::CodeGenerator
@@ -354,9 +355,9 @@ namespace GrassControl
 	void GrassControlPlugin::warn_extend_without_cache()
 	{
 		auto ls = std::vector<std::string>();
-		ls.emplace_back("Warning!! You have enabled ExtendGrassDistance without using pre-generated grass. This could lead to unstable game. Either disable ExtendGrassDistance or pre-generate grass cache files. In order to use pre-generated grass cache you will need UseGrassCache=True and OnlyLoadFromCache=True");
+		ls.emplace_back("Warning!! You have enabled ExtendGrassDistance without using pre-generated grass. This does not work in AE versions of Skyrim and could lead to unstable game in SE. Either disable ExtendGrassDistance or pre-generate grass cache files. In order to use pre-generated grass cache you will need UseGrassCache=True and OnlyLoadFromCache=True");
 		ls.emplace_back("Check nexus page of 'No Grass In Objects' mod for more information on how to do this.");
-		//ls.Add("This warning won't be shown again next time you start game.");
+		ls.emplace_back("This warning won't be shown again next time you start game.");
 
 		try
 		{
