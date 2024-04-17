@@ -629,6 +629,7 @@ namespace GrassControl
 	    
 	    // Fix weird shape selection.
 	    // Vanilla game groups shape selection by 12 x 12 cells, we want a shape per cell.
+#ifndef SKYRIM_AE
 	    if (addr = RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D1C); REL::make_pattern<"E8">().match(RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D10))) {
 		    //Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
 		    struct Patch : Xbyak::CodeGenerator
@@ -656,7 +657,7 @@ namespace GrassControl
 	    else {
 		    stl::report_and_fail("Failed to fix shape selection");
 	    }
-		
+#endif
 	    addr = RELOCATION_ID(15205, 15373).address() + OFFSET(0x5F6B - 0x5944, 0x583);
 		struct Patch : Xbyak::CodeGenerator
 		{
@@ -774,7 +775,7 @@ namespace GrassControl
 			memset((void*)(addr), 0x90, (0xC2 - 0xB7));
 		}
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
-
+		
 	    // Exterior cell buffer must be extended if grass radius is outside of ugrids.
 	    // Reason: cell may get deleted while it still has grass and we can not keep grass there then.
 	    if (!load_only)
@@ -993,7 +994,7 @@ namespace GrassControl
 			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
             #endif
-
+			
 		    addr = RELOCATION_ID(18150, 18541).address() + OFFSET(0xB094 - 0xAF20, 0x1CA); 
 			struct Patch2 : Xbyak::CodeGenerator
 			{
@@ -1003,7 +1004,7 @@ namespace GrassControl
 					Xbyak::Label retnLabel;
 
 					#ifdef SKYRIM_AE
-					movzx(eax, ptr[rsp + 0x98]);
+					movzx(eax, ptr[rsp + 0xA0]);
                     #else
 				    mov(esi, ptr[rsp + 0x30]);
                     #endif
@@ -1025,7 +1026,7 @@ namespace GrassControl
 
 					L(retnLabel);
                     #ifdef SKYRIM_AE
-					dq(a_target + 0x5);
+					dq(a_target + 0xB);
                     #else
 					dq(a_target + 0x7);
                     #endif
@@ -1033,11 +1034,13 @@ namespace GrassControl
 			};
 			Patch2 patch2(reinterpret_cast<uintptr_t>(CellLoadHook), addr);
 			patch2.ready();
-            #ifndef SKYRIM_AE
+            #ifdef SKYRIM_AE
+			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
+            #else
 			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
             #endif
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
-
+			
 		    addr = RELOCATION_ID(18149, 18540).address() + OFFSET(0xE1B - 0xCC0, 0x167); 
 			struct Patch3 : Xbyak::CodeGenerator
 			{
@@ -1076,6 +1079,7 @@ namespace GrassControl
 					Xbyak::Label retnLabel;
 					Xbyak::Label notIf;
 					Xbyak::Label jump;
+					Xbyak::Label jumpAd;
 
                     push(r9);
 					push(rdx);
@@ -1113,26 +1117,28 @@ namespace GrassControl
 					pop(rdx);
 					pop(rax);
 					pop(rsi);
-                    #ifdef SKYRIM_AE
+                    #ifdef SKYRIM_AE 
 					test(r12w, r12w);
 					jz(jump);
                     #else
 					cmp(esi, 0);
                     #endif
-
 					jmp(ptr[rip + retnLabel]);
 
 					L(funcLabel);
 					dq(a_func);
 
-					L(jump);
+					L(jumpAd);
 					dq(a_target + 0x2C);
+
+					L(jump);
+					jmp(ptr[rip + jumpAd]);
 
 					L(retnLabel);
                     #ifdef SKYRIM_AE
 					dq(a_target + 0x6);
 					#else
-					  dq(a_target + 0x9);
+				    dq(a_target + 0x9);
                     #endif
 				}
 			};
