@@ -13,8 +13,6 @@ void InitializeHooking()
 	trampoline.create(2048);
 	log::trace("Trampoline initialized.");
 	GrassControl::GrassControlPlugin::InstallHooks();
-    GrassControl::GidFileGenerationTask::InstallHooks();
-    GrassControl::DistantGrass::InstallHooks();
 }
 
  void InitializeMessaging()

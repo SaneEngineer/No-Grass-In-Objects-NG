@@ -240,11 +240,13 @@ namespace GrassControl
 
 		if (*Config::UseGrassCache)
 		{
+			GidFileGenerationTask::InstallHooks();
 			GidFileCache::FixFileFormat(*Config::OnlyLoadFromCache);
 		}
 
 		if (*Config::ExtendGrassDistance)
 		{
+			DistantGrass::InstallHooks();
 			DistantGrass::ReplaceGrassGrid(*Config::OnlyLoadFromCache);
 		}
 
@@ -355,7 +357,7 @@ namespace GrassControl
 	void GrassControlPlugin::warn_extend_without_cache()
 	{
 		auto ls = std::vector<std::string>();
-		ls.emplace_back("Warning!! You have enabled ExtendGrassDistance without using pre-generated grass. This does not work in AE versions of Skyrim and could lead to unstable game in SE. Either disable ExtendGrassDistance or pre-generate grass cache files. In order to use pre-generated grass cache you will need UseGrassCache=True and OnlyLoadFromCache=True");
+		ls.emplace_back("Warning!! You have enabled Extend-Grass-Distance without using pre-generated grass. This could lead to unstable game. Either disable Extend-Grass-Distance or pre-generate grass cache files. In order to use pre-generated grass cache you will need UseGrassCache=True and Only-Load-From-Cache=true");
 		ls.emplace_back("Check nexus page of 'No Grass In Objects' mod for more information on how to do this.");
 		ls.emplace_back("This warning won't be shown again next time you start game.");
 
