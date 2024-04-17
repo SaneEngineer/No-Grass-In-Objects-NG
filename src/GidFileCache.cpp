@@ -371,30 +371,33 @@ namespace GrassControl {
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x183);
-		struct Patch2 : Xbyak::CodeGenerator
-		{
-			explicit Patch2(const uintptr_t a_func, const uintptr_t a_target)
-			{
-				Xbyak::Label funcLabel;
-				Xbyak::Label retnLabel;
+		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D))) {
+		    struct Patch : Xbyak::CodeGenerator
+		    {
+			    explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
+			    {
+				    Xbyak::Label funcLabel;
+				    Xbyak::Label retnLabel;
 
-				sub(rsp, 0x20);
-				call(ptr[rip + funcLabel]);  // call our function
-				add(rsp, 0x20);
+				    sub(rsp, 0x20);
+				    call(ptr[rip + funcLabel]);  // call our function
+				    add(rsp, 0x20); 
 
-				jmp(ptr[rip + retnLabel]);
+				    jmp(ptr[rip + retnLabel]);
 
-				L(retnLabel);
-				dq(a_target + 0x6);
+				    L(retnLabel);
+				    dq(a_target + 0x6);
 
-				L(funcLabel);
-				dq(a_func);
-			}
-		};
-		Patch patch2(addr, reinterpret_cast<uintptr_t>(getChosenGrassGridRadius));
-		patch2.ready();
-		trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
+				    L(funcLabel);
+				    dq(a_func);
+			    }
+		    };
+		    Patch patch(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
+		    patch.ready();
+		    trampoline.write_branch<6>(addr, trampoline.allocate(patch));
+		} else {
+			stl::report_and_fail("Failed to Generate Gid Files");
+		}
 
 	    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
 	    setting->data.b = true;
@@ -618,7 +621,7 @@ namespace GrassControl {
 		auto skipSet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
 		for (auto& x : skip)
 		{
-			logger::debug("Skipping: {}", x);
+			logger::info("Skipping: {}", x);
 			skipSet.insert(x);
 		}
 
@@ -965,7 +968,7 @@ namespace GrassControl {
 
 		const std::string msg = "Generating grass for " + this->Parent->Name + "(" + std::to_string(this->X) + ", " + std::to_string(this->Y) + ") " + std::to_string(pct) + " pct, world " + std::to_string(GidFileGenerationTask::DoneWS + 1) + " out of " + std::to_string(GidFileGenerationTask::TotalWS);
 		RE::ConsoleLog::GetSingleton()->Print(msg.c_str());
-		logger::debug(fmt::runtime(msg.c_str()));
+		logger::info(fmt::runtime(msg.c_str()));
 		{
 			auto alloc = new char[0x20];
 			memset(alloc, 0, 0x20);

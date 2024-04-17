@@ -198,9 +198,7 @@ namespace GrassControl
 			REL::Relocation<void (*)(RE::TESObjectCELL*, uintptr_t)> func2{ RELOCATION_ID(11932, 12071) };
 			func2(d->DummyCell_Ptr, 0);
 
-			if(d->DummyCell_Ptr->cellData.exterior != nullptr) {
-			    delete d->DummyCell_Ptr->cellData.exterior;
-			}
+		    delete d->DummyCell_Ptr->cellData.exterior;
 			
 			d->DummyCell_Ptr = nullptr;
 			d->State = _cell_data::_cell_states::None;
