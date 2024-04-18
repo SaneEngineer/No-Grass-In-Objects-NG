@@ -325,7 +325,7 @@ namespace GrassControl
 
 		if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001)
 		{
-			RE::DebugMessageBox("Grass Scale is not working properly and should be disabled by setting GlobalGrassScale = 1.0");
+			/*
             #ifdef SKYRIM_AE 
 			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x754);
 			struct Patch : Xbyak::CodeGenerator
@@ -349,6 +349,7 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
 			#endif
+			*/
 		}
 	}
 

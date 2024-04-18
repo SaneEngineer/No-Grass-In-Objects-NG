@@ -14,6 +14,7 @@ void InitializeHooking()
 	log::trace("Trampoline initialized.");
 	GrassControl::GidFileGenerationTask::InstallHooks();
 	GrassControl::GrassControlPlugin::InstallHooks();
+    GrassControl::DistantGrass::InstallHooks();
 }
 
  void InitializeMessaging()
@@ -26,11 +27,17 @@ void InitializeHooking()
 				break;
 			case MessagingInterface::kInputLoaded:   // Called when all game data has been found.
 				GrassControl::GrassControlPlugin::init();
-				GrassControl::DistantGrass::InstallHooks();
 				break;
 			case MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 				// It is now safe to access form data.
 				MenuOpenCloseEventHandler::Register();
+				if(*GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
+		            RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pregenerated Cache from the Nexus");
+		        }
+				if (*GrassControl::Config::GlobalGrassScale != 1.0 && *GrassControl::Config::GlobalGrassScale > 0.0001)
+		        {
+			        RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
+		        }
 				break;
 			default:
 			    break;
@@ -90,11 +97,12 @@ void InitializeLog() {
 	    *path /= Version::PROJECT;
 	    *path += ".log"sv;
 		auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-#ifndef NDEBUG
-		const auto level = spdlog::level::trace;
-#else
-		const auto level = spdlog::level::info;
-#endif
+        spdlog::level::level_enum level;
+        if(*GrassControl::Config::DebugLogEnable) {
+		    level = spdlog::level::trace;
+        } else {
+		    level = spdlog::level::info;
+        }		
 
 		auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
 		log->set_level(level);
@@ -115,13 +123,13 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	}
 #endif
 
+	SKSE::Init(a_skse);
+
+	GrassControl::Config::load();
 	InitializeLog();
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 
-	SKSE::Init(a_skse);
-
-	GrassControl::Config::load();
 	InitializeHooking();
 	InitializeMessaging();
 

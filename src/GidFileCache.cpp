@@ -30,7 +30,7 @@ namespace GrassControl {
 
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
-		try {
+	    try {
 			auto dir = std::filesystem::path("data/grass");
 			if (!exists(dir))
 			{
@@ -888,12 +888,12 @@ namespace GrassControl {
 	    Func();
 
 		RE::TESObjectCELL* cellPtr;
-		try {
+		__try {
 			REL::Relocation <RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func{ RELOCATION_ID(20026, 20460) };
 
 			cellPtr = Func(this->Parent->WorldSpace, this->X, this->Y);
 		}
-	    catch (...) {
+	    __except (EXCEPTION_EXECUTE_HANDLER) {
 			stl::report_and_fail("Grass Generation has Crashed!");
 		}
 

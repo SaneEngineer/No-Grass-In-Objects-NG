@@ -99,15 +99,6 @@ namespace GrassControl
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
-
-			struct GrassScale
-            {
-                static double thunk(int64_t a1, uint32_t a2)
-                {
-                    return *Config::GlobalGrassScale * func(a1, a2);
-                }
-                static inline REL::Relocation<decltype(thunk)> func;
-            };	
 			
 			static void Install()
 			{
@@ -117,13 +108,6 @@ namespace GrassControl
 					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + OFFSET(0x905, 0x905));
 					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 					stl::write_thunk_call<GrassCreationEnd>(RELOCATION_ID(227915, 175016).address() + OFFSET(3037, 3037));
-				}
-				if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001) {
-					auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x949, 0x74F);
-                    #ifndef SKYRIM_AE 
-			        Utility::Memory::SafeWrite(addr + 7, Utility::Assembly::NoOperation8);
-                    #endif
-				    stl::write_thunk_call<GrassScale>(addr);
 				}
 			}
 		};

@@ -215,10 +215,10 @@ namespace GrassControl
 		{
 			std::scoped_lock lock(locker());
 			auto it = this->map.find(key);
-			d = it->second;
+			d = it == this->map.end() ? nullptr : it->second;
 		}
 
-		if (!d)
+		if (d == nullptr)
 			return;
 
 		_DoUnload(d);
@@ -234,7 +234,7 @@ namespace GrassControl
 		{
 			std::scoped_lock lock(locker());
 			auto it = this->map.find(key);
-			d = it->second;
+			d = it == this->map.end() ? nullptr : it->second;
 		}
 
 		if (d == nullptr)
