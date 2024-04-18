@@ -67,16 +67,10 @@ namespace GrassControl
 
 		static void ExchangeHook();
 
-		static void ProgressHook(uintptr_t unk, RE::TESObjectCELL* cell);
-
-
 		static int DoneWS;
 		static int TotalWS;
 
-		static std::string getProgressFilePath();
 	private:
-		static std::string _ovFilePath;
-		static const std::string _progressFilePath;
 
 	    static std::ofstream FileStream;
 
@@ -193,7 +187,7 @@ namespace GrassControl
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
 
-					if(exists(std::filesystem::path(getProgressFilePath()))) {
+					if(exists(std::filesystem::path(Util::getProgressFilePath()))) {
 					    stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 					}
 				}

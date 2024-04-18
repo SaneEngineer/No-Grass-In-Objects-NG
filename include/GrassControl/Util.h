@@ -2,6 +2,11 @@
 
 namespace Util
 {
+    inline std::string _ovFilePath;
+    const std::string _progressFilePath = R"(PrecacheGrass.txt)";
+
+	std::string getProgressFilePath();
+
 	std::optional<bool> GetGameSettingBool(const std::string a_name);
 
 	std::optional<float> GetGameSettingFloat(const std::string a_name);

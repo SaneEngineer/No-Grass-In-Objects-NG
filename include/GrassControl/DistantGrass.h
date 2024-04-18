@@ -2,7 +2,7 @@
 
 #include "CasualLibrary/CasualLibrary.hpp"
 #include "GrassControl/Main.h"
-#include "GrassControl/Util.h"
+#include "GrassControl/GidFileCache.h"
 
 namespace GrassControl
 {
@@ -195,7 +195,7 @@ namespace GrassControl
 			{
 				static void thunk(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
-					if (load_only)
+					if (*Config::OnlyLoadFromCache)
                     {
                         if(cell != nullptr)
                         {

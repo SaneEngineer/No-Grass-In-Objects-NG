@@ -46,7 +46,7 @@ namespace GrassControl
 
 	 void GrassControlPlugin::OnMainMenuOpen()
 	 {
-		auto fi = std::filesystem::path(GidFileGenerationTask::getProgressFilePath());
+		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (*Config::UseGrassCache && exists(fi)) {
 			_did_mainMenu = 1;
 			Memory::Internal::write<uint8_t>(RELOCATION_ID(508798, 380767).address() + 8, 1);  // Skyrim.ini [General] bAlwaysActive=1
@@ -78,7 +78,7 @@ namespace GrassControl
 
 		*Config::RayCastCollisionLayers = s.str();
 
-		auto fi = std::filesystem::path(GidFileGenerationTask::getProgressFilePath());
+		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (*Config::UseGrassCache && exists(fi))
 		{
 			*Config::OnlyLoadFromCache = false;
@@ -240,13 +240,11 @@ namespace GrassControl
 
 		if (*Config::UseGrassCache)
 		{
-			GidFileGenerationTask::InstallHooks();
 			GidFileCache::FixFileFormat(*Config::OnlyLoadFromCache);
 		}
 
 		if (*Config::ExtendGrassDistance)
 		{
-			DistantGrass::InstallHooks();
 			DistantGrass::ReplaceGrassGrid(*Config::OnlyLoadFromCache);
 		}
 

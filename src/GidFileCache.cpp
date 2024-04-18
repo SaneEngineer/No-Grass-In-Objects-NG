@@ -275,7 +275,7 @@ namespace GrassControl {
 			stl::report_and_fail("Only one instance of GidFileGenerationTask can be created at a time!");
 		}
 
-		FileStream.open(getProgressFilePath(), std::ios::app);
+		FileStream.open(Util::getProgressFilePath(), std::ios::app);
 	    //cur_instance = std::unique_ptr<GidFileGenerationTask>(this);
 	}
 
@@ -439,49 +439,7 @@ namespace GrassControl {
 
 	int GidFileGenerationTask::DoneWS = 0;
 	int GidFileGenerationTask::TotalWS = 0;
-
-	std::string GidFileGenerationTask::getProgressFilePath()
-	{
-		std::string n = _ovFilePath;
-		if (!n.empty())
-		{
-			return n;
-		}
-
-		// Dumb user mode for .txt.txt file name.
-		try
-		{
-			auto fi = std::filesystem::path(_progressFilePath);
-			if (exists(fi))
-			{
-				_ovFilePath = _progressFilePath;
-			}
-			else
-			{
-				std::string fpath = _progressFilePath + R"(.txt)";
-				fi = std::filesystem::path(fpath);
-				if (exists(fi))
-				{
-					_ovFilePath = fpath;
-				}
-			}
-		}
-		catch (...)
-		{
-
-		}
-
-		if (_ovFilePath.empty())
-		{
-			_ovFilePath = _progressFilePath;
-		}
-
-		return _ovFilePath;
-	}
-
-	std::string GidFileGenerationTask::_ovFilePath;
 	std::ofstream GidFileGenerationTask::FileStream;
-	const std::string GidFileGenerationTask::_progressFilePath = R"(PrecacheGrass.txt)";
 	volatile int64_t GidFileGenerationTask::queued_grass_counter = 0;
 	volatile int64_t GidFileGenerationTask::queued_grass_mode = 0;
 	int GidFileGenerationTask::cur_state = 0;
@@ -493,13 +451,13 @@ namespace GrassControl {
 
 	void GidFileGenerationTask::Init()
 	{
-		auto fi = std::filesystem::path(getProgressFilePath());
+		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (exists(fi))
 		{
 			{
 				std::scoped_lock lock(ProgressLocker());
 				
-				auto fs = std::ifstream(getProgressFilePath());
+				auto fs = std::ifstream(Util::getProgressFilePath());
 				std::string l;
 				while (std::getline(fs, l))
 				{
@@ -673,7 +631,7 @@ namespace GrassControl {
 			FileStream.close();
 		}
 
-		auto fi = std::filesystem::path(getProgressFilePath());
+		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (exists(fi))
 		{
 			remove(fi);

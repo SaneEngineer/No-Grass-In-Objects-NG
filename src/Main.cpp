@@ -12,6 +12,7 @@ void InitializeHooking()
 	auto& trampoline = GetTrampoline();
 	trampoline.create(2048);
 	log::trace("Trampoline initialized.");
+	GrassControl::GidFileGenerationTask::InstallHooks();
 	GrassControl::GrassControlPlugin::InstallHooks();
 }
 
@@ -25,6 +26,7 @@ void InitializeHooking()
 				break;
 			case MessagingInterface::kInputLoaded:   // Called when all game data has been found.
 				GrassControl::GrassControlPlugin::init();
+				GrassControl::DistantGrass::InstallHooks();
 				break;
 			case MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 				// It is now safe to access form data.
