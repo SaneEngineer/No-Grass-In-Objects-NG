@@ -1,4 +1,4 @@
-This is a port of No Grass in Objects rewritten using Commonlib. All hooks except for extended grass distance without cache are working for both SE and AE. The config is roughly the same with only a change to toml. To my knowledge all features except for grass count should be working in SE, the same goes for AE with the additon of extended distance without cache also not working.
+This is a port of No Grass in Objects rewritten using Commonlib, The main features of Caching, Raycasting (No grass in objects part), and extended grass distance are working in AE. The config is roughly the same with a change to toml, minor renaming of settings and an option for debug logs. To my knowledge all features except for grass scale should be working in SE, the same goes for AE.
 
 ## Requirements
 * [Casual Library](https://github.com/CasualCoder91/CasualLibrary/)
