@@ -14,7 +14,6 @@ void InitializeHooking()
 	log::trace("Trampoline initialized.");
 	GrassControl::GidFileGenerationTask::InstallHooks();
 	GrassControl::GrassControlPlugin::InstallHooks();
-    GrassControl::DistantGrass::InstallHooks();
 }
 
  void InitializeMessaging()
@@ -32,7 +31,7 @@ void InitializeHooking()
 				// It is now safe to access form data.
 				MenuOpenCloseEventHandler::Register();
 				if(*GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
-		            RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pregenerated Cache from the Nexus");
+		            RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pre-generated Cache from the Nexus");
 		        }
 				if (*GrassControl::Config::GlobalGrassScale != 1.0 && *GrassControl::Config::GlobalGrassScale > 0.0001)
 		        {

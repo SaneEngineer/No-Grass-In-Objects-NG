@@ -213,9 +213,11 @@ namespace GrassControl
 		std::string key = MakeKey(ws->editorID.c_str(), x, y);
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(locker());
-			auto it = this->map.find(key);
-			d = it == this->map.end() ? nullptr : it->second;
+			std::scoped_lock lock(NRlocker());
+			if(!this->map.empty()) {
+			    auto it = this->map.find(key);
+			    d = it == this->map.end() ? nullptr : it->second;
+			}
 		}
 
 		if (d == nullptr)

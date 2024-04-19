@@ -2,6 +2,11 @@
 
 namespace GrassControl
 {
+	double SetScale(double xmm11)
+	{
+	    return xmm11 * *Config::GlobalGrassScale;
+	}
+
 	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
 	{
 		if (land != nullptr)
@@ -245,6 +250,7 @@ namespace GrassControl
 
 		if (*Config::ExtendGrassDistance)
 		{
+		    DistantGrass::InstallHooks();
 			DistantGrass::ReplaceGrassGrid(*Config::OnlyLoadFromCache);
 		}
 
@@ -325,31 +331,39 @@ namespace GrassControl
 
 		if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001)
 		{
-			/*
             #ifdef SKYRIM_AE 
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x754);
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x75F);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_target)
+				Patch(std::uintptr_t a_target, uintptr_t a_func)
 				{
+					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
+					movss(xmm0, xmm11);
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);
+					add(rsp, 0x20);
+
 					movss(xmm11, xmm0);
+					mulss(xmm11, xmm14);
 
 					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(a_func);
 
 					L(retnLabel);
 					dq(a_target + 0x5);
 				}
 			};
-			Patch patch(addr);
+			Patch patch(addr, reinterpret_cast<uintptr_t>(SetScale));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
 			#endif
-			*/
 		}
 	}
 

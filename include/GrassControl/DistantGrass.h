@@ -15,6 +15,12 @@ namespace GrassControl
 		Active
 	};
 
+	static std::mutex& NRlocker()
+    {
+        static std::mutex NRlocker;
+        return NRlocker;
+    }
+
 	static std::recursive_mutex& locker()
 	{
 		static std::recursive_mutex locker;
@@ -195,7 +201,9 @@ namespace GrassControl
 			{
 				static void thunk(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
-					if (*Config::OnlyLoadFromCache && !exists(std::filesystem::path(Util::getProgressFilePath())))
+					if(exists(std::filesystem::path(Util::getProgressFilePath()))) return;
+
+					if (*Config::OnlyLoadFromCache)
                     {
                         if(cell != nullptr)
                         {
