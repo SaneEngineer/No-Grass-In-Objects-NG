@@ -2,27 +2,27 @@
 
 #include "GrassControl/Main.h"
 
-
 namespace GrassControl
 {
-    class GidFileGenerationTask;
-    class GidFileWorldGenerateTask;
-    class GidFileCellGenerateTask;
+	class GidFileGenerationTask;
+	class GidFileWorldGenerateTask;
+	class GidFileCellGenerateTask;
 
-    struct case_insensitive_unordered_set {
-	    struct comp {
+	struct case_insensitive_unordered_set
+	{
+		struct comp
+		{
 			bool operator()(const std::string& Left, const std::string& Right) const
 			{
 				return Left.size() == Right.size() && std::equal(Left.begin(), Left.end(), Right.begin(),
-				  [](char a, char b) {
-					  return tolower(a) == tolower(b);
-				  });
+														  [](char a, char b) {
+															  return tolower(a) == tolower(b);
+														  });
 			}
-
-	    };
-	    struct hash {
-
-	        size_t operator()(const std::string& Keyval) const
+		};
+		struct hash
+		{
+			size_t operator()(const std::string& Keyval) const
 			{
 				size_t h = 0;
 				std::ranges::for_each(Keyval.begin(), Keyval.end(), [&](char c) {
@@ -30,10 +30,9 @@ namespace GrassControl
 				});
 				return h;
 			}
+		};
+	};
 
-	    };
-    };
-	
 	class GidFileCache final
 	{
 	public:
@@ -47,7 +46,6 @@ namespace GrassControl
 
 	class GidFileGenerationTask final
 	{
-		
 	public:
 		GidFileGenerationTask();
 
@@ -55,6 +53,7 @@ namespace GrassControl
 		static uintptr_t addr_uGrids;
 
 		static int getChosenGrassGridRadius();
+
 	private:
 		static int _chosenGrassGridRadius;
 
@@ -71,8 +70,7 @@ namespace GrassControl
 		static int TotalWS;
 
 	private:
-
-	    static std::ofstream FileStream;
+		static std::ofstream FileStream;
 
 	public:
 		static volatile int64_t queued_grass_counter;
@@ -84,11 +82,11 @@ namespace GrassControl
 		static inline bool IsApplying = false;
 
 		static std::unique_ptr<GidFileGenerationTask> cur_instance;
-	private:
 
+	private:
 		bool IsResuming;
 
-	    std::unique_ptr<std::unordered_set<std::string, case_insensitive_unordered_set::hash>> ProgressDone;
+		std::unique_ptr<std::unordered_set<std::string, case_insensitive_unordered_set::hash>> ProgressDone;
 		static std::mutex& ProgressLocker()
 		{
 			static std::mutex ProgressLocker;
@@ -120,7 +118,7 @@ namespace GrassControl
 		void WriteProgressFile(const std::string& key, const std::string& wsName, int x = INT_MIN, int y = INT_MIN) const;
 
 	private:
-	    std::vector<std::unique_ptr<GidFileWorldGenerateTask>> WorldTodo;
+		std::vector<std::unique_ptr<GidFileWorldGenerateTask>> WorldTodo;
 
 		void Begin();
 
@@ -131,7 +129,7 @@ namespace GrassControl
 	public:
 		static bool Crashed;
 
-	    static void Update();
+		static void Update();
 
 	private:
 		bool RunOne();
@@ -154,7 +152,7 @@ namespace GrassControl
 				static void thunk(RE::TESObjectCELL* cell)
 				{
 					InterlockedIncrement64(&queued_grass_counter);
-				    func(cell);
+					func(cell);
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
@@ -164,18 +162,18 @@ namespace GrassControl
 				static void thunk(uintptr_t GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
 					func(GrassMgr, cell, unk);
-					if(IsApplying) {
-					    if (cell != nullptr) {
-			                auto ws = cell->worldSpace;
-			                if (ws != nullptr) {
-				                std::string wsn = ws->editorID.c_str();
-				                int x = cell->GetCoordinates()->cellX;
-				                int y = cell->GetCoordinates()->cellY;
+					if (IsApplying) {
+						if (cell != nullptr) {
+							auto ws = cell->worldSpace;
+							if (ws != nullptr) {
+								std::string wsn = ws->editorID.c_str();
+								int x = cell->GetCoordinates()->cellX;
+								int y = cell->GetCoordinates()->cellY;
 
-				                cur_instance->WriteProgressFile(KeyCell, wsn, x, y);
-			                }
-		                }
-		                InterlockedDecrement64(&queued_grass_counter);
+								cur_instance->WriteProgressFile(KeyCell, wsn, x, y);
+							}
+						}
+						InterlockedDecrement64(&queued_grass_counter);
 					}
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
@@ -187,19 +185,18 @@ namespace GrassControl
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
 
-					if(exists(std::filesystem::path(Util::getProgressFilePath()))) {
-					    stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
+					if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
+						stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 					}
 				}
 			}
 		};
-
 	};
 
 	class GidFileWorldGenerateTask final
 	{
 	public:
-		GidFileWorldGenerateTask(GidFileGenerationTask* parent, RE::TESWorldSpace *ws, const std::string &wsName);
+		GidFileWorldGenerateTask(GidFileGenerationTask* parent, RE::TESWorldSpace* ws, const std::string& wsName);
 
 		GidFileGenerationTask* Parent;
 
@@ -208,9 +205,9 @@ namespace GrassControl
 		std::string Name;
 
 	private:
-		std::list<GidFileCellGenerateTask*> CellTodo {};
+		std::list<GidFileCellGenerateTask*> CellTodo{};
 
-		std::vector<GidFileCellGenerateTask*> _grid {};
+		std::vector<GidFileCellGenerateTask*> _grid{};
 
 	public:
 		int TotalCellDo = 0;
@@ -218,7 +215,6 @@ namespace GrassControl
 		int DidCellDo = 0;
 
 	private:
-
 		static void Init();
 
 		void Free();
@@ -229,12 +225,12 @@ namespace GrassControl
 
 		int _istate = 0;
 
-        [[nodiscard]] GidFileCellGenerateTask* GetGrid(int x, int y) const;
+		[[nodiscard]] GidFileCellGenerateTask* GetGrid(int x, int y) const;
 
 		int uhalf = 0;
 		int ugrid = 0;
 
-        [[nodiscard]] GidFileCellGenerateTask* FindBestTodo() const;
+		[[nodiscard]] GidFileCellGenerateTask* FindBestTodo() const;
 
 	public:
 		bool RunOne();
@@ -247,14 +243,14 @@ namespace GrassControl
 	public:
 		GidFileCellGenerateTask(GidFileWorldGenerateTask* parent, int x, int y);
 
-	    GidFileWorldGenerateTask* Parent;
+		GidFileWorldGenerateTask* Parent;
 
 		int X;
 
 		int Y;
 
 	private:
-		RE::TESObjectCELL *Cell{};
+		RE::TESObjectCELL* Cell{};
 
 		static void Init();
 

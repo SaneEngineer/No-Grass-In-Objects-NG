@@ -1,19 +1,20 @@
 #include "GrassControl/GidFileCache.h"
 #pragma comment(lib, "CasualLibrary.lib")
 
-
-namespace GrassControl {
+namespace GrassControl
+{
 
 	uintptr_t GidFileGenerationTask::addr_GrassMgr = RELOCATION_ID(514292, 400452).address();
 	uintptr_t GidFileGenerationTask::addr_uGrids = RELOCATION_ID(501244, 359675).address();
 
-	const char* IsLodCell(RE::TESObjectCELL* Cell) {
+	const char* IsLodCell(RE::TESObjectCELL* Cell)
+	{
 		// Use a different file extension because we don't want to load the broken .gid files from BSA.
-	    auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
-        auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
+		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+		auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
 
-		if(DistantGrass::IsLodCell(Cell)) {
-		    return GrassFileLodString;
+		if (DistantGrass::IsLodCell(Cell)) {
+			return GrassFileLodString;
 		}
 
 		return GrassFileString;
@@ -21,27 +22,23 @@ namespace GrassControl {
 
 	void FixSaving(uintptr_t r8, uintptr_t ptrbuf, uintptr_t ptrThing)
 	{
-	    REL::Relocation <void (*)(uintptr_t, uintptr_t, uint32_t)> func{ RELOCATION_ID(74621, 76352) };
-	    func(r8, ptrbuf, 0x24);
+		REL::Relocation<void (*)(uintptr_t, uintptr_t, uint32_t)> func{ RELOCATION_ID(74621, 76352) };
+		func(r8, ptrbuf, 0x24);
 		auto ptrBuf = Memory::Internal::read<uintptr_t>(ptrThing + 0x8);
 		auto ptrSize = Memory::Internal::read<uint32_t>(ptrThing + 0x10);
-	    func(r8, ptrBuf, ptrSize);
+		func(r8, ptrBuf, ptrSize);
 	}
 
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
-	    try {
+		try {
 			auto dir = std::filesystem::path("data/grass");
-			if (!exists(dir))
-			{
+			if (!exists(dir)) {
 				create_directories(dir);
 			}
+		} catch (...) {
 		}
-		catch (...)
-		{
 
-		}
-		
 		// Fix saving the GID files (because bethesda broke it in SE).
 		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0))) {
 			struct Patch : Xbyak::CodeGenerator
@@ -54,9 +51,9 @@ namespace GrassControl {
 					mov(rax, rcx);
 					lea(rdx, ptr[rbp - 0x30]);
 					lea(rcx, ptr[r8 + 0x8]);
-				    mov(r8, ptr[rax + 0x40]); // ptrThing
-			
-				    sub(rsp, 0x20);
+					mov(r8, ptr[rax + 0x40]);  // ptrThing
+
+					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);
 					add(rsp, 0x20);
 
@@ -80,21 +77,19 @@ namespace GrassControl {
 				memset((void*)addr, 0x90, 0x13);
 			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		}
-		else {
+		} else {
 			stl::report_and_fail("Failed to find Gid Saving Function");
-		}	
-		
+		}
+
 		// Use a different file extension because we don't want to load the broken .gid files from BSA.
 		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
 		CustomGrassFileName = reinterpret_cast<uintptr_t>(&GrassFileString);
-        auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
+		auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
 		CustomGrassLodFileName = reinterpret_cast<uintptr_t>(&GrassFileLodString);
-		
+
 		// Saving.
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643))) {
-
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
@@ -105,14 +100,14 @@ namespace GrassControl {
 					Xbyak::Label j_else;
 
 					mov(rcx, rsi);
-					
+
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);
 					add(rsp, 0x20);
 
 					mov(r8, rax);
 
-                    /*
+					/*
 				    test(al, al);
 					je(j_else);
 					mov(r8, CustomGrassLodFileName);
@@ -136,11 +131,10 @@ namespace GrassControl {
 			auto& trampoline = SKSE::GetTrampoline();
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		}
-		else {
+		} else {
 			stl::report_and_fail("Failed to find Save Gid Files");
 		}
-		
+
 		// Loading.
 		//HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)))) {
@@ -155,16 +149,16 @@ namespace GrassControl {
 					Xbyak::Label j_else;
 
 					mov(rcx, r13);
-					
+
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function
 					add(rsp, 0x20);
 
 					mov(r8, rax);
-				    
+
 					jmp(ptr[rip + retnLabel]);
 
-				    L(funcLabel);
+					L(funcLabel);
 					dq(a_func);
 
 					L(retnLabel);
@@ -176,14 +170,13 @@ namespace GrassControl {
 			auto& trampoline = SKSE::GetTrampoline();
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-		}
-		else {
+		} else {
 			stl::report_and_fail("Failed to load Gid Files");
 		}
-		
+
 		// Set the ini stuff.
-	    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
-	    setting->data.b = true;
+		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
+		setting->data.b = true;
 		/* BROKEN TODO
 		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD)); REL::make_pattern<"44 38 3D">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD))) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation9);
@@ -224,11 +217,11 @@ namespace GrassControl {
 		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 	    */
-		if(!only_load) {
-		    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
+		if (!only_load) {
+			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = true;
 		} else {
-		    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
+			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = false;
 		}
 
@@ -245,11 +238,11 @@ namespace GrassControl {
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
-                    #ifdef SKYRIM_AE
+#ifdef SKYRIM_AE
 					dq(a_target + 0x7 + (0x5882 - 0x55AD));
-					#else
+#else
 					dq(a_target + 0x7 + (0x5882 - 0x55AD));
-                    #endif
+#endif
 				}
 			};
 			Patch patch(addr);
@@ -258,32 +251,29 @@ namespace GrassControl {
 			auto& trampoline = SKSE::GetTrampoline();
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		}
-		else {
+		} else {
 			stl::report_and_fail("Failed to Disable Grass Console");
 		}
-		
 	}
 
 	uintptr_t GidFileCache::CustomGrassFileName;
 	uintptr_t GidFileCache::CustomGrassLodFileName;
 
-	GidFileGenerationTask::GidFileGenerationTask() : IsResuming(false), ProgressDone(std::make_unique<std::unordered_set<std::string, case_insensitive_unordered_set::hash>>())
+	GidFileGenerationTask::GidFileGenerationTask() :
+		IsResuming(false), ProgressDone(std::make_unique<std::unordered_set<std::string, case_insensitive_unordered_set::hash>>())
 	{
-		if (cur_instance != nullptr)
-		{
+		if (cur_instance != nullptr) {
 			stl::report_and_fail("Only one instance of GidFileGenerationTask can be created at a time!");
 		}
 
 		FileStream.open(Util::getProgressFilePath(), std::ios::app);
-	    //cur_instance = std::unique_ptr<GidFileGenerationTask>(this);
+		//cur_instance = std::unique_ptr<GidFileGenerationTask>(this);
 	}
 
 	int GidFileGenerationTask::getChosenGrassGridRadius()
 	{
 		int r = _chosenGrassGridRadius;
-		if (r < 0)
-		{
+		if (r < 0) {
 			int ugrid = Memory::Internal::read<int>(addr_uGrids + 8);
 			r = (ugrid - 1) / 2;
 
@@ -297,16 +287,14 @@ namespace GrassControl {
 
 	void GidFileGenerationTask::run_freeze_check()
 	{
-		while (true)
-		{
+		while (true) {
 			if (cur_state != 1)
 				break;
 
 			uint64_t last = InterlockedCompareExchange64(&_lastDidSomething, 0, 0);
 			uint64_t now = GetTickCount64();
 
-			if (now - last < 60000)
-			{
+			if (now - last < 60000) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
@@ -323,13 +311,13 @@ namespace GrassControl {
 
 	void GidFileGenerationTask::ExchangeHook()
 	{
-		InterlockedExchange64(&queued_grass_mode,0);
+		InterlockedExchange64(&queued_grass_mode, 0);
 	}
 
 	void GidFileGenerationTask::apply()
 	{
 		unsigned long long addr;
-		
+
 		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29))) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
@@ -372,48 +360,49 @@ namespace GrassControl {
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
 		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D))) {
-		    struct Patch : Xbyak::CodeGenerator
-		    {
-			    explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
-			    {
-				    Xbyak::Label funcLabel;
-				    Xbyak::Label retnLabel;
+			struct Patch : Xbyak::CodeGenerator
+			{
+				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
+				{
+					Xbyak::Label funcLabel;
+					Xbyak::Label retnLabel;
 
-				    sub(rsp, 0x20);
-				    call(ptr[rip + funcLabel]);  // call our function
-				    add(rsp, 0x20); 
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);  // call our function
+					add(rsp, 0x20);
 
-				    jmp(ptr[rip + retnLabel]);
+					jmp(ptr[rip + retnLabel]);
 
-				    L(retnLabel);
-				    dq(a_target + 0x6);
+					L(retnLabel);
+					dq(a_target + 0x6);
 
-				    L(funcLabel);
-				    dq(a_func);
-			    }
-		    };
-		    Patch patch(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
-		    patch.ready();
-		    trampoline.write_branch<6>(addr, trampoline.allocate(patch));
+					L(funcLabel);
+					dq(a_func);
+				}
+			};
+			Patch patch(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
+			patch.ready();
+			trampoline.write_branch<6>(addr, trampoline.allocate(patch));
 		} else {
 			stl::report_and_fail("Failed to Generate Gid Files");
 		}
 
-	    auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
-	    setting->data.b = true;
+		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
+		setting->data.b = true;
 
 		IsApplying = true;
-		
+
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
 		addr = RELOCATION_ID(35565, 36564).address() + OFFSET(0x216 - 0x1E0, 0x51);
-	    Memory::Internal::write<uint8_t>(addr, 0xEB, true);
+		Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 
-	void GidFileGenerationTask::Update() {
-		if(!IsApplying) return;
+	void GidFileGenerationTask::Update()
+	{
+		if (!IsApplying)
+			return;
 
-		if (cur_state == 1)
-		{
+		if (cur_state == 1) {
 			if (InterlockedCompareExchange64(&queued_grass_counter, 0, 0) != 0)
 				return;
 
@@ -421,11 +410,9 @@ namespace GrassControl {
 				return;
 
 			InterlockedExchange64(&_lastDidSomething, GetTickCount64());
-			
-			if (!cur_instance->RunOne())
-			{
-				if (Crashed)
-				{
+
+			if (!cur_instance->RunOne()) {
+				if (Crashed) {
 					stl::report_and_fail("Grass Generation has Crashed!");
 				}
 
@@ -452,18 +439,17 @@ namespace GrassControl {
 	void GidFileGenerationTask::Init()
 	{
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
-		if (exists(fi))
-		{
+		if (exists(fi)) {
 			{
 				std::scoped_lock lock(ProgressLocker());
-				
+
 				auto fs = std::ifstream(Util::getProgressFilePath());
 				std::string l;
-				while (std::getline(fs, l))
-				{
+				while (std::getline(fs, l)) {
 					l = Util::StringHelpers::trim(l);
 
-					if (l.empty()) continue;
+					if (l.empty())
+						continue;
 					ProgressDone->insert(l);
 				}
 			}
@@ -471,30 +457,23 @@ namespace GrassControl {
 			IsResuming = !ProgressDone->empty();
 		}
 
-		if (ProgressDone->empty())
-		{
+		if (ProgressDone->empty()) {
 			auto dir = std::filesystem::path("Data/Grass");
-			if (!exists(dir))
-			{
+			if (!exists(dir)) {
 				create_directories(dir);
 			}
 
-			for (const auto& entry : std::filesystem::directory_iterator(dir))
-			{
-				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid")
-				{
+			for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid") {
 					remove(entry.path());
 				}
 			}
 		}
 
 		std::string tx;
-		if (IsResuming)
-		{
+		if (IsResuming) {
 			tx = "Resuming grass cache generation now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
-		}
-		else
-		{
+		} else {
 			tx = "Generating new grass cache now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		}
 		RE::DebugMessageBox(tx.c_str());
@@ -502,14 +481,13 @@ namespace GrassControl {
 
 	void GidFileGenerationTask::Free()
 	{
-		if (FileStream)
-		{
+		if (FileStream) {
 			FileStream.flush();
 			FileStream.close();
 		}
 	}
 
-	bool GidFileGenerationTask::HasDone(const std::string &key, const std::string &wsName, const int x, const int y) const
+	bool GidFileGenerationTask::HasDone(const std::string& key, const std::string& wsName, const int x, const int y) const
 	{
 		std::string text = GenerateProgressKey(key, wsName, x, y);
 		{
@@ -521,30 +499,23 @@ namespace GrassControl {
 	std::string GidFileGenerationTask::GenerateProgressKey(const std::string& key, const std::string& wsName, const int x, const int y) const
 	{
 		std::string bld;
-		if (!key.empty())
-		{
+		if (!key.empty()) {
 			bld.append(key);
 		}
-		if (!wsName.empty())
-		{
-			if (bld.length() != 0)
-			{
-				bld +='_';
+		if (!wsName.empty()) {
+			if (bld.length() != 0) {
+				bld += '_';
 			}
 			bld.append(wsName);
 		}
-		if (x != INT_MIN)
-		{
-			if (bld.length() != 0)
-			{
+		if (x != INT_MIN) {
+			if (bld.length() != 0) {
 				bld += '_';
 			}
 			bld.append(std::to_string(x));
 		}
-		if (y != INT_MIN)
-		{
-			if (bld.length() != 0)
-			{
+		if (y != INT_MIN) {
+			if (bld.length() != 0) {
 				bld += '_';
 			}
 			bld.append(std::to_string(y));
@@ -553,7 +524,7 @@ namespace GrassControl {
 		return bld;
 	}
 
-	void GidFileGenerationTask::WriteProgressFile(const std::string &key, const std::string &wsName, const int x, const int y )const
+	void GidFileGenerationTask::WriteProgressFile(const std::string& key, const std::string& wsName, const int x, const int y) const
 	{
 		std::string text = GenerateProgressKey(key, wsName, x, y);
 		if (text.empty())
@@ -564,11 +535,10 @@ namespace GrassControl {
 			auto [fst, snd] = ProgressDone->insert(text);
 			if (!snd)
 				return;
-			
-			if (FileStream.is_open())
-            {
-                FileStream << text << "\n";
-            }
+
+			if (FileStream.is_open()) {
+				FileStream << text << "\n";
+			}
 		}
 	}
 
@@ -577,32 +547,27 @@ namespace GrassControl {
 		char Char = ';';
 		auto skip = Util::StringHelpers::split(*Config::SkipPregenerateWorldSpaces, Char, true);
 		auto skipSet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
-		for (auto& x : skip)
-		{
+		for (auto& x : skip) {
 			logger::info("Skipping: {}", x);
 			skipSet.insert(x);
 		}
 
 		auto only = Util::StringHelpers::split(Util::StringHelpers::trim(*Config::OnlyPregenerateWorldSpaces), Char, true);
 		auto onlySet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
-		for (const auto& x : only)
-		{
+		for (const auto& x : only) {
 			std::string sy = Util::StringHelpers::trim(x);
-			if (sy.length() != 0)
-			{
+			if (sy.length() != 0) {
 				onlySet.insert(x);
 			}
 		}
 
 		auto& all = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESWorldSpace>();
-		for (auto f : all)
-		{
+		for (auto f : all) {
 			auto ws = f;
 
 			std::string name = ws->editorID.c_str();
 
-			if (!onlySet.empty())
-			{
+			if (!onlySet.empty()) {
 				if (name.empty() || !onlySet.contains(name))
 					continue;
 
@@ -611,29 +576,25 @@ namespace GrassControl {
 
 			TotalWS++;
 
-			if (HasDone(KeyWS, name))
-			{
+			if (HasDone(KeyWS, name)) {
 				DoneWS++;
 				continue;
 			}
 
 			auto t = new GidFileWorldGenerateTask(this, ws, name);
 			WorldTodo.emplace_back(t);
-
 		}
 	}
 
 	void GidFileGenerationTask::End()
 	{
-		if (FileStream)
-		{
+		if (FileStream) {
 			FileStream.flush();
 			FileStream.close();
 		}
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
-		if (exists(fi))
-		{
+		if (exists(fi)) {
 			remove(fi);
 		}
 	}
@@ -642,8 +603,7 @@ namespace GrassControl {
 
 	bool GidFileGenerationTask::RunOne()
 	{
-		if (_istate == 0)
-		{
+		if (_istate == 0) {
 			_istate = 1;
 
 			Init();
@@ -651,14 +611,12 @@ namespace GrassControl {
 			Begin();
 		}
 
-		if (!WorldTodo.empty())
-		{
+		if (!WorldTodo.empty()) {
 			auto& t = WorldTodo.back();
 
-			if (!t->RunOne())
-			{
+			if (!t->RunOne()) {
 				if (Crashed)
-				    return false;
+					return false;
 
 				WorldTodo.pop_back();
 				DoneWS++;
@@ -669,8 +627,7 @@ namespace GrassControl {
 			return true;
 		}
 
-		if (_istate == 1)
-		{
+		if (_istate == 1) {
 			_istate = 2;
 
 			End();
@@ -681,11 +638,11 @@ namespace GrassControl {
 		return false;
 	}
 
-	GidFileWorldGenerateTask::GidFileWorldGenerateTask(GidFileGenerationTask* parent, RE::TESWorldSpace *ws, const std::string &wsName)
+	GidFileWorldGenerateTask::GidFileWorldGenerateTask(GidFileGenerationTask* parent, RE::TESWorldSpace* ws, const std::string& wsName)
 	{
 		Parent = parent;
 		WorldSpace = ws;
-		Name = wsName; 
+		Name = wsName;
 		_grid = std::vector<GidFileCellGenerateTask*>(16641);  // 129 * 129
 
 		ugrid = Memory::Internal::read<int>(GidFileGenerationTask::addr_uGrids + 8);
@@ -694,7 +651,6 @@ namespace GrassControl {
 
 	void GidFileWorldGenerateTask::Init()
 	{
-
 	}
 
 	void GidFileWorldGenerateTask::Free()
@@ -709,20 +665,16 @@ namespace GrassControl {
 
 		TotalCellDo = 129 * 129;
 
-		for (int x = min; x <= max; x++)
-		{
-			for (int y = min; y <= max; y++)
-			{
-				if (Parent->HasDone(GidFileGenerationTask::KeyCell, Name, x, y))
-				{
+		for (int x = min; x <= max; x++) {
+			for (int y = min; y <= max; y++) {
+				if (Parent->HasDone(GidFileGenerationTask::KeyCell, Name, x, y)) {
 					DidCellDo++;
 					continue;
 				}
 
 				auto cg = new GidFileCellGenerateTask(this, x, y);
-			    CellTodo.emplace_back(cg);
+				CellTodo.emplace_back(cg);
 				_grid[(x + 64) * 129 + (y + 64)] = cg;
-
 			}
 		}
 	}
@@ -736,8 +688,7 @@ namespace GrassControl {
 	{
 		x += 64;
 		y += 64;
-		if (x < 0 || x > 128 || y < 0 || y > 128)
-		{
+		if (x < 0 || x > 128 || y < 0 || y > 128) {
 			return nullptr;
 		}
 		return _grid[x * 129 + y];
@@ -750,31 +701,26 @@ namespace GrassControl {
 
 		int ufull = ugrid * ugrid;
 
-		for (auto& n : CellTodo)
-		{
+		for (auto& n : CellTodo) {
 			int minx = n->X - uhalf;
 			int maxx = n->X + uhalf;
 			int miny = n->Y - uhalf;
 			int maxy = n->Y + uhalf;
 			int cur = 0;
 
-			for (int x = minx; x <= maxx; x++)
-			{
-				for (int y = miny; y <= maxy; y++)
-				{
+			for (int x = minx; x <= maxx; x++) {
+				for (int y = miny; y <= maxy; y++) {
 					auto t = GetGrid(x, y);
 					if (t != nullptr)
 						cur++;
 				}
 			}
 
-			if (cur == 0)
-			{
+			if (cur == 0) {
 				stl::report_and_fail("Grass generation has crashed!");
 			}
 
-			if (best == nullptr || cur > bestCount)
-			{
+			if (best == nullptr || cur > bestCount) {
 				best = n;
 				bestCount = cur;
 
@@ -788,8 +734,7 @@ namespace GrassControl {
 
 	bool GidFileWorldGenerateTask::RunOne()
 	{
-		if (_istate == 0)
-		{
+		if (_istate == 0) {
 			_istate = 1;
 
 			Init();
@@ -797,14 +742,12 @@ namespace GrassControl {
 			Begin();
 		}
 
-		while (!CellTodo.empty())
-		{
+		while (!CellTodo.empty()) {
 			auto t = FindBestTodo();
 			if (t == nullptr)
-			   stl::report_and_fail("Grass generation has crashed!");
+				stl::report_and_fail("Grass generation has crashed!");
 
-			if (!t->RunOne())
-			{
+			if (!t->RunOne()) {
 				if (GidFileGenerationTask::Crashed)
 					return false;
 
@@ -818,13 +761,10 @@ namespace GrassControl {
 			int maxx = t->X + uhalf;
 			int miny = t->Y - uhalf;
 			int maxy = t->Y + uhalf;
-			for (int x = minx; x <= maxx; x++)
-			{
-				for (int y = miny; y <= maxy; y++)
-				{
+			for (int x = minx; x <= maxx; x++) {
+				for (int y = miny; y <= maxy; y++) {
 					auto tx = GetGrid(x, y);
-					if (tx != nullptr)
-					{
+					if (tx != nullptr) {
 						Remove(tx);
 						Parent->WriteProgressFile(GidFileGenerationTask::KeyCell, Name, x, y);
 						DidCellDo++;
@@ -835,8 +775,7 @@ namespace GrassControl {
 			return true;
 		}
 
-		if (_istate == 1)
-		{
+		if (_istate == 1) {
 			_istate = 2;
 
 			End();
@@ -854,16 +793,12 @@ namespace GrassControl {
 		int x = t->X + 64;
 		int y = t->Y + 64;
 		int ix = x * 129 + y;
-		if (_grid[ix] == t)
-		{
+		if (_grid[ix] == t) {
 			_grid[ix] = nullptr;
-		}
-		else
-		{
+		} else {
 			stl::report_and_fail("Grass generation has crashed!");
 		}
 	}
-	
 
 	GidFileCellGenerateTask::GidFileCellGenerateTask(GidFileWorldGenerateTask* parent, const int x, const int y)
 	{
@@ -874,31 +809,28 @@ namespace GrassControl {
 
 	void GidFileCellGenerateTask::Init()
 	{
-
 	}
 
 	void GidFileCellGenerateTask::Free()
 	{
-
 	}
 
 	bool GidFileCellGenerateTask::Begin()
 	{
 		REL::Relocation<void (*)()> Func{ RELOCATION_ID(13188, 13333) };
-	    Func();
+		Func();
 
 		RE::TESObjectCELL* cellPtr;
 		__try {
-			REL::Relocation <RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func{ RELOCATION_ID(20026, 20460) };
+			REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func{ RELOCATION_ID(20026, 20460) };
 
 			cellPtr = Func(this->Parent->WorldSpace, this->X, this->Y);
-		}
-	    __except (EXCEPTION_EXECUTE_HANDLER) {
+		} __except (EXCEPTION_EXECUTE_HANDLER) {
 			stl::report_and_fail("Grass Generation has Crashed!");
 		}
 
-		REL::Relocation <void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
-	    Fnc();
+		REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
+		Fnc();
 
 		if (cellPtr == nullptr)
 			return false;
@@ -916,11 +848,10 @@ namespace GrassControl {
 	bool GidFileCellGenerateTask::Process()
 	{
 		if (Cell == nullptr)
-		    return false;
+			return false;
 
 		double pct = 0.0;
-		if (Parent->TotalCellDo > 0)
-		{
+		if (Parent->TotalCellDo > 0) {
 			pct = std::max(0.0, std::min(static_cast<double>(Parent->DidCellDo) / static_cast<double>(Parent->TotalCellDo), 1.0)) * 100.0;
 		}
 
@@ -935,13 +866,10 @@ namespace GrassControl {
 			Memory::Internal::write<float>(reinterpret_cast<uintptr_t>(alloc) + 4, static_cast<float>(Cell->GetCoordinates()->cellY) * 4096.0f + 2048.0f);
 			Memory::Internal::write<float>(reinterpret_cast<uintptr_t>(alloc) + 8, 0.0f);
 
-			try
-			{
-				REL::Relocation <void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
-				func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10,Cell, 0);
-			}
-			catch (...)
-			{
+			try {
+				REL::Relocation<void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
+				func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10, Cell, 0);
+			} catch (...) {
 				stl::report_and_fail("Grass Generation has Crashed!");
 			}
 		}
@@ -954,8 +882,7 @@ namespace GrassControl {
 
 		bool did = Begin();
 
-		if (did && !Process())
-		{
+		if (did && !Process()) {
 			did = false;
 		}
 

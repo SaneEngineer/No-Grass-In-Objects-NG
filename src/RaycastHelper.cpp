@@ -94,7 +94,6 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	pickData.ray = RE::hkVector4(to.x, to.y, to.z, one);
 	pickData.rayHitCollectorA8 = reinterpret_cast<RE::hkpClosestRayHitCollector*>(collector);
 
-
 	const auto ply = RE::PlayerCharacter::GetSingleton();
 	if (!ply->parentCell)
 		return {};
@@ -102,12 +101,11 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	if (ply->loadedData && ply->loadedData->data3D)
 		collector->AddFilter(ply->loadedData->data3D.get());
 
-    RayCollector::HitResult best{};
+	RayCollector::HitResult best{};
 	best.hitFraction = 1.0f;
 	glm::vec4 bestPos = {};
 
 	for (auto& hit : collector->GetHits()) {
-
 		const auto pos = (dif * hit.hitFraction) + start;
 		if (best.body == nullptr) {
 			best = hit;
@@ -156,11 +154,9 @@ namespace GrassControl
 	{
 		auto spl = Util::StringHelpers::Split_at_any(layers, { ' ', ',', '\t', '+' }, true);
 		unsigned long long mask = 0;
-		for (const auto& x : spl)
-		{
+		for (const auto& x : spl) {
 			int y = std::stoi(x);
-			if (y >= 0 && y < 64)
-			{
+			if (y >= 0 && y < 64) {
 				mask |= static_cast<unsigned long long>(1) << y;
 			}
 		}
@@ -168,7 +164,7 @@ namespace GrassControl
 	}
 
 	bool RaycastHelper::CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const
-    {
+	{
 		RE::TESObjectCELL* cell = land->GetSaveParentCell();
 
 		if (cell == nullptr) {
@@ -180,62 +176,56 @@ namespace GrassControl
 			return true;
 		}
 
-	    auto begin = glm::vec4(x, y, z + this->RayHeight, 0.0f);
+		auto begin = glm::vec4(x, y, z + this->RayHeight, 0.0f);
 		auto end = glm::vec4(x, y, z - this->RayDepth, 0.0f);
 		auto rs = Raycast::hkpCastRay(begin, end);
-		
+
 		for (auto& [normal, hitFraction, body] : rs.hitArray) {
-		    if (hitFraction >= 1.0f || body == nullptr) {
-			     continue;
-		    }
+			if (hitFraction >= 1.0f || body == nullptr) {
+				continue;
+			}
 
 			const auto collisionObj = static_cast<const RE::hkpCollidable*>(body);
 			const auto flags = collisionObj->GetCollisionLayer();
 			unsigned long long mask = static_cast<unsigned long long>(1) << static_cast<int>(flags);
-		    if (!(this->RaycastMask & mask)) {
-			//if (rs.CollisionLayer == RE::COL_LAYER::kTerrain) {
-			    continue;
-		    }
+			if (!(this->RaycastMask & mask)) {
+				//if (rs.CollisionLayer == RE::COL_LAYER::kTerrain) {
+				continue;
+			}
 
-		    if (this->Ignore != nullptr && this->IsIgnoredObject(rs)) {
-			    continue;
-		    }
+			if (this->Ignore != nullptr && this->IsIgnoredObject(rs)) {
+				continue;
+			}
 
-		    return false;
-	    }
-			return true;
+			return false;
+		}
+		return true;
 	}
 
 	bool RaycastHelper::IsIgnoredObject(Raycast::RayResult r) const
 	{
 		bool result = false;
-		try
-		{
+		try {
 			auto o = r.hitObject;
 			int tries = 0;
-			while (o != nullptr && tries++ < 10)
-			{
+			while (o != nullptr && tries++ < 10) {
 				const auto userdata = o->GetUserData();
-				if(userdata != nullptr) {
-				    auto baseForm = userdata->GetOwner();
-				    if (baseForm != nullptr)
-				    {
-					    /*if (this.Ignore.Contains(obj.FormId))
+				if (userdata != nullptr) {
+					auto baseForm = userdata->GetOwner();
+					if (baseForm != nullptr) {
+						/*if (this.Ignore.Contains(obj.FormId))
 					        result = true;
 					    else*/
-					    {
-					        if (this->Ignore->Contains(baseForm->formID))
+						{
+							if (this->Ignore->Contains(baseForm->formID))
 								result = true;
-					    }
-					    break;
-				    }
+						}
+						break;
+					}
 				}
 				o = o->parent;
 			}
-		}
-		catch (...)
-		{
-
+		} catch (...) {
 		}
 		return result;
 	}

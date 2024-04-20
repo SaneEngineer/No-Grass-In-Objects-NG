@@ -8,10 +8,8 @@
 #include "GrassControl/Profiler.h"
 #include "GrassControl/RaycastHelper.h"
 
-#include "Shared/Utility/Memory.h"
 #include "Shared/Utility/Assembly.h"
-
-
+#include "Shared/Utility/Memory.h"
 
 namespace GrassControl
 {
@@ -27,7 +25,7 @@ namespace GrassControl
 	public:
 		inline static std::unique_ptr<RaycastHelper> Cache;
 
-	    static void init();
+		static void init();
 
 		static void warn_extend_without_cache();
 
@@ -38,10 +36,10 @@ namespace GrassControl
 
 		static void OnMainMenuOpen();
 
-        static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, float x, float y, float z);
+		static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, float x, float y, float z);
 		static void Update();
 
-        static RE::TESObjectREFR* PlaceAtMe(RE::TESObjectREFR* self, RE::TESForm* a_form, std::uint32_t count, bool forcePersist, bool initiallyDisabled)
+		static RE::TESObjectREFR* PlaceAtMe(RE::TESObjectREFR* self, RE::TESForm* a_form, std::uint32_t count, bool forcePersist, bool initiallyDisabled)
 		{
 			using func_t = RE::TESObjectREFR*(RE::BSScript::Internal::VirtualMachine*, RE::VMStackID, RE::TESObjectREFR*, RE::TESForm*, std::uint32_t, bool, bool);
 			RE::VMStackID frame = 0;
@@ -51,7 +49,6 @@ namespace GrassControl
 
 			return func(vm, frame, self, a_form, count, forcePersist, initiallyDisabled);
 		};
-
 
 	protected:
 		struct Hooks
@@ -83,7 +80,7 @@ namespace GrassControl
 			{
 				static uint64_t thunk(uint64_t a1, uint64_t a2, char* a3)
 				{
-				    profiler->Begin();
+					profiler->Begin();
 
 					return func(a1, a2, a3);
 				}
@@ -95,11 +92,11 @@ namespace GrassControl
 				static void thunk()
 				{
 					func();
-				    profiler->End();
+					profiler->End();
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
-			
+
 			static void Install()
 			{
 				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET(0x748, 0xC26));

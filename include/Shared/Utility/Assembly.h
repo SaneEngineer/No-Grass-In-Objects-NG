@@ -8,9 +8,9 @@ namespace Utility
 		struct AbsoluteCall
 		{
 		public:
-			constexpr AbsoluteCall() noexcept                    = delete;
+			constexpr AbsoluteCall() noexcept = delete;
 			constexpr AbsoluteCall(const AbsoluteCall&) noexcept = default;
-			constexpr AbsoluteCall(AbsoluteCall&&) noexcept      = default;
+			constexpr AbsoluteCall(AbsoluteCall&&) noexcept = default;
 
 			constexpr ~AbsoluteCall() noexcept = default;
 
@@ -22,11 +22,11 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t  call{ 0xFF };      // 0
-			std::uint8_t  modRm{ 0x15 };     // 1
-			std::int32_t  relative32{ 0x2 }; // 2
-			std::uint8_t  jump{ 0xEB };      // 6
-			std::int8_t   relative8{ 0x8 };  // 7
+			std::uint8_t call{ 0xFF };       // 0
+			std::uint8_t modRm{ 0x15 };      // 1
+			std::int32_t relative32{ 0x2 };  // 2
+			std::uint8_t jump{ 0xEB };       // 6
+			std::int8_t relative8{ 0x8 };    // 7
 			std::uint64_t absolute64;        // 8
 		};
 		static_assert(offsetof(AbsoluteCall, call) == 0x0);
@@ -40,9 +40,9 @@ namespace Utility
 		struct AbsoluteJump
 		{
 		public:
-			constexpr AbsoluteJump() noexcept                    = delete;
+			constexpr AbsoluteJump() noexcept = delete;
 			constexpr AbsoluteJump(const AbsoluteJump&) noexcept = default;
-			constexpr AbsoluteJump(AbsoluteJump&&) noexcept      = default;
+			constexpr AbsoluteJump(AbsoluteJump&&) noexcept = default;
 
 			constexpr ~AbsoluteJump() noexcept = default;
 
@@ -54,9 +54,9 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t  jump{ 0xFF };      // 0
-			std::uint8_t  modRm{ 0x25 };     // 1
-			std::int32_t  relative32{ 0x0 }; // 2
+			std::uint8_t jump{ 0xFF };       // 0
+			std::uint8_t modRm{ 0x25 };      // 1
+			std::int32_t relative32{ 0x0 };  // 2
 			std::uint64_t absolute64;        // 6
 		};
 		static_assert(offsetof(AbsoluteJump, jump) == 0x0);
@@ -68,9 +68,9 @@ namespace Utility
 		struct RelativeCall5
 		{
 		public:
-			constexpr RelativeCall5() noexcept                     = delete;
+			constexpr RelativeCall5() noexcept = delete;
 			constexpr RelativeCall5(const RelativeCall5&) noexcept = default;
-			constexpr RelativeCall5(RelativeCall5&&) noexcept      = default;
+			constexpr RelativeCall5(RelativeCall5&&) noexcept = default;
 
 			constexpr ~RelativeCall5() noexcept = default;
 
@@ -82,8 +82,8 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t call{ 0xE8 }; // 0
-			std::int32_t relative32;   // 1
+			std::uint8_t call{ 0xE8 };  // 0
+			std::int32_t relative32;    // 1
 		};
 		static_assert(offsetof(RelativeCall5, call) == 0x0);
 		static_assert(offsetof(RelativeCall5, relative32) == 0x1);
@@ -92,9 +92,9 @@ namespace Utility
 		struct RelativeCall6
 		{
 		public:
-			constexpr RelativeCall6() noexcept                     = delete;
+			constexpr RelativeCall6() noexcept = delete;
 			constexpr RelativeCall6(const RelativeCall6&) noexcept = default;
-			constexpr RelativeCall6(RelativeCall6&&) noexcept      = default;
+			constexpr RelativeCall6(RelativeCall6&&) noexcept = default;
 
 			constexpr ~RelativeCall6() noexcept = default;
 
@@ -106,9 +106,9 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t call{ 0xFF };  // 0
-			std::uint8_t modRm{ 0x15 }; // 1
-			std::int32_t relative32;    // 2
+			std::uint8_t call{ 0xFF };   // 0
+			std::uint8_t modRm{ 0x15 };  // 1
+			std::int32_t relative32;     // 2
 		};
 		static_assert(offsetof(RelativeCall6, call) == 0x0);
 		static_assert(offsetof(RelativeCall6, modRm) == 0x1);
@@ -118,9 +118,9 @@ namespace Utility
 		struct RelativeJump5
 		{
 		public:
-			constexpr RelativeJump5() noexcept                     = delete;
+			constexpr RelativeJump5() noexcept = delete;
 			constexpr RelativeJump5(const RelativeJump5&) noexcept = default;
-			constexpr RelativeJump5(RelativeJump5&&) noexcept      = default;
+			constexpr RelativeJump5(RelativeJump5&&) noexcept = default;
 
 			constexpr ~RelativeJump5() noexcept = default;
 
@@ -132,8 +132,8 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t jump{ 0xE9 }; // 0
-			std::int32_t relative32;   // 1
+			std::uint8_t jump{ 0xE9 };  // 0
+			std::int32_t relative32;    // 1
 		};
 		static_assert(offsetof(RelativeJump5, jump) == 0x0);
 		static_assert(offsetof(RelativeJump5, relative32) == 0x1);
@@ -142,9 +142,9 @@ namespace Utility
 		struct RelativeJump6
 		{
 		public:
-			constexpr RelativeJump6() noexcept                     = delete;
+			constexpr RelativeJump6() noexcept = delete;
 			constexpr RelativeJump6(const RelativeJump6&) noexcept = default;
-			constexpr RelativeJump6(RelativeJump6&&) noexcept      = default;
+			constexpr RelativeJump6(RelativeJump6&&) noexcept = default;
 
 			constexpr ~RelativeJump6() noexcept = default;
 
@@ -156,9 +156,9 @@ namespace Utility
 			{
 			}
 
-			std::uint8_t jump{ 0xFF };  // 0
-			std::uint8_t modRm{ 0x25 }; // 1
-			std::int32_t relative32;    // 2
+			std::uint8_t jump{ 0xFF };   // 0
+			std::uint8_t modRm{ 0x25 };  // 1
+			std::int32_t relative32;     // 2
 		};
 		static_assert(offsetof(RelativeJump6, jump) == 0x0);
 		static_assert(offsetof(RelativeJump6, modRm) == 0x1);

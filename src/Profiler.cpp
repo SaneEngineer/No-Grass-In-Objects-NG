@@ -19,10 +19,10 @@ namespace GrassControl
 	}
 
 	Profiler::Profiler() :
-        Timer(new stopwatch::Stopwatch()), Divide(0)
-    {
-        this->Timer->start();
-    }
+		Timer(new stopwatch::Stopwatch()), Divide(0)
+	{
+		this->Timer->start();
+	}
 
 	void Profiler::Begin()
 	{
@@ -31,11 +31,9 @@ namespace GrassControl
 
 		{
 			std::lock_guard lock(this->Locker);
-			for (int i = 0; i < this->Progress.size(); i++)
-			{
+			for (int i = 0; i < this->Progress.size(); i++) {
 				auto t = this->Progress[i];
-				if (t.first == who)
-				{
+				if (t.first == who) {
 					{
 						this->Progress[i] = std::pair{ who, when };
 					}
@@ -54,17 +52,14 @@ namespace GrassControl
 
 		{
 			std::lock_guard lock(this->Locker);
-			for (int i = 0; i < this->Progress.size(); i++)
-			{
+			for (int i = 0; i < this->Progress.size(); i++) {
 				auto t = this->Progress[i];
-				if (t.first == who)
-				{
+				if (t.first == who) {
 					long long diff = when - t.second;
 					this->Progress.erase(this->Progress.begin() + i);
 
 					this->Times.push_back(diff);
-					if (this->Times.size() > 1000)
-					{
+					if (this->Times.size() > 1000) {
 						this->Times.erase(this->Times.begin());
 					}
 					return;
@@ -79,8 +74,7 @@ namespace GrassControl
 
 		{
 			std::lock_guard lock(this->Locker);
-			for (auto diff : this->Times)
-			{
+			for (auto diff : this->Times) {
 				auto w = static_cast<double>(diff);
 				w /= static_cast<double>(this->Divide);
 				all.push_back(w);
@@ -88,17 +82,12 @@ namespace GrassControl
 		}
 
 		std::string message;
-		if (all.empty())
-		{
+		if (all.empty()) {
 			message = "No samples have been gathered yet.";
-		}
-		else
-		{
-			if (all.size() > 1)
-			{
+		} else {
+			if (all.size() > 1) {
 				std::sort(all.begin(), all.end());
 			}
-
 
 			KahanAccumulation init = { 0 };
 			KahanAccumulation result =
@@ -110,19 +99,18 @@ namespace GrassControl
 			double min = all[0];
 			double max = all[all.size() - 1];
 
-			std::function<std::string(double)> fmt = [&] (double v)
-			{
+			std::function<std::string(double)> fmt = [&](double v) {
 				return std::to_string(v);
 			};
 
 			std::vector<std::string> things;
-			
+
 			things.emplace_back("Samples = " + std::to_string(all.size()));
 			things.emplace_back("Average = " + fmt(avg));
 			things.emplace_back("Median = " + fmt(med));
 			things.emplace_back("Min = " + fmt(min));
 			things.emplace_back("Max = " + fmt(max));
-			
+
 			message = Util::StringHelpers::Join(things, "; ");
 		}
 		RE::DebugNotification(message.c_str(), nullptr, true);

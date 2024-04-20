@@ -159,7 +159,9 @@ else()
 		"Variable ${CommonLibName}Path is not set or in extern/."
 	)
 endif()
+
 find_dependency_path(DKUtil include/DKUtil/Logger.hpp)
+
 # GLM
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
@@ -222,8 +224,7 @@ target_link_libraries(
 	${CommonLibName}::${CommonLibName}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
 	INTERFACE
-		DKUtil::DKUtil
-
+	DKUtil::DKUtil
 )
 
 target_precompile_headers(
@@ -258,22 +259,21 @@ if(MSVC)
 endif()
 
 # ---- Post build ----
-#if(COPY_BUILD)
-#	if(DEFINED SkyrimPath)
-#		add_custom_command(
-#			TARGET ${PROJECT_NAME}
-#			POST_BUILD
-#			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
-#			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
-#		)
-#	else()
-#		message(
-#			WARNING
-#			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
-#		)
-#	endif()
-#endif()
-
+# if(COPY_BUILD)
+# if(DEFINED SkyrimPath)
+# add_custom_command(
+# TARGET ${PROJECT_NAME}
+# POST_BUILD
+# COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+# COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+# )
+# else()
+# message(
+# WARNING
+# "Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
+# )
+# endif()
+# endif()
 
 # https://gitlab.kitware.com/cmake/cmake/-/issues/24922#note_1371990
 if(MSVC_VERSION GREATER_EQUAL 1936 AND MSVC_IDE) # 17.6+

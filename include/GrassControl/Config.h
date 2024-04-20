@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SKSE/SKSE.h>
 #include "GrassControl/Util.h"
+#include <SKSE/SKSE.h>
 
 namespace GrassControl
 {
@@ -16,7 +16,7 @@ namespace GrassControl
 		using iSetting = AutoTOML::iSetting;
 		using sSetting = AutoTOML::sSetting;
 
-	    static inline bSetting DebugLogEnable{ "Debug", "Debug-Log-Enable", false };
+		static inline bSetting DebugLogEnable{ "Debug", "Debug-Log-Enable", false };
 
 		static inline bSetting RayCast{ "RayCastConfig", "Ray-cast-enabled", true };
 		static inline fSetting RayCastHeight{ "RayCastConfig", "Ray-cast-height", 150.0 };
@@ -24,7 +24,7 @@ namespace GrassControl
 		static inline sSetting RayCastCollisionLayers{ "RayCastConfig", "Ray-cast-collision-layers", "1 2 13 20 31" };
 		static inline sSetting RayCastIgnoreForms{ "RayCastConfig", "Ray-cast-ignore-forms", "" };
 
-	    static inline bSetting SuperDenseGrass{ "GrassConfig", "Super-dense-grass", false };
+		static inline bSetting SuperDenseGrass{ "GrassConfig", "Super-dense-grass", false };
 		static inline iSetting SuperDenseMode{ "GrassConfig", "Super-dense-mode", 8 };
 		static inline bSetting ProfilerReport{ "GrassConfig", "Profiler-report", false };
 		static inline bSetting UseGrassCache{ "GrassConfig", "Use-grass-cache", false };
@@ -39,7 +39,7 @@ namespace GrassControl
 		static inline sSetting SkipPregenerateWorldSpaces{ "GrassConfig", "Skip-pregenerate-world-spaces", "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace" };
 		static inline sSetting OnlyPregenerateWorldSpaces{ "GrassConfig", "Only-pregenerate-world-spaces", "" };
 		static inline iSetting DynDOLODGrassMode{ "GrassConfig", "DynDOLOD-Grass-Mode", 0 };
-		
+
 		static void load()
 		{
 			try {

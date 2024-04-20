@@ -10,22 +10,22 @@
 
 #include <typeinfo>
 
-#   define GLM_FORCE_INLINE
-#   define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#   define GLM_FORCE_INTRINSICS
-#   define GLM_FORCE_LEFT_HANDED
-#   define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#   define GLM_FORCE_QUAT_DATA_WXYZ
-#   define GLM_ENABLE_EXPERIMENTAL
-#   include <glm/glm.hpp>
-#   include <glm/gtc/matrix_transform.hpp>
-#   include <glm/ext/matrix_clip_space.hpp>
-#   include <glm/gtc/quaternion.hpp>
-#   include <glm/gtc/constants.hpp>
-#   include <glm/gtx/easing.hpp>
-#   include <glm/gtx/spline.hpp>
-#   include <glm/gtx/norm.hpp>
-#   include <glm/gtx/hash.hpp>
+#define GLM_FORCE_INLINE
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_INTRINSICS
+#define GLM_FORCE_LEFT_HANDED
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_QUAT_DATA_WXYZ
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/easing.hpp>
+#include <glm/gtx/hash.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/spline.hpp>
 
 using vec2u = glm::vec<2, float, glm::highp>;
 using vec3u = glm::vec<3, float, glm::highp>;
@@ -71,7 +71,7 @@ namespace stl
 		T::func = trampoline.write_call<5>(a_src, T::thunk);
 	}
 
-    template <class F, size_t offset, class T>
+	template <class F, size_t offset, class T>
 	void write_vfunc()
 	{
 		REL::Relocation<std::uintptr_t> vtbl{ F::VTABLE[offset] };
@@ -102,6 +102,5 @@ namespace stl
 #define DLLEXPORT __declspec(dllexport)
 
 namespace logger = SKSE::log;
-
 
 #include "Version.h"
