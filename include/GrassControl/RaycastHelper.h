@@ -1,11 +1,11 @@
 #pragma once
 
+#include "GrassControl/mmath.h"
 #include <GrassControl/Config.h>
 #include <GrassControl/Util.h>
-#include "GrassControl/mmath.h"
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 namespace Raycast
 {
@@ -22,7 +22,6 @@ namespace Raycast
 		uint32_t unk;
 	};
 
-	
 	class RayCollector
 	{
 	public:
@@ -99,7 +98,6 @@ namespace Raycast
 	static_assert(sizeof(RayResult) == 128);
 #pragma warning(pop)
 
-
 	// Cast a ray from 'start' to 'end', returning the first thing it hits
 	// This variant collides with pretty much any solid geometry
 	//	Params:
@@ -111,7 +109,7 @@ namespace Raycast
 	//		A structure holding the results of the ray cast.
 	//		If the ray hit something, result.hit will be true.
 	RayResult hkpCastRay(const glm::vec4& start, const glm::vec4& end) noexcept;
-	
+
 }
 
 namespace GrassControl
@@ -125,7 +123,7 @@ namespace GrassControl
 			delete Ignore;
 		}
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string &layers, Util::CachedFormList *ignored);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored);
 
 		const int Version = 0;
 
@@ -135,14 +133,12 @@ namespace GrassControl
 
 		unsigned long long RaycastMask = 0;
 
-		Util::CachedFormList *const Ignore = nullptr;
+		Util::CachedFormList* const Ignore = nullptr;
 
-		bool CanPlaceGrass(RE::TESObjectLAND *land, const float x, const float y,const float z) const;
+		bool CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const;
 
 	private:
-
 		bool IsIgnoredObject(Raycast::RayResult r) const;
 	};
 
 }
-

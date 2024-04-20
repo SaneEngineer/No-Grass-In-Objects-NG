@@ -1,8 +1,8 @@
 #pragma once
 
-#include "CasualLibrary/CasualLibrary.hpp"
-#include "GrassControl/Main.h"
+#include "CasualLibrary.hpp"
 #include "GrassControl/GidFileCache.h"
+#include "GrassControl/Main.h"
 
 namespace GrassControl
 {
@@ -16,10 +16,10 @@ namespace GrassControl
 	};
 
 	static std::mutex& NRlocker()
-    {
-        static std::mutex NRlocker;
-        return NRlocker;
-    }
+	{
+		static std::mutex NRlocker;
+		return NRlocker;
+	}
 
 	static std::recursive_mutex& locker()
 	{
@@ -32,7 +32,7 @@ namespace GrassControl
 		class LoadOnlyCellInfoContainer2;
 
 	public:
-	    static void RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1);
+		static void RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1);
 
 		static void CellUnloadHook(bool did, RE::TESObjectCELL* cellObj);
 
@@ -54,7 +54,7 @@ namespace GrassControl
 		static uintptr_t addr_uGrids;
 		static uintptr_t addr_AllowLoadFile;
 		static uintptr_t addr_DataHandler;
-	    static uintptr_t addr_uLargeRef;
+		static uintptr_t addr_uLargeRef;
 		static uintptr_t addr_QueueLoadCellUnkGlobal;
 
 		// This is only ever called from when we are adding grass, calling from outside is not valid.
@@ -75,14 +75,14 @@ namespace GrassControl
 			cell_info(int _x, int _y);
 			cell_info();
 
-		    int x;
-		    int y;
+			int x;
+			int y;
 
 			RE::TESObjectCELL* cell = nullptr;
 			int self_data = 0;
 			volatile long long furtherLoad = 0;
 
-            [[nodiscard]] bool checkHasFile(const std::string &wsName, bool lod) const;
+			[[nodiscard]] bool checkHasFile(const std::string& wsName, bool lod) const;
 		};
 
 		class CellInfoContainer
@@ -90,10 +90,10 @@ namespace GrassControl
 		public:
 			CellInfoContainer();
 
-            [[nodiscard]] std::optional<cell_info> GetFromGrid(int x, int y) const;
+			[[nodiscard]] std::optional<cell_info> GetFromGrid(int x, int y) const;
 
 		private:
-		    std::vector<cell_info> grid{};
+			std::vector<cell_info> grid{};
 
 		public:
 			std::unordered_map<RE::TESObjectCELL*, cell_info> map = std::unordered_map<RE::TESObjectCELL*, cell_info>(1024);
@@ -102,12 +102,12 @@ namespace GrassControl
 
 			std::optional<cell_info> FindByCell(RE::TESObjectCELL* cell);
 		};
-	
+
 		static unsigned char CellLoadHook(int x, int y);
 
 		inline static std::unique_ptr<CellInfoContainer> Map;
 		//private static LoadOnlyCellInfoContainer LOMap;
-		inline static std::unique_ptr <LoadOnlyCellInfoContainer2> LO2Map;
+		inline static std::unique_ptr<LoadOnlyCellInfoContainer2> LO2Map;
 
 		static bool IsValidLoadedCell(RE::TESObjectCELL* cell, bool quickLoad);
 
@@ -151,17 +151,20 @@ namespace GrassControl
 				_cell_states State = _cell_states::None;
 			};
 
-			struct case_insensitive_unordered_map {
-				struct comp {
-					bool operator() (const std::string& lhs, const std::string& rhs) const {
+			struct case_insensitive_unordered_map
+			{
+				struct comp
+				{
+					bool operator()(const std::string& lhs, const std::string& rhs) const
+					{
 						// On non Windows OS, use the function "strcasecmp" in #include <strings.h>
 						return _stricmp(lhs.c_str(), rhs.c_str()) == 0;
 					}
-					
 				};
-				struct hash {
-
-					std::size_t operator() (std::string str) const {
+				struct hash
+				{
+					std::size_t operator()(std::string str) const
+					{
 						for (std::size_t index = 0; index < str.size(); ++index) {
 							auto ch = static_cast<unsigned char>(str[index]);
 							str[index] = static_cast<unsigned char>(std::tolower(ch));
@@ -175,47 +178,45 @@ namespace GrassControl
 
 			// Only used for debug message so it's fine to be slow.
 		public:
-            [[nodiscard]] int GetCount() const;
+			[[nodiscard]] int GetCount() const;
 
 		private:
-			static std::string MakeKey(const std::string &ws, int x, int y);
+			static std::string MakeKey(const std::string& ws, int x, int y);
 
 		public:
-			void UpdatePositionWithRemove(RE::TESWorldSpace *ws, int addType, int nowX, int nowY, int grassRadius) const;
+			void UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius) const;
 
-			void QueueLoad(RE::TESWorldSpace *ws, int x, int y);
+			void QueueLoad(RE::TESWorldSpace* ws, int x, int y);
 
 		private:
 			void _DoUnload(std::shared_ptr<_cell_data> d) const;
 
 		public:
-			void Unload(const RE::TESWorldSpace *ws, int x, int y) const;
+			void Unload(const RE::TESWorldSpace* ws, int x, int y) const;
 
-			void _DoLoad(const RE::TESWorldSpace *ws, int x, int y) const;
+			void _DoLoad(const RE::TESWorldSpace* ws, int x, int y) const;
 		};
 
-		protected:
+	protected:
 		struct Hooks
 		{
 			struct WriteProgress
 			{
 				static void thunk(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
-					if(exists(std::filesystem::path(Util::getProgressFilePath()))) return;
+					if (exists(std::filesystem::path(Util::getProgressFilePath())))
+						return;
 
-					if (*Config::OnlyLoadFromCache)
-                    {
-                        if(cell != nullptr)
-                        {
+					if (*Config::OnlyLoadFromCache) {
+						if (cell != nullptr) {
 							auto ext = cell->GetCoordinates();
 							auto x = ext->cellX;
-                            auto y = ext->cellY;
-                            LO2Map->_DoLoad(cell->worldSpace, x, y);
-                        }
-                    }
-                    else {
-                        Call_AddGrassNow(GrassMgr, cell, unk);
-                    }
+							auto y = ext->cellY;
+							LO2Map->_DoLoad(cell->worldSpace, x, y);
+						}
+					} else {
+						Call_AddGrassNow(GrassMgr, cell, unk);
+					}
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
@@ -242,10 +243,10 @@ namespace GrassControl
 			{
 				if (*Config::ExtendGrassDistance) {
 					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
-                    #ifdef SKYRIM_AE
+#ifdef SKYRIM_AE
 					stl::write_thunk_call<CellSelection>(REL_ID(15206, 15374).address() + OFFSET(0x645C - 0x6200, 0x645C - 0x6200));
 					stl::write_thunk_call<CellSelection>(REL_ID(15204, 15372).address() + OFFSET(0x2F5, 0x2F5));
-                    #endif
+#endif
 				}
 			}
 		};

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <functional>
 #include <mutex>
+#include <string>
+#include <vector>
 
-#include <GrassControl/logging.h>
 #include <GrassControl/Stopwatch.hpp>
 #include <GrassControl/Util.h>
+#include <GrassControl/logging.h>
 
 namespace GrassControl
 {
@@ -21,6 +21,7 @@ namespace GrassControl
 		}
 
 		Profiler();
+
 	private:
 		std::vector<long long> Times = std::vector<long long>();
 
@@ -30,7 +31,7 @@ namespace GrassControl
 
 		stopwatch::Stopwatch* const Timer;
 
-		long long Divide; 
+		long long Divide;
 
 	public:
 		void Begin();

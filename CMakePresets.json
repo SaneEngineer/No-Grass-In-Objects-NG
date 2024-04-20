@@ -66,33 +66,15 @@
     },
     {
       "name": "vs2022-windows-vcpkg-se",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "se"
-      ]
+      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "se"]
     },
     {
       "name": "vs2022-windows-vcpkg-ae",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "ae"
-      ]
+      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "ae"]
     },
     {
       "name": "vs2022-windows-vcpkg-vr",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "vr"
-      ]
+      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "vr"]
     }
   ],
   "buildPresets": [
@@ -128,5 +110,3 @@
     }
   ]
 }
-
-

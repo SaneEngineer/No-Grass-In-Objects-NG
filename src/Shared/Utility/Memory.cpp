@@ -2,11 +2,9 @@
 
 #include "Shared/Utility/Assembly.h"
 
-
-
 namespace Utility::Memory
 {
-	
+
 	std::uintptr_t ReadRelativeCall5(std::uintptr_t address)
 	{
 		return address + sizeof(Assembly::RelativeCall5) + reinterpret_cast<Assembly::RelativeCall5*>(address)->relative32;

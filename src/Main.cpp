@@ -5,7 +5,6 @@ using namespace SKSE;
 using namespace SKSE::log;
 using namespace SKSE::stl;
 
-
 void InitializeHooking()
 {
 	log::trace("Initializing trampoline...");
@@ -16,7 +15,7 @@ void InitializeHooking()
 	GrassControl::GrassControlPlugin::InstallHooks();
 }
 
- void InitializeMessaging()
+void InitializeMessaging()
 {
 	if (!GetMessagingInterface()->RegisterListener([](MessagingInterface::Message* message) {
 			switch (message->type) {
@@ -24,28 +23,26 @@ void InitializeHooking()
 			case MessagingInterface::kPostLoad:  // Called after all plugins have finished running SKSEPlugin_Load.
 				// It is now safe to do multithreaded operations, or operations against other plugins.
 				break;
-			case MessagingInterface::kInputLoaded:   // Called when all game data has been found.
+			case MessagingInterface::kInputLoaded:  // Called when all game data has been found.
 				GrassControl::GrassControlPlugin::init();
 				break;
 			case MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 				// It is now safe to access form data.
 				MenuOpenCloseEventHandler::Register();
-				if(*GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
-		            RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pre-generated Cache from the Nexus");
-		        }
-				if (*GrassControl::Config::GlobalGrassScale != 1.0 && *GrassControl::Config::GlobalGrassScale > 0.0001)
-		        {
-			        RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
-		        }
+				if (*GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
+					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pre-generated Cache from the Nexus");
+				}
+				if (*GrassControl::Config::GlobalGrassScale != 1.0 && *GrassControl::Config::GlobalGrassScale > 0.0001) {
+					RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
+				}
 				break;
 			default:
-			    break;
+				break;
 			}
 		})) {
 		report_and_fail("Unable to register message listener.");
 	}
 }
-
 
 #ifdef SKYRIM_AE
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
@@ -87,32 +84,32 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 }
 #endif
 
-void InitializeLog() {
-		auto path = logger::log_directory();
-	    if (!path) {
-		    report_and_fail("Failed to find standard logging directory"sv);
-	    }
+void InitializeLog()
+{
+	auto path = logger::log_directory();
+	if (!path) {
+		report_and_fail("Failed to find standard logging directory"sv);
+	}
 
-	    *path /= Version::PROJECT;
-	    *path += ".log"sv;
-		auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-        spdlog::level::level_enum level;
-        if(*GrassControl::Config::DebugLogEnable) {
-		    level = spdlog::level::trace;
-        } else {
-		    level = spdlog::level::info;
-        }		
+	*path /= Version::PROJECT;
+	*path += ".log"sv;
+	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
+	spdlog::level::level_enum level;
+	if (*GrassControl::Config::DebugLogEnable) {
+		level = spdlog::level::trace;
+	} else {
+		level = spdlog::level::info;
+	}
 
-		auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-		log->set_level(level);
-		log->flush_on(level);
+	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
+	log->set_level(level);
+	log->flush_on(level);
 
-		spdlog::set_default_logger(std::move(log));
-	    spdlog::set_pattern("[%H:%M:%S:%e] %v"s);
+	spdlog::set_default_logger(std::move(log));
+	spdlog::set_pattern("[%H:%M:%S:%e] %v"s);
 
-	    logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
+	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
 }
-
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
@@ -134,4 +131,3 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	return true;
 }
-

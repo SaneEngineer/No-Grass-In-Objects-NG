@@ -2,46 +2,36 @@
 
 namespace Util
 {
-    std::string Util::getProgressFilePath()
+	std::string Util::getProgressFilePath()
 	{
 		std::string n = _ovFilePath;
-		if (!n.empty())
-		{
+		if (!n.empty()) {
 			return n;
 		}
 
 		// Dumb user mode for .txt.txt file name.
-		try
-		{
+		try {
 			auto fi = std::filesystem::path(_progressFilePath);
-			if (exists(fi))
-			{
+			if (exists(fi)) {
 				_ovFilePath = _progressFilePath;
-			}
-			else
-			{
+			} else {
 				std::string fpath = _progressFilePath + R"(.txt)";
 				fi = std::filesystem::path(fpath);
-				if (exists(fi))
-				{
+				if (exists(fi)) {
 					_ovFilePath = fpath;
 				}
 			}
-		}
-		catch (...)
-		{
-
+		} catch (...) {
 		}
 
-		if (_ovFilePath.empty())
-		{
+		if (_ovFilePath.empty()) {
 			_ovFilePath = _progressFilePath;
 		}
 
 		return _ovFilePath;
 	}
 
-    CachedFormList::CachedFormList() = default;
+	CachedFormList::CachedFormList() = default;
 
 	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
 	{

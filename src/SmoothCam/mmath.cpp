@@ -1,15 +1,19 @@
 #include "GrassControl/mmath.h"
 
-bool mmath::IsInf(const float f) noexcept {
+bool mmath::IsInf(const float f) noexcept
+{
 	return glm::isinf(f);
 }
-bool mmath::IsInf(const double f) noexcept {
+bool mmath::IsInf(const double f) noexcept
+{
 	return glm::isinf(f);
 }
-bool mmath::IsInf(const glm::vec3& v) noexcept {
+bool mmath::IsInf(const glm::vec3& v) noexcept
+{
 	return glm::isinf(v.x) || glm::isinf(v.y) || glm::isinf(v.z);
 }
-bool mmath::IsInf(const glm::vec4& v) noexcept {
+bool mmath::IsInf(const glm::vec4& v) noexcept
+{
 	return glm::isinf(v.x) || glm::isinf(v.y) || glm::isinf(v.z) || glm::isinf(v.w);
 }
 bool mmath::IsInf(const glm::vec<4, float, glm::packed_highp>& v) noexcept
@@ -17,16 +21,20 @@ bool mmath::IsInf(const glm::vec<4, float, glm::packed_highp>& v) noexcept
 	return glm::isinf(v.x) || glm::isinf(v.y) || glm::isinf(v.z) || glm::isinf(v.w);
 }
 
-bool mmath::IsNan(const float f) noexcept {
+bool mmath::IsNan(const float f) noexcept
+{
 	return glm::isnan(f);
 }
-bool mmath::IsNan(const double f) noexcept {
+bool mmath::IsNan(const double f) noexcept
+{
 	return glm::isnan(f);
 }
-bool mmath::IsNan(const glm::vec3& v) noexcept {
+bool mmath::IsNan(const glm::vec3& v) noexcept
+{
 	return glm::isnan(v.x) || glm::isnan(v.y) || glm::isnan(v.z);
 }
-bool mmath::IsNan(const glm::vec4& v) noexcept {
+bool mmath::IsNan(const glm::vec4& v) noexcept
+{
 	return glm::isnan(v.x) || glm::isnan(v.y) || glm::isnan(v.z) || glm::isnan(v.w);
 }
 bool mmath::IsNan(const glm::vec<4, float, glm::packed_highp>& v) noexcept
@@ -34,30 +42,35 @@ bool mmath::IsNan(const glm::vec<4, float, glm::packed_highp>& v) noexcept
 	return glm::isnan(v.x) || glm::isnan(v.y) || glm::isnan(v.z) || glm::isnan(v.w);
 }
 
-bool mmath::IsValid(const float f) noexcept {
+bool mmath::IsValid(const float f) noexcept
+{
 	return !mmath::IsInf(f) && !mmath::IsNan(f);
 }
-bool mmath::IsValid(const double f) noexcept {
+bool mmath::IsValid(const double f) noexcept
+{
 	return !mmath::IsInf(f) && !mmath::IsNan(f);
 }
-bool mmath::IsValid(const glm::vec3& v) noexcept {
+bool mmath::IsValid(const glm::vec3& v) noexcept
+{
 	return !mmath::IsInf(v) && !mmath::IsNan(v);
 }
-bool mmath::IsValid(const glm::vec4& v) noexcept {
+bool mmath::IsValid(const glm::vec4& v) noexcept
+{
 	return !mmath::IsInf(v) && !mmath::IsNan(v);
 }
 bool mmath::IsValid(const glm::vec<4, float, glm::packed_highp>& v) noexcept
 {
 	return !mmath::IsInf(v) && !mmath::IsNan(v);
 }
-	// Return the forward view vector
-glm::vec3 mmath::GetViewVector(const glm::vec3& forwardRefer, float pitch, float yaw) noexcept {
+// Return the forward view vector
+glm::vec3 mmath::GetViewVector(const glm::vec3& forwardRefer, float pitch, float yaw) noexcept
+{
 	auto aproxNormal = glm::vec4(forwardRefer.x, forwardRefer.y, forwardRefer.z, 1.0);
 
 	auto m = glm::identity<glm::mat4>();
 	m = glm::rotate(m, -pitch, glm::vec3(1.0f, 0.0f, 0.0f));
 	aproxNormal = m * aproxNormal;
-	
+
 	m = glm::identity<glm::mat4>();
 	m = glm::rotate(m, -yaw, glm::vec3(0.0f, 0.0f, 1.0f));
 	aproxNormal = m * aproxNormal;
@@ -65,7 +78,8 @@ glm::vec3 mmath::GetViewVector(const glm::vec3& forwardRefer, float pitch, float
 	return static_cast<glm::vec3>(aproxNormal);
 }
 
-glm::vec3 mmath::NiMatrixToEuler(const RE::NiMatrix3& m) noexcept {
+glm::vec3 mmath::NiMatrixToEuler(const RE::NiMatrix3& m) noexcept
+{
 	glm::vec3 rot;
 	const auto a = glm::clamp(-m.entry[2][0], -1.0f, 1.0f);
 	rot.x = glm::clamp(glm::asin(a), -mmath::half_pi, mmath::half_pi) - mmath::half_pi;
@@ -95,7 +109,7 @@ void mmath::DecomposeToBasis(const glm::vec3& point, const glm::vec3& rotation,
 
 	const auto cZsX = cosValues.m128_f32[2] * sineValues.m128_f32[0];
 	const auto sXsZ = sineValues.m128_f32[0] * sineValues.m128_f32[2];
-	
+
 	forward = {
 		cosValues.m128_f32[1] * cosValues.m128_f32[2],
 		-cosValues.m128_f32[1] * sineValues.m128_f32[2],
@@ -119,7 +133,8 @@ void mmath::DecomposeToBasis(const glm::vec3& point, const glm::vec3& rotation,
 	};
 }
 
-glm::mat4 mmath::Perspective(float fov, float aspect, const RE::NiFrustum& frustum) noexcept {
+glm::mat4 mmath::Perspective(float fov, float aspect, const RE::NiFrustum& frustum) noexcept
+{
 	const auto range = frustum.fFar / (frustum.fNear - frustum.fFar);
 	const auto height = 1.0f / glm::tan(fov * 0.5f);
 
@@ -143,13 +158,14 @@ glm::mat4 mmath::Perspective(float fov, float aspect, const RE::NiFrustum& frust
 	proj[3][1] = 0.0f;
 	proj[3][2] = range * frustum.fNear;
 	proj[3][3] = 0.0f;
-	
+
 	// exact match, save for 2,0 2,1 - looks like XMMatrixPerspectiveOffCenterLH with a slightly
 	// different frustum or something. whatever, close enough.
-	return proj; 
+	return proj;
 }
 
-glm::mat4 mmath::LookAt(const glm::vec3& pos, const glm::vec3& at, const glm::vec3& up) noexcept {
+glm::mat4 mmath::LookAt(const glm::vec3& pos, const glm::vec3& at, const glm::vec3& up) noexcept
+{
 	const auto forward = glm::normalize(at - pos);
 	const auto side = glm::normalize(glm::cross(up, forward));
 	const auto u = glm::cross(forward, side);
@@ -163,7 +179,7 @@ glm::mat4 mmath::LookAt(const glm::vec3& pos, const glm::vec3& at, const glm::ve
 	result[0][0] = side.x * -1.0f;
 	result[0][1] = side.y * -1.0f;
 	result[0][2] = side.z * -1.0f;
-	result[0][3] = sDotEye *-1.0f;
+	result[0][3] = sDotEye * -1.0f;
 
 	result[1][0] = u.x;
 	result[1][1] = u.y;
@@ -183,58 +199,68 @@ glm::mat4 mmath::LookAt(const glm::vec3& pos, const glm::vec3& at, const glm::ve
 	return glm::transpose(result);
 }
 
-
-void mmath::Rotation::SetEuler(float pitch, float yaw) noexcept {
+void mmath::Rotation::SetEuler(float pitch, float yaw) noexcept
+{
 	euler.x = pitch;
 	euler.y = yaw;
 	dirty = true;
 }
 
-void mmath::Rotation::SetQuaternion(const glm::quat& q) noexcept {
+void mmath::Rotation::SetQuaternion(const glm::quat& q) noexcept
+{
 	quat = q;
 	euler.x = glm::pitch(q) * -1.0f;
-	euler.y = glm::roll(q) * -1.0f; // The game stores yaw in the Z axis
+	euler.y = glm::roll(q) * -1.0f;  // The game stores yaw in the Z axis
 	dirty = true;
 }
 
-void mmath::Rotation::SetQuaternion(const RE::NiQuaternion& q) noexcept {
+void mmath::Rotation::SetQuaternion(const RE::NiQuaternion& q) noexcept
+{
 	SetQuaternion(glm::quat{ q.w, q.x, q.y, q.z });
 }
 
-void mmath::Rotation::CopyFrom(const RE::TESObjectREFR* ref) noexcept {
+void mmath::Rotation::CopyFrom(const RE::TESObjectREFR* ref) noexcept
+{
 	SetEuler(ref->data.angle.x, ref->data.angle.z);
 }
 
-void mmath::Rotation::UpdateQuaternion() noexcept {
+void mmath::Rotation::UpdateQuaternion() noexcept
+{
 	quat = glm::quat(glm::vec3{ -euler.x, 0.0f, -euler.y });
 }
 
-glm::quat mmath::Rotation::InverseQuat() const noexcept {
+glm::quat mmath::Rotation::InverseQuat() const noexcept
+{
 	return glm::quat(glm::vec3{ euler.x, 0.0f, euler.y });
 }
 
-RE::NiQuaternion mmath::Rotation::InverseNiQuat() const noexcept {
+RE::NiQuaternion mmath::Rotation::InverseNiQuat() const noexcept
+{
 	const auto q = InverseQuat();
 	return { q.w, q.x, q.y, q.z };
 }
 
-RE::NiQuaternion mmath::Rotation::ToNiQuat() const noexcept {
+RE::NiQuaternion mmath::Rotation::ToNiQuat() const noexcept
+{
 	return { quat.w, quat.x, quat.y, quat.z };
 }
 
-RE::NiPoint2 mmath::Rotation::ToNiPoint2() const noexcept {
+RE::NiPoint2 mmath::Rotation::ToNiPoint2() const noexcept
+{
 	return { euler.x, euler.y };
 }
 
-RE::NiPoint3 mmath::Rotation::ToNiPoint3() const noexcept {
+RE::NiPoint3 mmath::Rotation::ToNiPoint3() const noexcept
+{
 	return { euler.x, 0.0f, euler.y };
 }
 
-glm::mat4 mmath::Rotation::ToRotationMatrix() noexcept {
+glm::mat4 mmath::Rotation::ToRotationMatrix() noexcept
+{
 	if (dirty) {
 		mat = glm::identity<glm::mat4>();
-		mat = glm::rotate(mat, -euler.y, { 0.0f, 0.0f, 1.0f }); // yaw
-		mat = glm::rotate(mat, -euler.x, { 1.0f, 0.0f, 0.0f }); // pitch
+		mat = glm::rotate(mat, -euler.y, { 0.0f, 0.0f, 1.0f });  // yaw
+		mat = glm::rotate(mat, -euler.x, { 1.0f, 0.0f, 0.0f });  // pitch
 		dirty = false;
 	}
 	return mat;

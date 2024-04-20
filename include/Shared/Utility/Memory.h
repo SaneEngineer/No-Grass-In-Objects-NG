@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 namespace Utility::Memory
 {
 	template <class First, class... Rest>
@@ -47,13 +45,13 @@ namespace Utility::Memory
 	std::uintptr_t ReadRelativeCall5(std::uintptr_t address);
 	std::uintptr_t ReadRelativeJump5(std::uintptr_t address);
 	std::uintptr_t ReadVirtualFunction(std::uintptr_t address, std::size_t index);
-	void           SafeWriteAbsoluteCall(std::uintptr_t address, std::uintptr_t function);
-	void           SafeWriteAbsoluteJump(std::uintptr_t address, std::uintptr_t function);
-	void           SafeWriteRelativeCall5(std::uintptr_t address, std::uintptr_t function);
-	void           SafeWriteRelativeCall6(std::uintptr_t address, std::uintptr_t functionAddress);
-	void           SafeWriteRelativeJump5(std::uintptr_t address, std::uintptr_t function);
-	void           SafeWriteRelativeJump6(std::uintptr_t address, std::uintptr_t functionAddress);
-	void           SafeWriteVirtualFunction(std::uintptr_t address, std::size_t index, std::uintptr_t function);
+	void SafeWriteAbsoluteCall(std::uintptr_t address, std::uintptr_t function);
+	void SafeWriteAbsoluteJump(std::uintptr_t address, std::uintptr_t function);
+	void SafeWriteRelativeCall5(std::uintptr_t address, std::uintptr_t function);
+	void SafeWriteRelativeCall6(std::uintptr_t address, std::uintptr_t functionAddress);
+	void SafeWriteRelativeJump5(std::uintptr_t address, std::uintptr_t function);
+	void SafeWriteRelativeJump6(std::uintptr_t address, std::uintptr_t functionAddress);
+	void SafeWriteVirtualFunction(std::uintptr_t address, std::size_t index, std::uintptr_t function);
 
 	template <class First, class... Rest>
 	bool MatchPattern(std::uintptr_t address, const First& first, const Rest&... rest);
@@ -85,8 +83,7 @@ namespace Utility::Memory
 	template <class First, class... Rest>
 	bool MatchPattern(std::uintptr_t address, const First& first, const Rest&... rest)
 	{
-		if (!Memory::MatchPattern(address, first))
-		{
+		if (!Memory::MatchPattern(address, first)) {
 			return false;
 		}
 
@@ -102,10 +99,8 @@ namespace Utility::Memory
 	template <class Last, std::size_t Count>
 	bool MatchPattern(std::uintptr_t address, const Last (&last)[Count])
 	{
-		for (std::size_t index = 0; index < Count; ++index)
-		{
-			if (!Memory::MatchPattern(address + (Memory::SizeOf<Last>::Implementation() * index), last[index]))
-			{
+		for (std::size_t index = 0; index < Count; ++index) {
+			if (!Memory::MatchPattern(address + (Memory::SizeOf<Last>::Implementation() * index), last[index])) {
 				return false;
 			}
 		}
@@ -124,8 +119,7 @@ namespace Utility::Memory
 	{
 		std::uint32_t oldProtect;
 
-		if (::VirtualProtect(reinterpret_cast<::LPVOID>(address), Memory::SizeOf<Arguments...>::Implementation(), PAGE_EXECUTE_READWRITE, reinterpret_cast<::PDWORD>(std::addressof(oldProtect))))
-		{
+		if (::VirtualProtect(reinterpret_cast<::LPVOID>(address), Memory::SizeOf<Arguments...>::Implementation(), PAGE_EXECUTE_READWRITE, reinterpret_cast<::PDWORD>(std::addressof(oldProtect)))) {
 			Memory::Write(address, arguments...);
 			::VirtualProtect(reinterpret_cast<::LPVOID>(address), Memory::SizeOf<Arguments...>::Implementation(), oldProtect, reinterpret_cast<::PDWORD>(std::addressof(oldProtect)));
 		}
@@ -147,8 +141,7 @@ namespace Utility::Memory
 	template <class Last, std::size_t Count>
 	void Write(std::uintptr_t address, const Last (&last)[Count])
 	{
-		for (std::size_t index = 0; index < Count; ++index)
-		{
+		for (std::size_t index = 0; index < Count; ++index) {
 			Memory::Write(address + (Memory::SizeOf<Last>::Implementation() * index), last[index]);
 		}
 	}
@@ -156,8 +149,7 @@ namespace Utility::Memory
 	template <class Last>
 	void Write(std::uintptr_t address, const std::optional<Last>& last)
 	{
-		if (last.has_value())
-		{
+		if (last.has_value()) {
 			Memory::Write(address, last.value());
 		}
 	}

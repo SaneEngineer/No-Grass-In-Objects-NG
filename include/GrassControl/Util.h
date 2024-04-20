@@ -2,8 +2,8 @@
 
 namespace Util
 {
-    inline std::string _ovFilePath;
-    const std::string _progressFilePath = R"(PrecacheGrass.txt)";
+	inline std::string _ovFilePath;
+	const std::string _progressFilePath = R"(PrecacheGrass.txt)";
 
 	std::string getProgressFilePath();
 
@@ -23,16 +23,13 @@ namespace Util
 
 	void SetGameSettingString(const std::string a_name, std::string a_value);
 
-
 	class CachedFormList final
 	{
-
 		CachedFormList();
 
 		std::vector<RE::TESForm*> Forms = std::vector<RE::TESForm*>();
 
 		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
-
 
 	public:
 		static CachedFormList* TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
@@ -43,7 +40,7 @@ namespace Util
 
 		std::vector<RE::TESForm*> getAll() const;
 	};
-	
+
 	// Function object for case insensitive comparison
 	struct case_insensitive_compare
 	{
@@ -59,11 +56,10 @@ namespace Util
 		static std::wstring to_lower(const std::wstring& a)
 		{
 			std::wstring s(a);
-			for (auto& c : s)
-			{
+			for (auto& c : s) {
 				c = tolower(c);
 			}
-		    //	transform(a.begin(), a.end(), a.begin(), ::tolower);
+			//	transform(a.begin(), a.end(), a.begin(), ::tolower);
 			return s;
 		}
 
@@ -94,12 +90,12 @@ namespace Util
 
 		static std::vector<std::string> split(const std::string& str, char delim, const bool RemoveEmpty)
 		{
-		    std::stringstream ss(str); 
+			std::stringstream ss(str);
 			std::string token;
-		    std::vector<std::string> tokens; 
-		    while (getline(ss, token, delim)) { 
-                tokens.push_back(token); 
-            } 
+			std::vector<std::string> tokens;
+			while (getline(ss, token, delim)) {
+				tokens.push_back(token);
+			}
 			if (RemoveEmpty) {
 				for (int i = 0; i < tokens.size();) {
 					if (tokens[i].empty()) {
@@ -113,16 +109,15 @@ namespace Util
 
 		static std::vector<std::string> Split_at_any(const std::string& str, const std::vector<char>& delims, const bool RemoveEmpty)
 		{
-		    // Make a copy of the string
+			// Make a copy of the string
 			std::string tmp = str;
-		    constexpr char finalDelim = ',';
+			constexpr char finalDelim = ',';
 
-			for(auto delim : delims) {
-			    std::ranges::replace(tmp, delim, finalDelim); // replace all 'x' to 'y'
+			for (auto delim : delims) {
+				std::ranges::replace(tmp, delim, finalDelim);  // replace all 'x' to 'y'
 			}
 
 			return split(tmp, finalDelim, RemoveEmpty);
-
 		}
 
 		static std::string trim(std::string_view s)
