@@ -216,6 +216,7 @@ target_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/external/DKUtil/include
 	${CLIB_UTIL_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0
 )
 
 target_link_libraries(

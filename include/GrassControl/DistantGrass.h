@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CasualLibrary/CasualLibrary.hpp"
+#include "CasualLibrary.hpp"
 #include "GrassControl/GidFileCache.h"
 #include "GrassControl/Main.h"
 
