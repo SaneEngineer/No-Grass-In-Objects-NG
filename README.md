@@ -6,7 +6,7 @@ This is a port of No Grass in Objects rewritten using Commonlib, The main featur
 
 ## Installation Instructions:
 
-1. The Mod Organizer 2 plugin from the original mod: [`Grass Generation MO2 Plugin v1 (fix)`](https://www.nexusmods.com/skyrimspecialedition/mods/42161?tab=files).
+1. Download and install the Mod Organizer 2 plugin from the original mod into your MO2 plugins directory, located here: [`Grass Generation MO2 Plugin v1 (fix)`](https://www.nexusmods.com/skyrimspecialedition/mods/42161?tab=files).
  - You will need to edit lines 56 and 57 to reflect `grassPluginPath = "SKSE/Plugins/"` and `grassPlugin = "*NGIO-NG.dll"`, as shown below.
 
     ![Screenshot 2024-04-20 080244](https://github.com/AllstaRawR/No-Grass-In-Objects-NG/assets/164591926/af9cced5-e1f9-49b8-8014-863e6195d87f)
