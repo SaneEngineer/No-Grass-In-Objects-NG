@@ -29,10 +29,10 @@ void InitializeMessaging()
 			case MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 				// It is now safe to access form data.
 				MenuOpenCloseEventHandler::Register();
-				if (*GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
+				if (GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
 					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pre-generated Cache from the Nexus");
 				}
-				if (*GrassControl::Config::GlobalGrassScale != 1.0 && *GrassControl::Config::GlobalGrassScale > 0.0001) {
+				if (GrassControl::Config::GlobalGrassScale != 1.0 && GrassControl::Config::GlobalGrassScale > 0.0001) {
 					RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
 				}
 				break;
@@ -95,7 +95,7 @@ void InitializeLog()
 	*path += ".log"sv;
 	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 	spdlog::level::level_enum level;
-	if (*GrassControl::Config::DebugLogEnable) {
+	if (GrassControl::Config::DebugLogEnable) {
 		level = spdlog::level::trace;
 	} else {
 		level = spdlog::level::info;
@@ -121,7 +121,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-	GrassControl::Config::load();
+	GrassControl::Config::ReadSettings();
 	InitializeLog();
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());

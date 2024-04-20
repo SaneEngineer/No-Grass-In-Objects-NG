@@ -181,7 +181,7 @@ namespace GrassControl
 
 			static void Install()
 			{
-				if (*Config::UseGrassCache) {
+				if (Config::UseGrassCache) {
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
 

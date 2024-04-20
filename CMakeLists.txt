@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "NGIO-NG" CACHE STRING "")
-set(VERSION 1.0.0 CACHE STRING "")
+set(VERSION 1.0.9 CACHE STRING "")
 set(VR_VERSION 2)
 set(AE_VERSION 1)
 
@@ -160,8 +160,6 @@ else()
 	)
 endif()
 
-find_dependency_path(DKUtil include/DKUtil/Logger.hpp)
-
 # GLM
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
@@ -214,7 +212,6 @@ target_include_directories(
 	PRIVATE
 	${CMAKE_CURRENT_BINARY_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/external/DKUtil/include
 	${CLIB_UTIL_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0
 )
@@ -224,8 +221,6 @@ target_link_libraries(
 	PRIVATE
 	${CommonLibName}::${CommonLibName}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
-	INTERFACE
-	DKUtil::DKUtil
 )
 
 target_precompile_headers(

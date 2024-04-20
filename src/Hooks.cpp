@@ -4,7 +4,7 @@ namespace GrassControl
 {
 	double SetScale(double xmm11)
 	{
-		return xmm11 * *Config::GlobalGrassScale;
+		return xmm11 * Config::GlobalGrassScale;
 	}
 
 	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
@@ -22,7 +22,7 @@ namespace GrassControl
 
 	void GrassControlPlugin::Update()
 	{
-		if (!*Config::UseGrassCache)
+		if (!Config::UseGrassCache)
 			return;
 
 		if (_did_mainMenu == 0)
@@ -47,24 +47,24 @@ namespace GrassControl
 	void GrassControlPlugin::OnMainMenuOpen()
 	{
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
-		if (*Config::UseGrassCache && exists(fi)) {
+		if (Config::UseGrassCache && exists(fi)) {
 			_did_mainMenu = 1;
 			Memory::Internal::write<uint8_t>(RELOCATION_ID(508798, 380767).address() + 8, 1);  // Skyrim.ini [General] bAlwaysActive=1
 			Memory::Internal::write<uint8_t>(RELOCATION_ID(501125, 359439).address() + 8, 0);  // Skyrim.ini [Grass] bAllowLoadGrass=0
 		}
 
-		if (*Config::RayCast) {
-			std::string formsStr = *Config::RayCastIgnoreForms;
+		if (Config::RayCast) {
+			std::string formsStr = Config::RayCastIgnoreForms;
 			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, true);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
-			Cache = std::make_unique<RaycastHelper>(std::stof(Version::NAME.data()), *Config::RayCastHeight, *Config::RayCastDepth, *Config::RayCastCollisionLayers, cachedList);
+			Cache = std::make_unique<RaycastHelper>(std::stof(Version::NAME.data()), Config::RayCastHeight, Config::RayCastDepth, Config::RayCastCollisionLayers, cachedList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
-		if (*Config::ExtendGrassDistance) {
-			if (!*Config::UseGrassCache || !*Config::OnlyLoadFromCache) {
+		if (Config::ExtendGrassDistance) {
+			if (!Config::UseGrassCache || !Config::OnlyLoadFromCache) {
 				warn_extend_without_cache();
 			}
 		}
@@ -76,39 +76,39 @@ namespace GrassControl
 		auto list = { std::to_string(static_cast<int>(RE::COL_LAYER::kStatic)), std::to_string(static_cast<int>(RE::COL_LAYER::kAnimStatic)), std::to_string(static_cast<int>(RE::COL_LAYER::kTerrain)), std::to_string(static_cast<int>(RE::COL_LAYER::kDebrisLarge)), std::to_string(static_cast<int>(RE::COL_LAYER::kStairHelper)) };
 		std::ranges::copy(list.begin(), list.end(), std::ostream_iterator<std::string, char>(s, " "));
 
-		*Config::RayCastCollisionLayers = s.str();
+		Config::RayCastCollisionLayers = s.str();
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
-		if (*Config::UseGrassCache && exists(fi)) {
-			*Config::OnlyLoadFromCache = false;
+		if (Config::UseGrassCache && exists(fi)) {
+			Config::OnlyLoadFromCache = false;
 
 			GidFileGenerationTask::apply();
 
-			*Config::ExtendGrassDistance = false;
-			*Config::DynDOLODGrassMode = 0;
+			Config::ExtendGrassDistance = false;
+			Config::DynDOLODGrassMode = 0;
 		}
 
-		switch (*Config::DynDOLODGrassMode) {
+		switch (Config::DynDOLODGrassMode) {
 		case 1:
 			{
-				*Config::OverwriteGrassDistance = 999999.0;
-				*Config::OverwriteGrassFadeRange = 0.0;
-				*Config::ExtendGrassDistance = false;
+				Config::OverwriteGrassDistance = 999999.0;
+				Config::OverwriteGrassFadeRange = 0.0;
+				Config::ExtendGrassDistance = false;
 			}
 			break;
 
 		case 2:
 			{
-				*Config::OverwriteGrassDistance = 999999.0;
-				*Config::OverwriteGrassFadeRange = 0.0;
-				*Config::ExtendGrassDistance = true;
+				Config::OverwriteGrassDistance = 999999.0;
+				Config::OverwriteGrassFadeRange = 0.0;
+				Config::ExtendGrassDistance = true;
 			}
 			break;
 		default:
 			break;
 		}
 
-		if (*Config::RayCast) {
+		if (Config::RayCast) {
 			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET((0x723A - 0x6CE0), 0x664);
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -171,16 +171,16 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		}
 
-		if (*Config::SuperDenseGrass) {
+		if (Config::SuperDenseGrass) {
 			// Make amount big.
 			auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xAE5 - 0x890, 0x258);
-			int mode = std::max(0, std::min(12, static_cast<int>(*Config::SuperDenseMode)));
+			int mode = std::max(0, std::min(12, static_cast<int>(Config::SuperDenseMode)));
 			if (mode != 7) {
 				Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
 			}
 		}
 
-		if (*Config::ExtendGrassCount) {
+		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
 			if (auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x68))) {
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
@@ -229,22 +229,22 @@ namespace GrassControl
 			}
 		}
 
-		if (*Config::UseGrassCache) {
-			GidFileCache::FixFileFormat(*Config::OnlyLoadFromCache);
+		if (Config::UseGrassCache) {
+			GidFileCache::FixFileFormat(Config::OnlyLoadFromCache);
 		}
 
-		if (*Config::ExtendGrassDistance) {
+		if (Config::ExtendGrassDistance) {
 			DistantGrass::InstallHooks();
-			DistantGrass::ReplaceGrassGrid(*Config::OnlyLoadFromCache);
+			DistantGrass::ReplaceGrassGrid(Config::OnlyLoadFromCache);
 		}
 
-		if (*Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
+		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
 			if (auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68)))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
-				uint32_t max = std::max(static_cast<int>(*Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
+				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
 
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -272,7 +272,7 @@ namespace GrassControl
 			}
 		}
 
-		if (*Config::OverwriteGrassDistance >= 0.0) {
+		if (Config::OverwriteGrassDistance >= 0.0) {
 			auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
 			if (!setting) {
 				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
@@ -281,10 +281,10 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = *Config::OverwriteGrassDistance;
+			setting->data.f = Config::OverwriteGrassDistance;
 		}
 
-		if (*Config::OverwriteGrassFadeRange >= 0.0) {
+		if (Config::OverwriteGrassFadeRange >= 0.0) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
 			if (!setting) {
 				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
@@ -293,10 +293,10 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = *Config::OverwriteGrassFadeRange;
+			setting->data.f = Config::OverwriteGrassFadeRange;
 		}
 
-		if (*Config::OverwriteMinGrassSize >= 0) {
+		if (Config::OverwriteMinGrassSize >= 0) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("iMinGrassSize:Grass");
 			if (!setting) {
 				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("iMinGrassSize:Grass");
@@ -305,10 +305,10 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.i = *Config::OverwriteMinGrassSize;
+			setting->data.i = Config::OverwriteMinGrassSize;
 		}
 
-		if (*Config::GlobalGrassScale != 1.0 && *Config::GlobalGrassScale > 0.0001) {
+		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
 #ifdef SKYRIM_AE
 			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x75F);
 			struct Patch : Xbyak::CodeGenerator

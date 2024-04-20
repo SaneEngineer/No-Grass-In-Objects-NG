@@ -122,8 +122,8 @@ namespace Util
 
 		static std::string trim(std::string_view s)
 		{
-			s.remove_prefix(std::min(s.find_first_not_of(" \t\r\v\n"), s.size()));
-			s.remove_suffix(std::min(s.size() - s.find_last_not_of(" \t\r\v\n") - 1, s.size()));
+			s.remove_prefix(std::min(s.find_first_not_of("\r\v\n"), s.size()));
+			s.remove_suffix(std::min(s.size() - s.find_last_not_of("\r\v\n") - 1, s.size()));
 
 			return std::string{ s };
 		}

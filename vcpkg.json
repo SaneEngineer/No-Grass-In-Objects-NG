@@ -2,7 +2,6 @@
   "name": "ngio-ng",
   "builtin-baseline": "b7dba7f9aad09a56900f21cd78cfda1258e54e38",
   "dependencies": [
-    "autotoml",
     "glm",
     "nlohmann-json",
     "rapidcsv",

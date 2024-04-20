@@ -1,4 +1,5 @@
 set(sources ${sources}
+	src/Config.cpp
 	src/DistantGrass.cpp
 	src/Events.cpp
 	src/GidFileCache.cpp

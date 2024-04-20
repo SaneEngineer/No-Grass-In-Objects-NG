@@ -7,59 +7,34 @@ namespace GrassControl
 {
 	class Config
 	{
-	private:
-		using ISetting = AutoTOML::ISetting;
-
 	public:
-		using bSetting = AutoTOML::bSetting;
-		using fSetting = AutoTOML::fSetting;
-		using iSetting = AutoTOML::iSetting;
-		using sSetting = AutoTOML::sSetting;
+		static void ReadSettings();
+		static void WriteSettings();
 
-		static inline bSetting DebugLogEnable{ "Debug", "Debug-Log-Enable", false };
+		static inline bool DebugLogEnable = false;
 
-		static inline bSetting RayCast{ "RayCastConfig", "Ray-cast-enabled", true };
-		static inline fSetting RayCastHeight{ "RayCastConfig", "Ray-cast-height", 150.0 };
-		static inline fSetting RayCastDepth{ "RayCastConfig", "Ray-cast-depth", 5.0 };
-		static inline sSetting RayCastCollisionLayers{ "RayCastConfig", "Ray-cast-collision-layers", "1 2 13 20 31" };
-		static inline sSetting RayCastIgnoreForms{ "RayCastConfig", "Ray-cast-ignore-forms", "" };
+		static inline bool RayCast = true;
+		static inline double RayCastHeight = 150.0;
+		static inline double RayCastDepth = 5.0;
+		static inline std::string RayCastCollisionLayers = "1 2 13 20 31";
+		static inline std::string RayCastIgnoreForms = "";
 
-		static inline bSetting SuperDenseGrass{ "GrassConfig", "Super-dense-grass", false };
-		static inline iSetting SuperDenseMode{ "GrassConfig", "Super-dense-mode", 8 };
-		static inline bSetting ProfilerReport{ "GrassConfig", "Profiler-report", false };
-		static inline bSetting UseGrassCache{ "GrassConfig", "Use-grass-cache", false };
-		static inline bSetting ExtendGrassDistance{ "GrassConfig", "Extend-grass-distance", false };
-		static inline bSetting ExtendGrassCount{ "GrassConfig", "Extend-grass-count", true };
-		static inline iSetting EnsureMaxGrassTypesPerTextureSetting{ "GrassConfig", "Ensure-max-grass-types-setting", 7 };
-		static inline fSetting OverwriteGrassDistance{ "GrassConfig", "Overwrite-grass-distance", 6000.0 };
-		static inline fSetting OverwriteGrassFadeRange{ "GrassConfig", "Overwrite-grass-fade-range", 3000.0 };
-		static inline iSetting OverwriteMinGrassSize{ "GrassConfig", "Overwrite-min-grass-size", -1 };
-		static inline fSetting GlobalGrassScale{ "GrassConfig", "Global-grass-scale", 1.0 };
-		static inline bSetting OnlyLoadFromCache{ "GrassConfig", "Only-load-from-cache", false };
-		static inline sSetting SkipPregenerateWorldSpaces{ "GrassConfig", "Skip-pregenerate-world-spaces", "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace" };
-		static inline sSetting OnlyPregenerateWorldSpaces{ "GrassConfig", "Only-pregenerate-world-spaces", "" };
-		static inline iSetting DynDOLODGrassMode{ "GrassConfig", "DynDOLOD-Grass-Mode", 0 };
+		static inline bool SuperDenseGrass = false;
+		static inline int SuperDenseMode = 8;
+		static inline bool ProfilerReport = false;
+		static inline bool UseGrassCache = false;
+		static inline bool ExtendGrassDistance = false;
+		static inline bool ExtendGrassCount = true;
+		static inline int EnsureMaxGrassTypesPerTextureSetting = 7;
+		static inline double OverwriteGrassDistance = 6000.0;
+		static inline double OverwriteGrassFadeRange = 3000.0;
+		static inline int OverwriteMinGrassSize = -1;
+		static inline double GlobalGrassScale = 1.0;
+		static inline bool OnlyLoadFromCache = false;
+		static inline std::string SkipPregenerateWorldSpaces = "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace";
+		static inline std::string OnlyPregenerateWorldSpaces = "";
+		static inline int DynDOLODGrassMode = 0;
 
-		static void load()
-		{
-			try {
-				const auto table = toml::parse_file("Data/SKSE/Plugins/GrassControl.toml"s);
-				for (const auto& setting : ISetting::get_settings()) {
-					try {
-						setting->load(table);
-					} catch (const std::exception& e) {
-						logger::warn(fmt::runtime(e.what()));
-					}
-				}
-			} catch (const toml::parse_error& e) {
-				std::ostringstream ss;
-				ss
-					<< "Error parsing file \'" << *e.source().path << "\':\n"
-					<< '\t' << e.description() << '\n'
-					<< "\t\t(" << e.source().begin << ')';
-				logger::error(fmt::runtime(ss.str()));
-				throw std::runtime_error("failed to load settings"s);
-			}
-		}
+		constexpr static inline std::string_view iniPath = "Data/SKSE/Plugins/GrassControl.ini";
 	};
 }

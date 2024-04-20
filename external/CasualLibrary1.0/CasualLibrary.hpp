@@ -24,9 +24,9 @@
 #pragma warning(disable : 6387)
 #endif
 
-#if defined(_MSVC_LANG) && _MSVC_LANG >= 201703L || __cplusplus >= 201703L
+//#if defined(_MSVC_LANG) && _MSVC_LANG >= 201703L || __cplusplus >= 201703L
 #define CPP17GRT
-#endif
+//#endif
 
 namespace Helper {
 	[[nodiscard]] bool matchingBuilt(const HANDLE process) noexcept;
@@ -129,7 +129,7 @@ namespace Memory {
                     if (!VirtualProtectEx(handle, mbi.BaseAddress, mbi.RegionSize, PAGE_READWRITE, &mbi.Protect)) {
                         return T{};
                     }
-#if(__cplusplus >= 201703L)               	
+#ifdef   CPP17GRT           	
                     if constexpr (is_any_type<T, const char*, std::string, char*>()) {
                         constexpr const std::size_t size = 200;
                         std::vector<char> chars(size);
@@ -330,11 +330,16 @@ namespace Memory {
                         return;
                     }
 
-                    if (mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS)) {
-                        if (!VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_READWRITE, &mbi.Protect)) {
-                            return;
-                        }
-
+                    if (mbi.Protect & (PAGE_GUARD | PAGE_NOCACHE | PAGE_NOACCESS | PAGE_READONLY | PAGE_EXECUTE_READ)) {
+						if (!(mbi.Protect & PAGE_EXECUTE_READ)) {
+                            if (!VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_READWRITE, &mbi.Protect)) {
+                                return;
+                            }
+					    }	else {
+							if (!VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &mbi.Protect)) {
+								return;
+							}
+					    }
                         *reinterpret_cast<T*>(address) = value;
 
                         DWORD dwOldProtect;

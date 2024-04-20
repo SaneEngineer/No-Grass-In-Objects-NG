@@ -207,7 +207,7 @@ namespace GrassControl
 					if (exists(std::filesystem::path(Util::getProgressFilePath())))
 						return;
 
-					if (*Config::OnlyLoadFromCache) {
+					if (Config::OnlyLoadFromCache) {
 						if (cell != nullptr) {
 							auto ext = cell->GetCoordinates();
 							auto x = ext->cellX;
@@ -241,7 +241,7 @@ namespace GrassControl
 
 			static void Install()
 			{
-				if (*Config::ExtendGrassDistance) {
+				if(Config::ExtendGrassDistance) {
 					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 #ifdef SKYRIM_AE
 					stl::write_thunk_call<CellSelection>(REL_ID(15206, 15374).address() + OFFSET(0x645C - 0x6200, 0x645C - 0x6200));

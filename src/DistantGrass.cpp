@@ -252,6 +252,8 @@ namespace GrassControl
 			} else if (d->State == _cell_data::_cell_states::Loading) {
 				REL::Relocation<void (*)(RE::BGSGrassManager*, RE::TESObjectCELL*)> func{ RELOCATION_ID(15206, 15374) };
 
+				if(d->DummyCell_Ptr == nullptr) return;
+
 				func(RE::BGSGrassManager::GetSingleton(), d->DummyCell_Ptr);
 				d->State = _cell_data::_cell_states::Loaded;
 			} else if (d->DummyCell_Ptr != nullptr) {
@@ -277,7 +279,7 @@ namespace GrassControl
 			if (!c) {
 				SKSE::log::debug("RemoveGrassDueToAdd(null): warning: c == null");
 			}
-		} else if (*Config::DebugLogEnable) {
+		} else if (Config::DebugLogEnable) {
 			SKSE::log::debug("RemoveGrassDueToAdd(null)");
 		}
 	}
@@ -332,39 +334,11 @@ namespace GrassControl
 			int radius = getChosenGrassGridRadius();
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("iGrassCellRadius:Grass");
 			setting->data.i = radius;
-			/*
-			if (auto addr = (RELOCATION_ID(15202, 15370).address() + (0xA0E - 0x890)); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + (0xA0E - 0x890))) {
-				//Memory::WriteHook( { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
-
-				struct Patch : Xbyak::CodeGenerator
-				{
-					explicit Patch(uintptr_t a_target, int Radius)
-					{
-						Xbyak::Label retnLabel;
-
-						mov(eax, ptr[Radius]);
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x6);
-
-					}
-				};
-				Patch patch(addr, radius);
-				patch.ready();
-
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			}
-			else {
-				stl::report_and_fail("Failed to set correct iGrassCellRadius");
-			}
-			*/
 		}
 
 		// Unload old grass, load new grass. But we have replaced how the grid works now.
 		uintptr_t addr;
-
+		
 		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0xA06 - 0x220, 0xA1D)); REL::make_pattern<"8B 3D">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0xA06 - 0x220, 0xA1D))) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
 
@@ -415,7 +389,7 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to Unload Old Grass");
 		}
-
+		
 		if (addr = RELOCATION_ID(13190, 13335).address(); REL::make_pattern<"48 89 74 24 10">().match(RELOCATION_ID(13190, 13335).address())) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 
@@ -453,9 +427,9 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to load New Grass");
 		}
-
+		
 		Memory::Internal::write<uint8_t>(addr + 5, 0xC3, true);
-
+		
 		if (addr = RELOCATION_ID(13191, 13336).address(); REL::make_pattern<"48 89 74 24 10">().match(RELOCATION_ID(13191, 13336).address())) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
@@ -492,7 +466,7 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to load New Grass");
 		}
-
+		
 		Memory::Internal::write<uint8_t>(addr + 5, 0xC3, true);
 
 		// cell dtor
@@ -550,7 +524,7 @@ namespace GrassControl
 				stl::report_and_fail("Failed to load New Grass");
 			}
 		}
-
+		
 		// unloading cell
 		if (!load_only) {
 			if (addr = RELOCATION_ID(13623, 13721).address() + OFFSET(0xC0F8 - 0xBF90, 0x1E8); REL::make_pattern<"E8">().match(RELOCATION_ID(13623, 13721).address() + OFFSET(0xC0F8 - 0xBF90, 0x1E8))) {
@@ -609,7 +583,7 @@ namespace GrassControl
 				stl::report_and_fail("Failed to Remove Grass");
 			}
 		}
-
+		
 		// Fix weird shape selection.
 		// Vanilla game groups shape selection by 12 x 12 cells, we want a shape per cell.
 #ifndef SKYRIM_AE
@@ -1166,6 +1140,7 @@ namespace GrassControl
 
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch5));
 		}
+		
 	}
 
 	bool DistantGrass::_canUpdateGridNormal = false;
@@ -1173,7 +1148,7 @@ namespace GrassControl
 
 	float DistantGrass::getChosenGrassFadeRange()
 	{
-		float r = *Config::OverwriteGrassFadeRange;
+		float r = Config::OverwriteGrassFadeRange;
 		if (r < 0.0f) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
 			r = setting->data.f;
@@ -1188,7 +1163,7 @@ namespace GrassControl
 	{
 		int r = _chosenGrassGridRadius;
 		if (r < 0) {
-			float dist = *Config::OverwriteGrassDistance;
+			float dist = Config::OverwriteGrassDistance;
 			if (dist < 0.0f) {
 				auto addr = RELOCATION_ID(501108, 359413).address();
 				dist = Memory::Internal::read<float>(addr + 8);
@@ -1201,7 +1176,7 @@ namespace GrassControl
 
 			int icells = static_cast<int>(std::ceil(cells));
 
-			switch (*Config::DynDOLODGrassMode) {
+			switch (Config::DynDOLODGrassMode) {
 			case 1:
 				icells = Memory::Internal::read<int>(addr_uGrids + 8) / 2;
 				break;
@@ -1223,8 +1198,8 @@ namespace GrassControl
 			}
 
 			int imin = 0;
-			if (*Config::OverwriteMinGrassSize >= 0) {
-				imin = *Config::OverwriteMinGrassSize;
+			if (Config::OverwriteMinGrassSize >= 0) {
+				imin = Config::OverwriteMinGrassSize;
 			} else {
 				try {
 					imin = Memory::Internal::read<int>(RELOCATION_ID(501113, 359421).address() + 8);
