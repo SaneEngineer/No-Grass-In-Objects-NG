@@ -26,7 +26,7 @@ This can be found by opening Steam and locating Skyrim SE in your game library, 
 
 ---
 
-##Common Issues:
+## Common Issues:
 * Instant completion of Caching or completion of caching for only some worldspaces.
   - Check `Skip-pregenerate-world-spaces` and `Only-pregenerate-world-spaces`, make sure that both of these options are only one line.
 * Crashing while Caching
