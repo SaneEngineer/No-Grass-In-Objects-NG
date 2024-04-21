@@ -105,7 +105,15 @@ namespace GrassControl
 
 	std::string DistantGrass::LoadOnlyCellInfoContainer2::MakeKey(const std::string& ws, int x, int y)
 	{
-		return fmt::format("{}_{}_{}", x, y, ws);
+		std::string rtn;
+		try {
+			rtn = fmt::format("{}_{}_{}", x, y, ws);
+		} catch (fmt::format_error& e) {
+			logger::error("Error occured while extending Grass Distance:");
+			logger::error(fmt::runtime(e.what()));
+		}
+
+		return rtn;
 	}
 
 	void DistantGrass::LoadOnlyCellInfoContainer2::UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius) const
@@ -135,6 +143,9 @@ namespace GrassControl
 			return;
 
 		std::string key = MakeKey(ws->editorID.c_str(), x, y);
+		if (key.empty())
+			return;
+
 		std::shared_ptr<_cell_data> d;
 		{
 			std::scoped_lock lock(locker());
@@ -252,7 +263,8 @@ namespace GrassControl
 			} else if (d->State == _cell_data::_cell_states::Loading) {
 				REL::Relocation<void (*)(RE::BGSGrassManager*, RE::TESObjectCELL*)> func{ RELOCATION_ID(15206, 15374) };
 
-				if(d->DummyCell_Ptr == nullptr) return;
+				if (d->DummyCell_Ptr == nullptr)
+					return;
 
 				func(RE::BGSGrassManager::GetSingleton(), d->DummyCell_Ptr);
 				d->State = _cell_data::_cell_states::Loaded;
@@ -338,7 +350,7 @@ namespace GrassControl
 
 		// Unload old grass, load new grass. But we have replaced how the grid works now.
 		uintptr_t addr;
-		
+
 		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0xA06 - 0x220, 0xA1D)); REL::make_pattern<"8B 3D">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0xA06 - 0x220, 0xA1D))) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
 
@@ -389,7 +401,7 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to Unload Old Grass");
 		}
-		
+
 		if (addr = RELOCATION_ID(13190, 13335).address(); REL::make_pattern<"48 89 74 24 10">().match(RELOCATION_ID(13190, 13335).address())) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 
@@ -427,9 +439,9 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to load New Grass");
 		}
-		
+
 		Memory::Internal::write<uint8_t>(addr + 5, 0xC3, true);
-		
+
 		if (addr = RELOCATION_ID(13191, 13336).address(); REL::make_pattern<"48 89 74 24 10">().match(RELOCATION_ID(13191, 13336).address())) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
@@ -466,7 +478,7 @@ namespace GrassControl
 		} else {
 			stl::report_and_fail("Failed to load New Grass");
 		}
-		
+
 		Memory::Internal::write<uint8_t>(addr + 5, 0xC3, true);
 
 		// cell dtor
@@ -524,7 +536,7 @@ namespace GrassControl
 				stl::report_and_fail("Failed to load New Grass");
 			}
 		}
-		
+
 		// unloading cell
 		if (!load_only) {
 			if (addr = RELOCATION_ID(13623, 13721).address() + OFFSET(0xC0F8 - 0xBF90, 0x1E8); REL::make_pattern<"E8">().match(RELOCATION_ID(13623, 13721).address() + OFFSET(0xC0F8 - 0xBF90, 0x1E8))) {
@@ -583,7 +595,7 @@ namespace GrassControl
 				stl::report_and_fail("Failed to Remove Grass");
 			}
 		}
-		
+
 		// Fix weird shape selection.
 		// Vanilla game groups shape selection by 12 x 12 cells, we want a shape per cell.
 #ifndef SKYRIM_AE
@@ -1140,7 +1152,6 @@ namespace GrassControl
 
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch5));
 		}
-		
 	}
 
 	bool DistantGrass::_canUpdateGridNormal = false;
