@@ -1260,7 +1260,7 @@ namespace GrassControl
 			}
 		} else if (cell != nullptr) {
 			auto landPtr = cell->cellLand;
-			if (landPtr != nullptr && (Memory::Internal::read<uint8_t>(landPtr + 0x28) & 8) == 0) {
+			if (landPtr != nullptr && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
 				REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> fnc{ RELOCATION_ID(18331, 18747) };
 
 				fnc(landPtr, 0, 1);
@@ -1297,11 +1297,11 @@ namespace GrassControl
 
 		uintptr_t task;
 		{
-			auto alloc = new char[0x10];
+			auto alloc = new char[0x10];  // RE::BSExtraData
 			Memory::Internal::write<uintptr_t>(reinterpret_cast<uintptr_t>(alloc), 0);
 
-			REL::Relocation<void (*)(uintptr_t, uintptr_t)> func{ RELOCATION_ID(11933, 12072) };
-			func(reinterpret_cast<uintptr_t>(cell) + 0x48, reinterpret_cast<uintptr_t>(alloc));
+			REL::Relocation<void (*)(RE::ExtraDataList, uintptr_t)> func{ RELOCATION_ID(11933, 12072) };
+			func(cell->extraList, reinterpret_cast<uintptr_t>(alloc));
 
 			task = Memory::Internal::read<uintptr_t>(alloc);
 			delete[] alloc;
@@ -1320,9 +1320,9 @@ namespace GrassControl
 			func(task, 1);
 		}
 
-		REL::Relocation<void (*)(intptr_t, int)> func{ RELOCATION_ID(11932, 12071) };
+		REL::Relocation<void (*)(RE::ExtraDataList, int)> func{ RELOCATION_ID(11932, 12071) };
 
-		func(reinterpret_cast<uintptr_t>(cell) + 0x48, 0);
+		func(cell->extraList, 0);
 
 		return true;
 	}
@@ -1396,11 +1396,11 @@ namespace GrassControl
 				Fnc();
 			}
 			if (cell != nullptr) {
-				REL::Relocation<uintptr_t (*)(RE::TESObjectCELL*)> func{ RELOCATION_ID(18513, 18970) };
+				REL::Relocation<RE::TESObjectLAND* (*)(RE::TESObjectCELL*)> func{ RELOCATION_ID(18513, 18970) };
 
 				auto landPtr = func(cell);
-				if (landPtr != 0 && (Memory::Internal::read<uint8_t>(landPtr + 0x28) & 8) == 0) {
-					REL::Relocation<void (*)(uintptr_t, int, int)> Func{ RELOCATION_ID(18331, 18747) };
+				if (landPtr != 0 && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
+					REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> Func{ RELOCATION_ID(18331, 18747) };
 
 					Func(landPtr, 0, 1);
 
@@ -1597,11 +1597,11 @@ namespace GrassControl
 				if (IsValidLoadedCell(cell, false)) {
 					logger::debug("InstantLoadSuccessFirst({}, {}) {}", x, y, cell->GetFormEditorID());
 				} else if (cell != nullptr) {
-					REL::Relocation<uintptr_t (*)(RE::TESObjectCELL*)> Func{ RELOCATION_ID(18513, 18970) };
+					REL::Relocation<RE::TESObjectLAND* (*)(RE::TESObjectCELL*)> Func{ RELOCATION_ID(18513, 18970) };
 
 					auto landPtr = Func(cell);
-					if (landPtr != 0 && (Memory::Internal::read<uint8_t>(landPtr + 0x28) & 8) == 0) {
-						REL::Relocation<void (*)(intptr_t, int, int)> fnc{ RELOCATION_ID(18331, 18747) };
+					if (landPtr != 0 && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
+						REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> fnc{ RELOCATION_ID(18331, 18747) };
 
 						fnc(landPtr, 0, 1);
 
