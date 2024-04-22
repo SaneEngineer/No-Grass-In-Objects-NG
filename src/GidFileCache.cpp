@@ -425,10 +425,12 @@ namespace GrassControl
 
 		std::string tx;
 		if (IsResuming) {
-			tx = "Resuming grass cache generation now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
+			auto entries = ProgressDone.get()->size();
+			tx = "Resuming grass cache generation now with " + std::to_string(entries) + " entries completed.\n\nThis will take a while !\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		} else {
 			tx = "Generating new grass cache now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		}
+		logger::info(fmt::runtime(tx.c_str()));
 		RE::DebugMessageBox(tx.c_str());
 	}
 

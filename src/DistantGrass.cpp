@@ -330,8 +330,10 @@ namespace GrassControl
 
 		if (load_only) {
 			LO2Map = std::make_unique<LoadOnlyCellInfoContainer2>();
+			logger::debug("LO2Map created at {:x}", reinterpret_cast<uintptr_t>(LO2Map.get()));
 		} else {
 			Map = std::make_unique<CellInfoContainer>();
+			logger::debug("Map created at {:x}", reinterpret_cast<uintptr_t>(Map.get()));
 		}
 
 		// Disable grass fade.
