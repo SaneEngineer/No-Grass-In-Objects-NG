@@ -40,7 +40,7 @@ namespace GrassControl
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0))) {
+		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
@@ -89,7 +89,7 @@ namespace GrassControl
 
 		// Saving.
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643))) {
+		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
@@ -137,7 +137,7 @@ namespace GrassControl
 
 		// Loading.
 		//HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)))) {
+		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(addr))) {
 			// R13 is cell
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -187,7 +187,7 @@ namespace GrassControl
 		}
 
 		// Disable grass console.
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896))) {
+		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -279,7 +279,7 @@ namespace GrassControl
 	{
 		unsigned long long addr;
 
-		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29))) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
 
@@ -312,7 +312,7 @@ namespace GrassControl
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D))) {
+		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)

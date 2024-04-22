@@ -114,6 +114,6 @@ namespace GrassControl
 			message = Util::StringHelpers::Join(things, "; ");
 		}
 		RE::DebugNotification(message.c_str(), nullptr, true);
-		//SKSE::log::debug(fmt::runtime(message));
+		//logger::debug(fmt::runtime(message));
 	}
 }
