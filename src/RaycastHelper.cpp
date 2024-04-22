@@ -196,13 +196,45 @@ namespace GrassControl
 			if (this->Ignore != nullptr && this->IsIgnoredObject(rs)) {
 				continue;
 			}
-
+			auto sTemplate = fmt::runtime("{} {}(0x{:x})");
+			auto landName = fmt::format(sTemplate, "land", land->GetFormEditorID() ? land->GetFormEditorID() : land->GetName(), land->formID);
+			auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
+			auto rsTESForm = GetRaycastHitBaseForm(rs);
+			auto hitObjectName = rsTESForm ?
+			                         fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) :
+			                         "";
+			logger::debug("{}:{}({},{},{}) detected hit {}", landName, cellName, x, y, z, hitObjectName);
 			return false;
 		}
 		return true;
 	}
 
-	bool RaycastHelper::IsIgnoredObject(Raycast::RayResult r) const
+	RE::TESForm* RaycastHelper::GetRaycastHitBaseForm(Raycast::RayResult r) const
+	{
+		RE::TESForm* result = nullptr;
+		try {
+			auto o = r.hitObject;
+			int tries = 0;
+			while (o != nullptr && tries++ < 10) {
+				const auto userdata = o->GetUserData();
+				if (userdata != nullptr) {
+					auto baseForm = userdata->GetOwner();
+					if (baseForm != nullptr) {
+						{
+							result = baseForm;
+							return result;
+						}
+						break;
+					}
+				}
+				o = o->parent;
+			}
+		} catch (...) {
+		}
+		return result;
+	}
+
+	bool RaycastHelper::IsRaycastHitTest(Raycast::RayResult r, std::function<bool(RE::FormID)> func) const
 	{
 		bool result = false;
 		try {
@@ -213,11 +245,8 @@ namespace GrassControl
 				if (userdata != nullptr) {
 					auto baseForm = userdata->GetOwner();
 					if (baseForm != nullptr) {
-						/*if (this.Ignore.Contains(obj.FormId))
-					        result = true;
-					    else*/
 						{
-							if (this->Ignore->Contains(baseForm->formID))
+							if (func(baseForm->formID))
 								result = true;
 						}
 						break;
@@ -228,5 +257,13 @@ namespace GrassControl
 		} catch (...) {
 		}
 		return result;
+	}
+
+	bool RaycastHelper::IsIgnoredObject(Raycast::RayResult r) const
+	{
+		/*if (this.Ignore.Contains(obj.FormId))
+					        result = true;
+					    else*/
+		return IsRaycastHitTest(r, [this](RE::FormID formid) { return this->Ignore->Contains(formid); });
 	}
 }
