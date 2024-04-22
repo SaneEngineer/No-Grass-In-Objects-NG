@@ -20,7 +20,7 @@ macro(find_commonlib_path)
 		# Check extern
 		find_path(CommonLibPath
 			include/REL/Relocation.h
-			PATHS extern/${CommonLibName})
+			PATHS external/${CommonLibName})
 
 		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
 			# Check path
