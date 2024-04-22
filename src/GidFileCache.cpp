@@ -346,7 +346,7 @@ namespace GrassControl
 		IsApplying = true;
 
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
-		addr = RELOCATION_ID(35565, 36564).address() + OFFSET(0x216 - 0x1E0, 0x51);
+		addr = RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x216 - 0x1E0, 0x51, 0x4b);
 		Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 

@@ -963,7 +963,7 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 #endif
 
-			addr = RELOCATION_ID(18150, 18541).address() + OFFSET(0xB094 - 0xAF20, 0x1CA);
+			addr = RELOCATION_ID(18150, 18541).address() + OFFSET_3(0xB094 - 0xAF20, 0x1CA, 0x177);
 			struct Patch2 : Xbyak::CodeGenerator
 			{
 				Patch2(uintptr_t a_func, uintptr_t a_target)
@@ -971,11 +971,12 @@ namespace GrassControl
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
-#ifdef SKYRIM_AE
+#ifndef SKYRIMVR
+#	ifdef SKYRIM_AE
 					movzx(eax, ptr[rsp + 0xA0]);
-#else
+#	else
 					mov(esi, ptr[rsp + 0x30]);
-#endif
+#	endif
 					mov(ptr[rbx + 0x3D], al);
 
 					mov(rcx, ptr[rbx + 0x30]);  // x
@@ -993,9 +994,30 @@ namespace GrassControl
 					dq(a_func);
 
 					L(retnLabel);
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					dq(a_target + 0xB);
-#else
+#	else
+					dq(a_target + 0x7);
+#	endif
+#else  // VR
+					mov(esi, ptr[rsp + 0x30]);
+					mov(ptr[rbx + 0x45], al);
+
+					mov(rcx, ptr[rbx + 0x38]);  // x
+					mov(rdx, ptr[rbx + 0x3c]);  // y
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);
+					add(rsp, 0x20);
+
+					mov(byte[rbx + 0x46], al);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(a_func);
+
+					L(retnLabel);
 					dq(a_target + 0x7);
 #endif
 				}
@@ -1009,23 +1031,29 @@ namespace GrassControl
 #endif
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
-			addr = RELOCATION_ID(18149, 18540).address() + OFFSET(0xE1B - 0xCC0, 0x167);
+			addr = RELOCATION_ID(18149, 18540).address() + OFFSET_3(0xE1B - 0xCC0, 0x167, 0x15E);
 			struct Patch3 : Xbyak::CodeGenerator
 			{
 				explicit Patch3(uintptr_t a_target)
 				{
 					Xbyak::Label retnLabel;
-
+#ifndef SKYRIMVR
 					mov(byte[rbx + 0x3E], 0);
 
 					mov(byte[rbx + 0x3C], 1);
 
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					mov(ptr[rbx + 0x3D], bpl);
-#else
+#	else
 					mov(ptr[rbx + 0x3D], r15b);
-#endif
+#	endif
+#else
+					mov(byte[rbx + 0x46], 0);
 
+					mov(byte[rbx + 0x44], 1);
+
+					mov(ptr[rbx + 0x45], r15b);
+#endif  // VR
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);

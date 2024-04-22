@@ -99,9 +99,9 @@ namespace GrassControl
 
 			static void Install()
 			{
-				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET(0x748, 0xC26));
+				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x748, 0xC26, 0x7EE));
 				if (Config::ProfilerReport) {
-					stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET(334, 334));
+					stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET_3(334, 334, 0x15b));
 					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + OFFSET(0x905, 0x905));
 					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 					stl::write_thunk_call<GrassCreationEnd>(RELOCATION_ID(15204, 15372).address() + OFFSET(3037, 3037));

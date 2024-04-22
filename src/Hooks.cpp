@@ -109,7 +109,7 @@ namespace GrassControl
 		}
 
 		if (Config::RayCast) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET((0x723A - 0x6CE0), 0x664);
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3((0x723A - 0x6CE0), 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(std::uintptr_t b_func, std::uintptr_t a_target)
@@ -119,20 +119,20 @@ namespace GrassControl
 
 					Xbyak::Label jump;
 					Xbyak::Label notIf;
-
-#ifdef SKYRIM_AE
+#ifndef SKYRIMVR
+#	ifdef SKYRIM_AE
 					movss(xmm1, ptr[rsp + 0x50]);  // x
 					movss(xmm2, ptr[rsp + 0x54]);  // y
 					movss(xmm3, xmm7);             // z
 
 					mov(rcx, rdi);
-#else
+#	else
 					movss(xmm1, ptr[rsp + 0x40]);  // x
 					movss(xmm2, ptr[rsp + 0x44]);  // y
 					movss(xmm3, xmm7);             // z
 
 					mov(rcx, rsi);
-#endif
+#	endif
 
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function
@@ -143,19 +143,41 @@ namespace GrassControl
 					jmp(ptr[rip + jump]);
 
 					L(notIf);
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					movss(xmm6, ptr[rbp - 0x68]);
-#else
+#	else
 					movss(xmm6, ptr[rbp - 0x48]);
-#endif
+#	endif
 					jmp(ptr[rip + retnLabel]);
 
 					L(jump);
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					dq(a_target - 0x156);
+#	else
+					dq(a_target + 0x5 + (0x661 - 0x23F));  // VR 515
+#	endif
 #else
-					dq(a_target + 0x5 + (0x661 - 0x23F));
-#endif
+					movss(xmm1, ptr[rsp + 0x50]);  // x
+					movss(xmm2, ptr[rsp + 0x54]);  // y
+					movss(xmm3, xmm14);            // z
+
+					mov(rcx, rbx);
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);  // call our function
+					add(rsp, 0x20);
+
+					test(al, al);
+					jne(notIf);
+					jmp(ptr[rip + jump]);
+
+					L(notIf);
+					movss(xmm6, ptr[rbp - 0x38]);
+					jmp(ptr[rip + retnLabel]);
+
+					L(jump);
+					dq(a_target + 0x5 + 0x510);
+#endif  //VR
 
 					L(funcLabel);
 					dq(b_func);

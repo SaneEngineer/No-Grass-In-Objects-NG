@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "NGIO-NG" CACHE STRING "")
 set(VERSION 1.0.11 CACHE STRING "")
-set(VR_VERSION 2)
+set(VR_VERSION 1)
 set(AE_VERSION 1)
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
