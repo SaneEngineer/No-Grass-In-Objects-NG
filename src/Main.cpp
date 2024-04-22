@@ -33,10 +33,6 @@ void InitializeMessaging()
 					logger::info("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
 					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
 				}
-				if (GrassControl::Config::GlobalGrassScale != 1.0 && GrassControl::Config::GlobalGrassScale > 0.0001) {
-					logger::info("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
-					RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
-				}
 				break;
 			default:
 				break;

@@ -2,9 +2,10 @@
 
 namespace GrassControl
 {
-	double SetScale(double xmm11)
+	static float SetScale(float a_input)
 	{
-		return xmm11 * Config::GlobalGrassScale;
+		// we need to only interact with floats so the input/ouput register xmm0 is proper precision
+		return a_input * Config::GlobalGrassScale;
 	}
 
 	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
@@ -331,8 +332,7 @@ namespace GrassControl
 		}
 
 		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
-#ifdef SKYRIM_AE
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET(0x92B, 0x75F);
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3(0x93a, 0xab4, 0xa0c);  // replacing xmm0 *= 4.656613e-10;
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(std::uintptr_t a_target, uintptr_t a_func)
@@ -340,14 +340,41 @@ namespace GrassControl
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
-					movss(xmm0, xmm11);
+#ifndef SKYRIMVR
+					mulss(xmm0, xmm14);  // original code
+#	ifdef SKYRIM_AE
+					subss(xmm0, xmm10);            // original code
+					mulss(xmm0, ptr[rbx + 0x10]);  // original code
+					addss(xmm0, xmm10);            // finalScale = xmm0 + 1;
+#	else
+					subss(xmm0, xmm11);            // original code
+					mulss(xmm0, ptr[rsi + 0x10]);  // original code
+					addss(xmm0, xmm11);            // finalScale = xmm0 + 1;
+#	endif  // AE
 
+					// function call
 					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);
+					mov(al, 1);
+					call(ptr[rip + funcLabel]);  // finalScale = SetScale(finalScale);
 					add(rsp, 0x20);
+#	ifdef SKYRIM_AE
+					subss(xmm0, xmm10);  // xmm0 = finalScale - 1; // original code
+#	else
+					subss(xmm0, xmm11);  // xmm0 = finalScale - 1; // original code
+#	endif  //AE
+#else       // VR
+					mulss(xmm0, xmm12);            // original code
+					subss(xmm0, xmm11);            // original code
+					mulss(xmm0, ptr[r13 + 0x10]);  // original code
+					addss(xmm0, xmm11);            // finalScale = xmm0 + 1;
 
-					movss(xmm11, xmm0);
-					mulss(xmm11, xmm14);
+					// function call
+					sub(rsp, 0x20);
+					mov(al, 1);
+					call(ptr[rip + funcLabel]);  // finalScale = SetScale(finalScale);
+					add(rsp, 0x20);
+					subss(xmm0, xmm11);  // xmm0 = finalScale - 1; // original code
+#endif      // VR
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -355,7 +382,11 @@ namespace GrassControl
 					dq(a_func);
 
 					L(retnLabel);
-					dq(a_target + 0x5);
+#ifndef SKYRIMVR
+					dq(a_target + 0xf);
+#else  // VR
+					dq(a_target + 0x10);
+#endif
 				}
 			};
 			Patch patch(addr, reinterpret_cast<uintptr_t>(SetScale));
@@ -363,7 +394,6 @@ namespace GrassControl
 
 			auto& trampoline = SKSE::GetTrampoline();
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-#endif
 		}
 	}
 
