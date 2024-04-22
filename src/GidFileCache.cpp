@@ -417,7 +417,7 @@ namespace GrassControl
 			}
 
 			for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid") {
+				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid" || entry.path().extension() == ".fail") {
 					remove(entry.path());
 				}
 			}
@@ -802,7 +802,30 @@ namespace GrassControl
 	{
 		if (Cell == nullptr)
 			return false;
-
+		const std::string fileKey = fmt::format(fmt::runtime("Data/Grass/{}x{:04}y{:04}.fail"), this->Parent->Name, this->X, this->Y);
+		auto fails = 1;
+		if (std::filesystem::exists(fileKey)) {
+			std::ifstream failFile(fileKey);
+			if (failFile.good()) {
+				std::string failCount;
+				std::getline(failFile, failCount);
+				fails = stoi(failCount);
+				failFile.close();
+				if (fails >= Config::MaxFailures) {
+					logger::info(fmt::runtime("{}({},{}) failed {} times; skipping"), this->Parent->Name, this->X, this->Y, fails);
+					return false;
+				} else {
+					logger::info(fmt::runtime("{}({},{}) failed {} times; trying again"), this->Parent->Name, this->X, this->Y, fails);
+					fails++;
+				}
+			}
+		}
+		// write failFile
+		std::ofstream failFile(fileKey, std::ios::trunc);
+		if (failFile.is_open()) {
+			failFile << fails << std::endl;
+			failFile.close();
+		}
 		double pct = 0.0;
 		if (Parent->TotalCellDo > 0) {
 			pct = std::max(0.0, std::min(static_cast<double>(Parent->DidCellDo) / static_cast<double>(Parent->TotalCellDo), 1.0)) * 100.0;
@@ -825,6 +848,9 @@ namespace GrassControl
 			} catch (...) {
 				stl::report_and_fail("Grass Generation has Crashed!");
 			}
+		}
+		if (std::filesystem::exists(fileKey)) {
+			std::filesystem::remove(fileKey);
 		}
 		return true;
 	}
