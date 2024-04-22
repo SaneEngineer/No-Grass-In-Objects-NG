@@ -52,7 +52,7 @@ namespace Util
 			int ix = x.find(L':');
 			if (ix <= 0) {
 				if (!dontWriteAnythingToLog) {
-					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`."));
+					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`."));
 				}
 
 				delete ls;
@@ -64,7 +64,7 @@ namespace Util
 
 			if (!std::ranges::all_of(idstr.begin(), idstr.end(), [](wchar_t q) { return (q >= L'0' && q <= L'9') || (q >= L'a' && q <= L'f') || (q >= L'A' && q <= L'F'); })) {
 				if (!dontWriteAnythingToLog) {
-					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
+					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -73,7 +73,7 @@ namespace Util
 
 			if (fileName.empty()) {
 				if (!dontWriteAnythingToLog) {
-					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Missing file name."));
+					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Missing file name."));
 				}
 
 				delete ls;
@@ -90,7 +90,7 @@ namespace Util
 			}
 			if (!sucess) {
 				if (!dontWriteAnythingToLog) {
-					logger::info(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
+					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -101,7 +101,7 @@ namespace Util
 			if (auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName); file) {
 				if (!file->IsFormInMod(id)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
-						logger::info(fmt::runtime("Failed to find form " + settingNameForLog + " for " + pluginForLog + "! Form ID was " + std::to_string(id) + " and file was " + fileName + "."));
+						logger::warn(fmt::runtime("Failed to find form " + settingNameForLog + " for " + pluginForLog + "! Form ID was " + std::to_string(id) + " and file was " + fileName + "."));
 					}
 					continue;
 				}

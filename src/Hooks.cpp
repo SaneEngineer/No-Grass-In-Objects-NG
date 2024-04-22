@@ -55,7 +55,7 @@ namespace GrassControl
 
 		if (Config::RayCast) {
 			std::string formsStr = Config::RayCastIgnoreForms;
-			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, true);
+			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, false);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
