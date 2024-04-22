@@ -1328,7 +1328,7 @@ namespace GrassControl
 			auto alloc = new char[0x10];  // RE::BSExtraData
 			Memory::Internal::write<uintptr_t>(reinterpret_cast<uintptr_t>(alloc), 0);
 
-			REL::Relocation<void (*)(RE::ExtraDataList, uintptr_t)> func{ RELOCATION_ID(11933, 12072) };
+			REL::Relocation<void (*)(const RE::ExtraDataList&, uintptr_t)> func{ RELOCATION_ID(11933, 12072) };
 			func(cell->extraList, reinterpret_cast<uintptr_t>(alloc));
 
 			task = Memory::Internal::read<uintptr_t>(alloc);
@@ -1348,7 +1348,7 @@ namespace GrassControl
 			func(task, 1);
 		}
 
-		REL::Relocation<void (*)(RE::ExtraDataList, int)> func{ RELOCATION_ID(11932, 12071) };
+		REL::Relocation<void (*)(const RE::ExtraDataList&, int)> func{ RELOCATION_ID(11932, 12071) };
 
 		func(cell->extraList, 0);
 
