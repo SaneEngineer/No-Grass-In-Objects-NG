@@ -1,6 +1,6 @@
 ## No Grass in Objects NG
 
-This is a port of No Grass in Objects rewritten using Commonlib, The main features of Caching, Raycasting (No grass in objects part), and extended grass distance are working in AE. The config is roughly the same with a change to ini that should be created while the mod is first loaded, minor renaming of settings and an option for debug logs. To my knowledge all features except for grass scale should be working in SE, the same goes for AE. Right now `Extend-grass-distance` is broken and should be set false in order to avoid crashes. 
+This is a port of No Grass in Objects rewritten using Commonlib, The main features of Caching and Raycasting (No grass in objects part). Extended grass distance, is working but is incomplete and may result in crashes. The config is roughly the same with a change to ini that should be created while the mod is first loaded, minor renaming of settings and an option for debug logs. To my knowledge all features except for grass scale should be working in SE, the same goes for AE.
 
 ---
 
@@ -32,7 +32,9 @@ This can be found by opening Steam and locating Skyrim SE in your game library, 
 * Crashing while Caching
   - Check `NGIO-NG/log`, `PrecacheGrass.txt`, and `Data\Grass\` to see if any progress is being done. If no progress is being made check any crash logs as the crash is likely caused by an issue with a mod affecting the area. This can be a texture, mesh, patch, or mod editing the area. It should be mentioned by the crash log.
   - I recommend using [Crash Logger SSE AE VR](https://www.nexusmods.com/skyrimspecialedition/mods/59818?tab=description) over [Trainwreck](https://www.nexusmods.com/skyrimspecialedition/mods/106440). As it provides much more helpful and readable crash logs.
- 
+* Raycasting not working
+  - Raycasting when used without a grass cache does not apply without loading a save twice. Raycasting will always take effect when a cache is generated with it enabled. 
+  
  ---
 
 ## Requirements to Build

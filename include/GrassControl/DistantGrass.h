@@ -184,15 +184,15 @@ namespace GrassControl
 			static std::string MakeKey(const std::string& ws, int x, int y);
 
 		public:
-			void UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius) const;
+			void UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius);
 
 			void QueueLoad(RE::TESWorldSpace* ws, int x, int y);
 
 		private:
-			void _DoUnload(std::shared_ptr<_cell_data> d) const;
+			void _DoUnload(const std::shared_ptr<_cell_data>& d);
 
 		public:
-			void Unload(const RE::TESWorldSpace* ws, int x, int y) const;
+			void Unload(const RE::TESWorldSpace* ws, int x, int y);
 
 			void _DoLoad(const RE::TESWorldSpace* ws, int x, int y) const;
 		};

@@ -116,7 +116,7 @@ namespace GrassControl
 		return rtn;
 	}
 
-	void DistantGrass::LoadOnlyCellInfoContainer2::UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius) const
+	void DistantGrass::LoadOnlyCellInfoContainer2::UpdatePositionWithRemove(RE::TESWorldSpace* ws, int addType, int nowX, int nowY, int grassRadius)
 	{
 		unsigned int wsId = ws != nullptr ? ws->formID : 0;
 
@@ -191,7 +191,7 @@ namespace GrassControl
 		}
 	}
 
-	void DistantGrass::LoadOnlyCellInfoContainer2::_DoUnload(std::shared_ptr<_cell_data> d) const
+	void DistantGrass::LoadOnlyCellInfoContainer2::_DoUnload(const std::shared_ptr<_cell_data>& d)
 	{
 		if (d == nullptr)
 			return;
@@ -216,10 +216,17 @@ namespace GrassControl
 
 			d->DummyCell_Ptr = nullptr;
 			d->State = _cell_data::_cell_states::None;
+
+			for (auto it = map.begin(); it != map.end(); ++it) {
+				if (it->second == d) {
+					map.erase(it);
+					break;
+				}
+			}
 		}
 	}
 
-	void DistantGrass::LoadOnlyCellInfoContainer2::Unload(const RE::TESWorldSpace* ws, const int x, const int y) const
+	void DistantGrass::LoadOnlyCellInfoContainer2::Unload(const RE::TESWorldSpace* ws, const int x, const int y)
 	{
 		if (ws == nullptr)
 			return;
@@ -248,7 +255,7 @@ namespace GrassControl
 		std::string key = MakeKey(ws->editorID.c_str(), x, y);
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			auto it = this->map.find(key);
 			d = it == this->map.end() ? nullptr : it->second;
 		}
@@ -257,7 +264,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			if (d->State == _cell_data::_cell_states::Loaded) {
 				// This shouldn't happen
 			} else if (d->State == _cell_data::_cell_states::Loading) {
@@ -1619,12 +1626,7 @@ namespace GrassControl
 		int bigSide = std::max(grassRadius, uHalf);
 		bool canLoadGrass = Memory::Internal::read<uint8_t>(addr_AllowLoadFile + 8) != 0;
 
-		std::string wsName;
-		try {
-			//auto wsObj = (RE::TESWorldSpace*)ws;
-			wsName = wsObj->editorID.c_str();
-		} catch (...) {
-		}
+		std::string wsName = wsObj->editorID.c_str();
 
 		int nowX = prevX + movedX;
 		int nowY = prevY + movedY;

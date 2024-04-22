@@ -177,46 +177,7 @@ namespace GrassControl
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
-		/* BROKEN TODO
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD)); REL::make_pattern<"44 38 3D">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0xAC - 0x10, 0xBD))) {
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation9);
-		}
-		*/
-		/*
-		auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xBE7 - 0x890, 0x351);
-		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(bool only_load, const std::uintptr_t a_target)
-			{
-				Xbyak::Label retnLabel;
-
-				Xbyak::Label j_else;
-
-				mov(al, only_load);
-				movzx(eax, al);
-				test(eax, eax);
-				jne(j_else);
-				mov(rax, 1);
-				jmp(ptr[rip + retnLabel]);
-
-				L(j_else);
-				mov(rax, 0);
-				
-				jmp(ptr[rip + retnLabel]);
-
-				L(retnLabel);
-				dq(a_target + 0x7);
-			}
-		};
-		Patch patch(only_load, addr);
-		patch.ready();
-
-		auto& trampoline = SKSE::GetTrampoline();
-		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-	    */
+	
 		if (!only_load) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = true;
@@ -249,8 +210,8 @@ namespace GrassControl
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+		    Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
 		} else {
 			stl::report_and_fail("Failed to Disable Grass Console");
 		}
@@ -329,14 +290,6 @@ namespace GrassControl
 			{
 				Xbyak::Label retnLabel;
 				Xbyak::Label exchange;
-
-				/*
-				push(rax);
-				xor_(eax, eax);
-				mov(rcx, mode);
-				lock();
-				xchg(ptr[rcx], rax);
-				*/
 
 				mov(rdi, ptr[rsp + 0x50]);
 
