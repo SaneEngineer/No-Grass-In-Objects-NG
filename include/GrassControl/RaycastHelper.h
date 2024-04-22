@@ -138,6 +138,16 @@ namespace GrassControl
 		bool CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const;
 
 	private:
+		/// @brief Iterate the Raycast Hit object and provide the first TESForm*
+		/// @param r The Rayresult to iterate
+		/// @return True if the predicate function returns true
+		RE::TESForm* GetRaycastHitBaseForm(Raycast::RayResult r) const;
+
+		/// @brief Iterate the Raycast Hit object and use provided test func
+		/// @param r The Rayresult to iterate
+		/// @param func The predicate function that tests based on formID
+		/// @return True if the predicate function returns true
+		bool IsRaycastHitTest(Raycast::RayResult r, std::function<bool(RE::FormID)> func) const;
 		bool IsIgnoredObject(Raycast::RayResult r) const;
 	};
 

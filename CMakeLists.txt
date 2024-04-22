@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "NGIO-NG" CACHE STRING "")
 set(VERSION 1.0.11 CACHE STRING "")
-set(VR_VERSION 2)
+set(VR_VERSION 1)
 set(AE_VERSION 1)
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
@@ -20,7 +20,7 @@ macro(find_commonlib_path)
 		# Check extern
 		find_path(CommonLibPath
 			include/REL/Relocation.h
-			PATHS extern/${CommonLibName})
+			PATHS external/${CommonLibName})
 
 		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
 			# Check path
@@ -255,21 +255,21 @@ if(MSVC)
 endif()
 
 # ---- Post build ----
-# if(COPY_BUILD)
-# if(DEFINED SkyrimPath)
-# add_custom_command(
-# TARGET ${PROJECT_NAME}
-# POST_BUILD
-# COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
-# COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
-# )
-# else()
-# message(
-# WARNING
-# "Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
-# )
-# endif()
-# endif()
+if(COPY_BUILD)
+	if(DEFINED SkyrimPath)
+		add_custom_command(
+			TARGET ${PROJECT_NAME}
+			POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+		)
+	else()
+		message(
+			WARNING
+			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
+		)
+	endif()
+endif()
 
 # https://gitlab.kitware.com/cmake/cmake/-/issues/24922#note_1371990
 if(MSVC_VERSION GREATER_EQUAL 1936 AND MSVC_IDE) # 17.6+

@@ -55,7 +55,7 @@ namespace GrassControl
 
 		if (Config::RayCast) {
 			std::string formsStr = Config::RayCastIgnoreForms;
-			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, true);
+			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, false);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
@@ -109,7 +109,7 @@ namespace GrassControl
 		}
 
 		if (Config::RayCast) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET((0x723A - 0x6CE0), 0x664);
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3((0x723A - 0x6CE0), 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(std::uintptr_t b_func, std::uintptr_t a_target)
@@ -119,20 +119,20 @@ namespace GrassControl
 
 					Xbyak::Label jump;
 					Xbyak::Label notIf;
-
-#ifdef SKYRIM_AE
+#ifndef SKYRIMVR
+#	ifdef SKYRIM_AE
 					movss(xmm1, ptr[rsp + 0x50]);  // x
 					movss(xmm2, ptr[rsp + 0x54]);  // y
 					movss(xmm3, xmm7);             // z
 
 					mov(rcx, rdi);
-#else
+#	else
 					movss(xmm1, ptr[rsp + 0x40]);  // x
 					movss(xmm2, ptr[rsp + 0x44]);  // y
 					movss(xmm3, xmm7);             // z
 
 					mov(rcx, rsi);
-#endif
+#	endif
 
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function
@@ -143,19 +143,41 @@ namespace GrassControl
 					jmp(ptr[rip + jump]);
 
 					L(notIf);
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					movss(xmm6, ptr[rbp - 0x68]);
-#else
+#	else
 					movss(xmm6, ptr[rbp - 0x48]);
-#endif
+#	endif
 					jmp(ptr[rip + retnLabel]);
 
 					L(jump);
-#ifdef SKYRIM_AE
+#	ifdef SKYRIM_AE
 					dq(a_target - 0x156);
+#	else
+					dq(a_target + 0x5 + (0x661 - 0x23F));  // VR 515
+#	endif
 #else
-					dq(a_target + 0x5 + (0x661 - 0x23F));
-#endif
+					movss(xmm1, ptr[rsp + 0x50]);  // x
+					movss(xmm2, ptr[rsp + 0x54]);  // y
+					movss(xmm3, xmm14);            // z
+
+					mov(rcx, rbx);
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);  // call our function
+					add(rsp, 0x20);
+
+					test(al, al);
+					jne(notIf);
+					jmp(ptr[rip + jump]);
+
+					L(notIf);
+					movss(xmm6, ptr[rbp - 0x38]);
+					jmp(ptr[rip + retnLabel]);
+
+					L(jump);
+					dq(a_target + 0x5 + 0x510);
+#endif  //VR
 
 					L(funcLabel);
 					dq(b_func);
@@ -182,10 +204,10 @@ namespace GrassControl
 
 		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
-			if (auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(RELOCATION_ID(15220, 15383).address() + OFFSET(0x433 - 0x3C0, 0x68))) {
+			if (auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
 			}
-			if (auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129))) {
+			if (auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
 				//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -225,7 +247,7 @@ namespace GrassControl
 				auto& trampoline = SKSE::GetTrampoline();
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			} else {
-				SKSE::stl::report_and_fail("Failed to create more grass shapes");
+				stl::report_and_fail("Failed to create more grass shapes");
 			}
 		}
 
@@ -241,7 +263,7 @@ namespace GrassControl
 		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-			if (auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68)))
+			if (auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
 				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));

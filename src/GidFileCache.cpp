@@ -40,7 +40,7 @@ namespace GrassControl
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0))) {
+		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
@@ -89,7 +89,7 @@ namespace GrassControl
 
 		// Saving.
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643))) {
+		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
@@ -137,7 +137,7 @@ namespace GrassControl
 
 		// Loading.
 		//HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)))) {
+		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(addr))) {
 			// R13 is cell
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -187,7 +187,7 @@ namespace GrassControl
 		}
 
 		// Disable grass console.
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896))) {
+		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -279,7 +279,7 @@ namespace GrassControl
 	{
 		unsigned long long addr;
 
-		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29))) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
 
@@ -312,7 +312,7 @@ namespace GrassControl
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D))) {
+		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
@@ -346,7 +346,7 @@ namespace GrassControl
 		IsApplying = true;
 
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
-		addr = RELOCATION_ID(35565, 36564).address() + OFFSET(0x216 - 0x1E0, 0x51);
+		addr = RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x216 - 0x1E0, 0x51, 0x4b);
 		Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 
@@ -417,7 +417,7 @@ namespace GrassControl
 			}
 
 			for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid") {
+				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid" || entry.path().extension() == ".fail") {
 					remove(entry.path());
 				}
 			}
@@ -425,10 +425,12 @@ namespace GrassControl
 
 		std::string tx;
 		if (IsResuming) {
-			tx = "Resuming grass cache generation now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
+			auto entries = ProgressDone.get()->size();
+			tx = "Resuming grass cache generation now with " + std::to_string(entries) + " entries completed.\n\nThis will take a while !\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		} else {
 			tx = "Generating new grass cache now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		}
+		logger::info(fmt::runtime(tx.c_str()));
 		RE::DebugMessageBox(tx.c_str());
 	}
 
@@ -802,7 +804,30 @@ namespace GrassControl
 	{
 		if (Cell == nullptr)
 			return false;
-
+		const std::string fileKey = fmt::format(fmt::runtime("Data/Grass/{}x{:04}y{:04}.fail"), this->Parent->Name, this->X, this->Y);
+		auto fails = 1;
+		if (std::filesystem::exists(fileKey)) {
+			std::ifstream failFile(fileKey);
+			if (failFile.good()) {
+				std::string failCount;
+				std::getline(failFile, failCount);
+				fails = stoi(failCount);
+				failFile.close();
+				if (fails >= Config::MaxFailures) {
+					logger::info(fmt::runtime("{}({},{}) failed {} times; skipping"), this->Parent->Name, this->X, this->Y, fails);
+					return false;
+				} else {
+					logger::info(fmt::runtime("{}({},{}) failed {} times; trying again"), this->Parent->Name, this->X, this->Y, fails);
+					fails++;
+				}
+			}
+		}
+		// write failFile
+		std::ofstream failFile(fileKey, std::ios::trunc);
+		if (failFile.is_open()) {
+			failFile << fails << std::endl;
+			failFile.close();
+		}
 		double pct = 0.0;
 		if (Parent->TotalCellDo > 0) {
 			pct = std::max(0.0, std::min(static_cast<double>(Parent->DidCellDo) / static_cast<double>(Parent->TotalCellDo), 1.0)) * 100.0;
@@ -825,6 +850,9 @@ namespace GrassControl
 			} catch (...) {
 				stl::report_and_fail("Grass Generation has Crashed!");
 			}
+		}
+		if (std::filesystem::exists(fileKey)) {
+			std::filesystem::remove(fileKey);
 		}
 		return true;
 	}

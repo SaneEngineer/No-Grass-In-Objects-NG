@@ -34,6 +34,7 @@ namespace GrassControl
 		static inline std::string SkipPregenerateWorldSpaces = "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace";
 		static inline std::string OnlyPregenerateWorldSpaces = "";
 		static inline int DynDOLODGrassMode = 0;
+		static inline int MaxFailures = 1;
 
 		constexpr static inline std::string_view iniPath = "Data/SKSE/Plugins/GrassControl.ini";
 	};

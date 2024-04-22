@@ -30,9 +30,11 @@ void InitializeMessaging()
 				// It is now safe to access form data.
 				MenuOpenCloseEventHandler::Register();
 				if (GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
-					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or downloading a pre-generated Cache from the Nexus");
+					logger::info("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
+					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
 				}
 				if (GrassControl::Config::GlobalGrassScale != 1.0 && GrassControl::Config::GlobalGrassScale > 0.0001) {
+					logger::info("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
 					RE::DebugMessageBox("Grass Scale is not functional and has been disabled. Set GlobalGrassScale = 1.0 to get rid of this message");
 				}
 				break;
@@ -106,7 +108,7 @@ void InitializeLog()
 	log->flush_on(level);
 
 	spdlog::set_default_logger(std::move(log));
-	spdlog::set_pattern("[%H:%M:%S:%e] %v"s);
+	spdlog::set_pattern("[%H:%M:%S:%e][%l] %v"s);
 
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
 }

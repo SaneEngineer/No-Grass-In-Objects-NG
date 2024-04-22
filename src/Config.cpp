@@ -124,6 +124,7 @@ namespace GrassControl
 		ini.SetValue("GrassConfig", "Skip-pregenerate-world-spaces", SkipPregenerateWorldSpaces.c_str(), ";When pre-generating grass then skip worldspaces with this editor IDs. This can greatly speed up generating if we know the worldspace will not need grass at all.");
 		ini.SetValue("GrassConfig", "Only-pregenerate-world-spaces", OnlyPregenerateWorldSpaces.c_str(), ";If this is not empty then skip every worldspace that isn't in this list.");
 		ini.SetLongValue("GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode, ";Enable grass compatibility mode with DynDOLOD Grass LODs. Valid values: 0 = Disabled; 1 = Display grass only in active cells(without fade) and let DynDOLOD handle inactive cell Grass; 2 = Display grass only in active cells and large ref loaded cells(without fade) and let DynDOLOD handle grass outside of large ref cells ");
+		ini.SetLongValue("GrassConfig", "Max-Failures", MaxFailures, ";Maximum number of attempts to generate a grass cache before skipping.");
 
 		ini.SaveFile(iniPath.data());
 
