@@ -36,7 +36,7 @@ namespace GrassControl
 		const char* bFound = nullptr;
 		bFound = a_ini.GetValue(a_sectionName, a_settingName);
 		if (bFound) {
-			a_setting = a_ini.GetValue(a_sectionName, a_settingName);
+			a_setting = Util::StringHelpers::trim(a_ini.GetValue(a_sectionName, a_settingName));
 		}
 	}
 

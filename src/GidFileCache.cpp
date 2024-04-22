@@ -507,7 +507,7 @@ namespace GrassControl
 			skipSet.insert(x);
 		}
 
-		auto only = Util::StringHelpers::split(Util::StringHelpers::trim(Config::OnlyPregenerateWorldSpaces), Char, true);
+		auto only = Util::StringHelpers::split(Config::OnlyPregenerateWorldSpaces, Char, true);
 		auto onlySet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
 		for (const auto& x : only) {
 			std::string sy = Util::StringHelpers::trim(x);
