@@ -11,7 +11,7 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
-        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
+        "CMAKE_CXX_FLAGS": "/EHa /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
       },
       "errors": {
         "deprecated": true

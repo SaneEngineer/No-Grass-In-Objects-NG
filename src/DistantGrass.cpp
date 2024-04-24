@@ -67,13 +67,13 @@ namespace GrassControl
 
 	void DistantGrass::CellInfoContainer::unsafe_ForeachWithState(const std::function<bool(cell_info)>& action)
 	{
-		__try {
+		try {
 			for (auto& [fst, snd] : map) {
 				if (!action(snd)) {
 					map.erase(fst);
 				}
 			}
-		} __except (EXCEPTION_EXECUTE_HANDLER) {
+		} catch (...) {
 			//Terrible idea but fuck it. Erase keeps throwing a read access violation.
 		}
 	}

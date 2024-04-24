@@ -177,7 +177,7 @@ namespace GrassControl
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
-	
+
 		if (!only_load) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = true;
@@ -211,7 +211,7 @@ namespace GrassControl
 
 			auto& trampoline = SKSE::GetTrampoline();
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		    Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
 		} else {
 			stl::report_and_fail("Failed to Disable Grass Console");
 		}
@@ -775,13 +775,15 @@ namespace GrassControl
 		REL::Relocation<void (*)()> Func{ RELOCATION_ID(13188, 13333) };
 		Func();
 
-		RE::TESObjectCELL* cellPtr;
-		__try {
+		RE::TESObjectCELL* cellPtr = nullptr;
+		try {
 			REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func{ RELOCATION_ID(20026, 20460) };
 
 			cellPtr = Func(this->Parent->WorldSpace, this->X, this->Y);
-		} __except (EXCEPTION_EXECUTE_HANDLER) {
-			stl::report_and_fail("Grass Generation has Crashed!");
+		} catch (...) {
+			logger::error("Grass Generation has Crashed!");
+			MessageBoxTimeoutA(nullptr, "Grass Generation has Crashed!", "Grass Generation has Crashed!", MB_SYSTEMMODAL, 0, 5000);
+			TerminateProcess(GetCurrentProcess(), 1);
 		}
 
 		REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
@@ -848,7 +850,9 @@ namespace GrassControl
 				REL::Relocation<void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
 				func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10, Cell, 0);
 			} catch (...) {
-				stl::report_and_fail("Grass Generation has Crashed!");
+				logger::error("Grass Generation has Crashed!");
+				MessageBoxTimeoutA(nullptr, "Grass Generation has Crashed!", "Grass Generation has Crashed!", MB_SYSTEMMODAL, 0, 5000);
+				TerminateProcess(GetCurrentProcess(), 1);
 			}
 		}
 		if (std::filesystem::exists(fileKey)) {

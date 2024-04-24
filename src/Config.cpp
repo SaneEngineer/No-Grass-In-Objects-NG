@@ -74,6 +74,7 @@ namespace GrassControl
 				ReadStringSetting(ini, "GrassConfig", "Skip-pregenerate-world-spaces", SkipPregenerateWorldSpaces);
 				ReadStringSetting(ini, "GrassConfig", "Only-pregenerate-world-spaces", OnlyPregenerateWorldSpaces);
 				ReadIntSetting(ini, "GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode);
+				ReadIntSetting(ini, "GrassConfig", "Max-Failures", MaxFailures);
 
 				return true;
 			}

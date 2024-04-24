@@ -83,6 +83,11 @@ namespace stl
 	}
 }
 
+extern "C"
+{
+	int WINAPI MessageBoxTimeoutA(IN HWND hWnd, IN LPCSTR lpText, IN LPCSTR lpCaption, IN UINT uType, IN WORD wLanguageId, IN DWORD dwMilliseconds);
+};
+
 #ifdef SKYRIM_AE
 #	define REL_ID(se, ae) REL::ID(ae)
 #	define OFFSET(se, ae) ae
