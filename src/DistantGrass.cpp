@@ -93,7 +93,7 @@ namespace GrassControl
 	{
 		int count = 0;
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			for (const auto& val : map | std::views::values) {
 				if (val->State != _cell_data::_cell_states::None) {
 					count++;
@@ -148,7 +148,7 @@ namespace GrassControl
 
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			if (!this->map.contains(key)) {
 				d = std::make_shared<_cell_data>();
 				this->map.insert_or_assign(key, d);
@@ -163,7 +163,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			if (d->State != _cell_data::_cell_states::None) {
 				return;
 			}
@@ -197,7 +197,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(NRlocker());
 			if (d->State == _cell_data::_cell_states::None || d->State == _cell_data::_cell_states::Abort) {
 				return;
 			}
