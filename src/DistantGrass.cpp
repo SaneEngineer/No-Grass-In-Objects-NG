@@ -635,7 +635,7 @@ namespace GrassControl
 			stl::report_and_fail("Failed to fix shape selection");
 		}
 #endif
-		addr = RELOCATION_ID(15205, 15373).address() + OFFSET(0x5F6B - 0x5944, 0x583);
+		addr = RELOCATION_ID(15205, 15373).address() + OFFSET(0x617, 0x583);
 		struct Patch : Xbyak::CodeGenerator
 		{
 			Patch(uintptr_t a_target)
