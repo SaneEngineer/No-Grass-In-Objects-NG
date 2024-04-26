@@ -878,7 +878,7 @@ namespace GrassControl
 			addr = RELOCATION_ID(18137, 18527).address() + OFFSET(0x17, 0x25);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_target)
+				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_rbxWorldSpaceOffset, uintptr_t a_target)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label funcLabel2;
@@ -890,13 +890,13 @@ namespace GrassControl
 					Xbyak::Label notIf;
 					Xbyak::Label include;
 
-					mov(al, ptr[rbx + 0x3E]);  //if ourMethod == 1
+					mov(al, ptr[rbx + a_rbxWorldSpaceOffset + 0x1E]);  //if ourMethod == 1
 					cmp(al, 1);
 					jne(j_else);
 
-					mov(rcx, ptr[rbx + 0x20]);  // ws
-					mov(edx, ptr[rbx + 0x30]);  // x
-					mov(r8d, ptr[rbx + 0x34]);  // y
+					mov(rcx, ptr[rbx + a_rbxWorldSpaceOffset]);         // ws
+					mov(edx, ptr[rbx + a_rbxWorldSpaceOffset + 0x10]);  // x
+					mov(r8d, ptr[rbx + a_rbxWorldSpaceOffset + 0x14]);  // y
 
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function
@@ -911,7 +911,7 @@ namespace GrassControl
 					mov(cl, al);
 
 					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel2]);  // call our function
+					call(ptr[rip + funcLabel2]);  // exception
 					add(rsp, 0x20);
 
 					jmp(include);
@@ -923,8 +923,8 @@ namespace GrassControl
 #ifdef SKYRIM_AE
 					call(ptr[rip + Call]);
 #else
-					mov(rcx, ptr[rbx + 0x18]);
-					lea(rdx, ptr[rbx + 0x20]);
+						mov(rcx, ptr[rbx + a_rbxWorldSpaceOffset - 0x8]);  // lock
+						lea(rdx, ptr[rbx + a_rbxWorldSpaceOffset]);        // worldspace
 #endif
 					jmp(ptr[rip + retnLabel]);
 
@@ -952,7 +952,7 @@ namespace GrassControl
 #endif
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), addr);
+			Patch patch(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), OFFSET_3(0x20, 0x20, 0x28), addr);
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
