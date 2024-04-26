@@ -187,7 +187,7 @@ namespace GrassControl
 		}
 
 		// Disable grass console.
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + OFFSET(0x55A6 - 0x4D10, 0x896)); REL::make_pattern<"48 8D 05">().match(addr)) {
+		if (auto addr = (RELOCATION_ID(15204, 15372).address() + 0x896); REL::make_pattern<"48 8D 05">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
 			struct Patch : Xbyak::CodeGenerator
 			{
@@ -199,11 +199,7 @@ namespace GrassControl
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
-#ifdef SKYRIM_AE
 					dq(a_target + 0x7 + (0x5882 - 0x55AD));
-#else
-					dq(a_target + 0x7 + (0x5882 - 0x55AD));
-#endif
 				}
 			};
 			Patch patch(addr);

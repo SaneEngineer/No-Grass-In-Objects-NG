@@ -1,5 +1,12 @@
 #include "GrassControl/DistantGrass.h"
+using namespace Xbyak;
 
+// temporary define until NG
+#ifdef SKYRIM_AE
+bool AE = true;
+#else
+bool AE = false;
+#endif
 namespace GrassControl
 {
 	uintptr_t DistantGrass::addr_uGrids = RELOCATION_ID(501244, 359675).address();
@@ -365,7 +372,7 @@ namespace GrassControl
 
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_func, uintptr_t a_target)
+				Patch(std::uintptr_t a_func, uintptr_t a_target, Reg a_Y, Reg a_X)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
@@ -374,13 +381,8 @@ namespace GrassControl
 					push(rcx);
 
 					mov(r9d, 0);
-#ifdef SKYRIM_AE
-					mov(r8d, edi);   // movedY
-					mov(edx, r14d);  // movedX
-#else
-					mov(r8d, r14d);  // movedY
-					mov(edx, ebp);   // movedX
-#endif
+					mov(r8d, a_Y);  // movedY
+					mov(edx, a_X);  // movedX
 					mov(rcx, rbx);
 
 					sub(rsp, 0x20);
@@ -395,14 +397,10 @@ namespace GrassControl
 					dq(a_func);
 
 					L(retnLabel);
-#ifdef SKYRIM_AE
-					dq(a_target + 0x15C);
-#else
-					dq(a_target + (0xB5F - 0xA0C));
-#endif
+					dq(a_target);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr);
+			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + (OFFSET((0xB5F - 0xA0C), 0x15C)), Reg32(OFFSET(Reg::R14D, Reg::EDI)), Reg32(OFFSET(Reg::EBP, Reg::R14D)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -692,33 +690,21 @@ namespace GrassControl
 
 		struct Patch2 : Xbyak::CodeGenerator
 		{
-			explicit Patch2(uintptr_t a_target)
+			explicit Patch2(uintptr_t a_target, Reg a_X)
 			{
 				Xbyak::Label retnLabel;
 
-#ifdef SKYRIM_AE
-				mov(ptr[rsp + 0x48 + 4], r14w);
+				mov(ptr[rsp + 0x48 + 4], a_X.cvt16());
 				mov(ptr[rsp + 0x48 + 6], bx);
 
-				movsx(eax, r14w);  // x
-				mov(r14, rcx);
-#else
-				mov(ptr[rsp + 0x48 + 4], r15w);
-				mov(ptr[rsp + 0x48 + 6], bx);
-
-				movsx(eax, r15w);  // x
-				mov(r15, rcx);
-#endif
+				movsx(eax, a_X.cvt16());  // x
+				mov(a_X, rcx);
 				cdq();
 				mov(ecx, 12);  // x/12
 				idiv(ecx);
-#ifdef SKYRIM_AE
-				mov(rcx, r14);
-				mov(r14d, eax);
-#else
-				mov(rcx, r15);
-				mov(r15d, eax);
-#endif
+
+				mov(rcx, a_X);
+				mov(a_X.cvt32(), eax);
 
 				movsx(eax, bx);  // y
 				mov(rbx, rcx);
@@ -728,12 +714,8 @@ namespace GrassControl
 				mov(rcx, rbx);
 				mov(ebx, eax);
 
-#ifdef SKYRIM_AE
-				mov(ptr[rsp + 0x258 + 0x58], r14d);  // x
-#else
-				mov(ptr[rsp + 0x258 + 0x58], r15d);  // x
-#endif
-				mov(ptr[rsp + 0x258 + 0x60], ebx);  // y
+				mov(ptr[rsp + 0x258 + 0x58], a_X.cvt32());  // x
+				mov(ptr[rsp + 0x258 + 0x60], ebx);          // y
 
 				jmp(ptr[rip + retnLabel]);
 
@@ -741,7 +723,7 @@ namespace GrassControl
 				dq(a_target + (0xC2 - 0xB7));
 			}
 		};
-		Patch2 patch2(addr);
+		Patch2 patch2(addr, Reg32(OFFSET(Reg::R15, Reg::R14)));
 		patch2.ready();
 
 		DWORD flOldProtect = 0;
@@ -878,7 +860,7 @@ namespace GrassControl
 			addr = RELOCATION_ID(18137, 18527).address() + OFFSET(0x17, 0x25);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_rbxWorldSpaceOffset, uintptr_t a_target)
+				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_rbxWorldSpaceOffset, uintptr_t a_targetReturn, uintptr_t a_targetSkip)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label funcLabel2;
@@ -920,12 +902,12 @@ namespace GrassControl
 					jmp(include);
 
 					L(include);
-#ifdef SKYRIM_AE
-					call(ptr[rip + Call]);
-#else
+					if (AE) {
+						call(ptr[rip + Call]);
+					} else {
 						mov(rcx, ptr[rbx + a_rbxWorldSpaceOffset - 0x8]);  // lock
 						lea(rdx, ptr[rbx + a_rbxWorldSpaceOffset]);        // worldspace
-#endif
+					}
 					jmp(ptr[rip + retnLabel]);
 
 					L(funcLabel);
@@ -935,58 +917,46 @@ namespace GrassControl
 					dq(b_func);
 
 					L(retnLabel);
-#ifdef SKYRIM_AE
-					dq(a_target + 0x5);
-#else
-					dq(a_target + 0x8);
-#endif
+					dq(a_targetReturn);
 
 					L(Call);
 					dq(RELOCATION_ID(18637, 19111).address());
 
 					L(skip);
-#ifdef SKYRIM_AE
-					dq(a_target + 0x141);
-#else
-					dq(a_target + 0x8 + (0xA9 - 0x8F));
-#endif
+					dq(a_targetSkip);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), OFFSET_3(0x20, 0x20, 0x28), addr);
+			Patch patch(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), OFFSET_3(0x20, 0x20, 0x28), addr + OFFSET(0x8, 0x5), addr + OFFSET(0x8 + (0xA9 - 0x8F), 0x141));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
-#ifdef SKYRIM_AE
+			if (!AE) {
+				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
+			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-#else
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-#endif
 
 			addr = RELOCATION_ID(18150, 18541).address() + OFFSET_3(0xB094 - 0xAF20, 0x1CA, 0x177);
 			struct Patch2 : Xbyak::CodeGenerator
 			{
-				Patch2(uintptr_t a_func, uintptr_t a_target)
+				Patch2(uintptr_t a_func, uintptr_t a_target, uintptr_t rbx_offset)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
-#ifndef SKYRIMVR
-#	ifdef SKYRIM_AE
-					movzx(eax, ptr[rsp + 0xA0]);
-#	else
-					mov(esi, ptr[rsp + 0x30]);
-#	endif
-					mov(ptr[rbx + 0x3D], al);
+					if (AE)
+						movzx(eax, ptr[rsp + 0xA0]);
+					else
+						mov(esi, ptr[rsp + 0x30]);
+					mov(ptr[rbx + rbx_offset + 0xd], al);
 
-					mov(rcx, ptr[rbx + 0x30]);  // x
-					mov(rdx, ptr[rbx + 0x34]);  // y
+					mov(rcx, ptr[rbx + rbx_offset]);        // x
+					mov(rdx, ptr[rbx + rbx_offset + 0x4]);  // y
 
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);
 					add(rsp, 0x20);
 
-					mov(byte[rbx + 0x3E], al);
+					mov(byte[rbx + rbx_offset + 0xe], al);
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -994,73 +964,32 @@ namespace GrassControl
 					dq(a_func);
 
 					L(retnLabel);
-#	ifdef SKYRIM_AE
-					dq(a_target + 0xB);
-#	else
-					dq(a_target + 0x7);
-#	endif
-#else  // VR
-					mov(esi, ptr[rsp + 0x30]);
-					mov(ptr[rbx + 0x45], al);
-
-					mov(rcx, ptr[rbx + 0x38]);  // x
-					mov(rdx, ptr[rbx + 0x3c]);  // y
-
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);
-					add(rsp, 0x20);
-
-					mov(byte[rbx + 0x46], al);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(a_func);
-
-					L(retnLabel);
-					dq(a_target + 0x7);
-#endif
+					dq(a_target);
 				}
 			};
-			Patch2 patch2(reinterpret_cast<uintptr_t>(CellLoadHook), addr);
+			Patch2 patch2(reinterpret_cast<uintptr_t>(CellLoadHook), addr + OFFSET(0x7, 0xB), OFFSET_3(0x30, 0x30, 0x38));
 			patch2.ready();
-#ifdef SKYRIM_AE
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
-#else
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-#endif
+			Utility::Memory::SafeWrite(addr + 5, OFFSET(Utility::Assembly::NoOperation2, Utility::Assembly::NoOperation6));
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
 			addr = RELOCATION_ID(18149, 18540).address() + OFFSET_3(0xE1B - 0xCC0, 0x167, 0x15E);
 			struct Patch3 : Xbyak::CodeGenerator
 			{
-				explicit Patch3(uintptr_t a_target)
+				explicit Patch3(uintptr_t a_target, uintptr_t rbx_offset, Reg a_source)
 				{
 					Xbyak::Label retnLabel;
-#ifndef SKYRIMVR
-					mov(byte[rbx + 0x3E], 0);
+					mov(byte[rbx + rbx_offset + 0x2], 0);
 
-					mov(byte[rbx + 0x3C], 1);
+					mov(byte[rbx + rbx_offset], 1);
 
-#	ifdef SKYRIM_AE
-					mov(ptr[rbx + 0x3D], bpl);
-#	else
-					mov(ptr[rbx + 0x3D], r15b);
-#	endif
-#else
-					mov(byte[rbx + 0x46], 0);
-
-					mov(byte[rbx + 0x44], 1);
-
-					mov(ptr[rbx + 0x45], r15b);
-#endif  // VR
+					mov(ptr[rbx + rbx_offset + 0x1], a_source);
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
 					dq(a_target + 0x8);
 				}
 			};
-			Patch3 patch3(addr);
+			Patch3 patch3(addr, OFFSET_3(0x3c, 0x3c, 0x44), Reg8(OFFSET(Reg::R15B, Reg::BPL)));
 			patch3.ready();
 
 			Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
@@ -1069,7 +998,7 @@ namespace GrassControl
 			addr = RELOCATION_ID(13148, 13288).address() + OFFSET(0x2630 - 0x2220, 0x4D0);
 			struct Patch4 : Xbyak::CodeGenerator
 			{
-				Patch4(std::uintptr_t a_func, uintptr_t a_target)
+				Patch4(std::uintptr_t a_func, uintptr_t a_target, Reg a_movedY, uintptr_t a_retn_offset)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
@@ -1081,13 +1010,12 @@ namespace GrassControl
 					push(rdx);
 					push(rax);
 					push(rsi);
-#ifdef SKYRIM_AE
-					mov(r8d, r12w);  //movedX
-					mov(r9d, r15w);  //movedY
-#else
-					mov(r8d, ptr[rsp + 0x90]);  //movedX
-					mov(r9d, r13w);             //movedY
-#endif
+					if (AE) {
+						mov(r8d, r12w);  //movedX
+					} else {
+						mov(r8d, ptr[rsp + 0x90]);  //movedX
+					}
+					mov(r9d, a_movedY);  //movedY
 					mov(esi, r8d);
 
 					mov(rax, ptr[rbx + 0x140]);  // ws
@@ -1113,12 +1041,11 @@ namespace GrassControl
 					pop(rdx);
 					pop(rax);
 					pop(rsi);
-#ifdef SKYRIM_AE
-					test(r12w, r12w);
-					jz(jump);
-#else
-					cmp(esi, 0);
-#endif
+					if (AE) {
+						test(r12w, r12w);
+						jz(jump);
+					} else
+						cmp(esi, 0);
 					jmp(ptr[rip + retnLabel]);
 
 					L(funcLabel);
@@ -1131,21 +1058,17 @@ namespace GrassControl
 					jmp(ptr[rip + jumpAd]);
 
 					L(retnLabel);
-#ifdef SKYRIM_AE
-					dq(a_target + 0x6);
-#else
-					dq(a_target + 0x9);
-#endif
+					dq(a_target + a_retn_offset);
 				}
 			};
-			Patch4 patch4(reinterpret_cast<uintptr_t>(UpdateGrassGridQueue), addr);
+			Patch4 patch4(reinterpret_cast<uintptr_t>(UpdateGrassGridQueue), addr, Reg16(OFFSET(Reg16::R13W, Reg16::R15W)), OFFSET(0x9, 0x6));
 			patch4.ready();
-#ifdef SKYRIM_AE
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch4));
-#else
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch4));
-#endif
+			if (AE)
+				trampoline.write_branch<6>(addr, trampoline.allocate(patch4));
+			else {
+				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
+				trampoline.write_branch<5>(addr, trampoline.allocate(patch4));
+			}
 
 			addr = RELOCATION_ID(13148, 13288).address() + OFFSET(0x29AF - 0x2220, 0x9A9);
 			struct Patch5 : Xbyak::CodeGenerator
