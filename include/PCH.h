@@ -62,11 +62,11 @@ namespace stl
 		T::func = trampoline.write_branch<5>(a_src, T::thunk);
 	}
 
-	template <class T>
+	template <class T, size_t size = 5>
 	void write_thunk_call(std::uintptr_t a_src)
 	{
 		auto& trampoline = SKSE::GetTrampoline();
-		T::func = trampoline.write_call<5>(a_src, T::thunk);
+		T::func = trampoline.write_call<size>(a_src, T::thunk);
 	}
 
 	template <class F, size_t offset, class T>
