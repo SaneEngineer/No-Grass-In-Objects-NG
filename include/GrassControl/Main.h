@@ -66,9 +66,9 @@ namespace GrassControl
 			// Track when console is opened.
 			struct ConsoleOpen
 			{
-				static void thunk(RE::PlayerCharacter* playerCharacter)
+				static void thunk(int64_t a1, char a2)
 				{
-					func(playerCharacter);
+					func(a1, a2);
 					profiler->Report();
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
@@ -100,9 +100,17 @@ namespace GrassControl
 
 			static void Install()
 			{
-				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x748, 0xC2b, 0x7EE));
+				bool marketPlace = REL::Module::get().version() >= SKSE::RUNTIME_LATEST;
+
+				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x748, (marketPlace ? 0xC2b : 0xC26), 0x7EE));
+
 				if (Config::ProfilerReport) {
-					stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET_3(0x14E, 334, 0x15b));
+					if (marketPlace) {
+						stl::write_thunk_call<ConsoleOpen>(REL::ID(442669).address() + 0x15D);
+					} else {
+						stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET_3(0x142, 0x15C, 0x14F));
+					}
+
 					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + OFFSET(0x905, 0xb29));
 					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 					stl::write_thunk_call<GrassCreationEnd, 6>(RELOCATION_ID(15204, 15372).address() + OFFSET(0xBDD, 0xbd9));
