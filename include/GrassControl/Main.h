@@ -100,10 +100,9 @@ namespace GrassControl
 
 			static void Install()
 			{
-				bool marketPlace = REL::Module::get().version() >= SKSE::RUNTIME_LATEST;
+				bool marketPlace = REL::Module::get().version() >= SKSE::RUNTIME_1_6_1130;
 
 				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x748, (marketPlace ? 0xC2b : 0xC26), 0x7EE));
-
 				if (Config::ProfilerReport) {
 					if (marketPlace) {
 						stl::write_thunk_call<ConsoleOpen>(REL::ID(442669).address() + 0x15D);
