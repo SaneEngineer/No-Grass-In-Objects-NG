@@ -332,64 +332,38 @@ namespace GrassControl
 		}
 
 		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3(0x93a, 0xab4, 0xa0c);  // replacing xmm0 *= 4.656613e-10;
+			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3(0x93a, 0xab4, 0xa0c);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_target, uintptr_t a_func)
+				Patch(uintptr_t a_target, uintptr_t a_func,
+					Xbyak::Xmm a_sourceReg_4656,  // 4.656613e-10
+					Xbyak::Xmm a_sourceReg_1,     // 1.0
+					Xbyak::Reg a_baseReg)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
-#ifndef SKYRIMVR
-					mulss(xmm0, xmm14);  // original code
-#	ifdef SKYRIM_AE
-					subss(xmm0, xmm10);            // original code
-					mulss(xmm0, ptr[rbx + 0x10]);  // original code
-					addss(xmm0, xmm10);            // finalScale = xmm0 + 1;
-#	else
-					subss(xmm0, xmm11);            // original code
-					mulss(xmm0, ptr[rsi + 0x10]);  // original code
-					addss(xmm0, xmm11);            // finalScale = xmm0 + 1;
-#	endif  // AE
+					mulss(xmm0, a_sourceReg_4656);       // finalScale *= 4.656613e-10; // original code
+					subss(xmm0, a_sourceReg_1);          // xmm0 -= 1; original code
+					mulss(xmm0, ptr[a_baseReg + 0x10]);  // original code
+					addss(xmm0, a_sourceReg_1);          // finalScale = xmm0 + 1;
 
 					// function call
 					sub(rsp, 0x20);
-					mov(al, 1);
+					mov(al, 1);                  // one float parameter
 					call(ptr[rip + funcLabel]);  // finalScale = SetScale(finalScale);
 					add(rsp, 0x20);
-#	ifdef SKYRIM_AE
-					subss(xmm0, xmm10);  // xmm0 = finalScale - 1; // original code
-#	else
-					subss(xmm0, xmm11);  // xmm0 = finalScale - 1; // original code
-#	endif  //AE
-#else       // VR
-					mulss(xmm0, xmm12);            // original code
-					subss(xmm0, xmm11);            // original code
-					mulss(xmm0, ptr[r13 + 0x10]);  // original code
-					addss(xmm0, xmm11);            // finalScale = xmm0 + 1;
-
-					// function call
-					sub(rsp, 0x20);
-					mov(al, 1);
-					call(ptr[rip + funcLabel]);  // finalScale = SetScale(finalScale);
-					add(rsp, 0x20);
-					subss(xmm0, xmm11);  // xmm0 = finalScale - 1; // original code
-#endif      // VR
-
+					subss(xmm0, a_sourceReg_1);  // xmm0 = finalScale - 1; // original code
 					jmp(ptr[rip + retnLabel]);
 
 					L(funcLabel);
 					dq(a_func);
 
 					L(retnLabel);
-#ifndef SKYRIMVR
-					dq(a_target + 0xf);
-#else  // VR
-					dq(a_target + 0x10);
-#endif
+					dq(a_target);
 				}
 			};
-			Patch patch(addr, reinterpret_cast<uintptr_t>(SetScale));
+			Patch patch(addr + OFFSET_3(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(OFFSET_3(14, 14, 12)), Xbyak::Xmm(OFFSET_3(11, 10, 11)), Xbyak::Reg64(OFFSET_3(Xbyak::Reg::RSI, Xbyak::Reg::RBX, 13)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
