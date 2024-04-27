@@ -5,7 +5,7 @@ namespace GrassControl
 	static float SetScale(float a_input)
 	{
 		// we need to only interact with floats so the input/ouput register xmm0 is proper precision
-		return a_input * Config::GlobalGrassScale;
+		return static_cast<float>(a_input * Config::GlobalGrassScale);
 	}
 
 	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
@@ -36,7 +36,7 @@ namespace GrassControl
 
 			GidFileGenerationTask::cur_state = 1;
 
-			GidFileGenerationTask::_lastDidSomething = static_cast<volatile long long>(GetTickCount64());
+			GidFileGenerationTask::_lastDidSomething = GetTickCount64();
 			std::thread t(GidFileGenerationTask::run_freeze_check);
 			t.detach();
 
@@ -60,7 +60,7 @@ namespace GrassControl
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
-			Cache = std::make_unique<RaycastHelper>(std::stof(Version::NAME.data()), Config::RayCastHeight, Config::RayCastDepth, Config::RayCastCollisionLayers, cachedList);
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(Version::NAME.data())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
@@ -304,7 +304,7 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = Config::OverwriteGrassDistance;
+			setting->data.f = static_cast<float>(Config::OverwriteGrassDistance);
 		}
 
 		if (Config::OverwriteGrassFadeRange >= 0.0) {
@@ -316,7 +316,7 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = Config::OverwriteGrassFadeRange;
+			setting->data.f = static_cast<float>(Config::OverwriteGrassFadeRange);
 		}
 
 		if (Config::OverwriteMinGrassSize >= 0) {

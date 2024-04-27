@@ -329,9 +329,9 @@ namespace GrassControl
 					dq(a_func);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
-			patch.ready();
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch));
+			Patch patch2(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
+			patch2.ready();
+			trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
 		} else {
 			stl::report_and_fail("Failed to Generate Gid Files");
 		}
@@ -773,9 +773,9 @@ namespace GrassControl
 
 		RE::TESObjectCELL* cellPtr = nullptr;
 		try {
-			REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func{ RELOCATION_ID(20026, 20460) };
+			REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func2{ RELOCATION_ID(20026, 20460) };
 
-			cellPtr = Func(this->Parent->WorldSpace, this->X, this->Y);
+			cellPtr = Func2(this->Parent->WorldSpace, this->X, this->Y);
 		} catch (...) {
 			logger::error("Grass Generation has Crashed!");
 			MessageBoxTimeoutA(nullptr, "Grass Generation has Crashed!", "Grass Generation has Crashed!", MB_SYSTEMMODAL, 0, 5000);

@@ -49,7 +49,7 @@ namespace Util
 			std::string idstr;
 			std::string fileName;
 
-			int ix = x.find(L':');
+			auto ix = x.find(L':');
 			if (ix <= 0) {
 				if (!dontWriteAnythingToLog) {
 					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`."));
@@ -85,7 +85,7 @@ namespace Util
 			try {
 				id = stoi(idstr, nullptr, 16);
 				sucess = true;
-			} catch (std::exception& err) {
+			} catch (std::exception&) {
 				sucess = false;
 			}
 			if (!sucess) {
