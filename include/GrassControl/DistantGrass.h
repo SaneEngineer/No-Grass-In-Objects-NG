@@ -212,7 +212,7 @@ namespace GrassControl
 							auto ext = cell->GetCoordinates();
 							auto x = ext->cellX;
 							auto y = ext->cellY;
-							LO2Map->_DoLoad(cell->worldSpace, x, y);
+							LO2Map->_DoLoad(cell->GetRuntimeData().worldSpace, x, y);
 						}
 					} else {
 						Call_AddGrassNow(GrassMgr, cell, unk);
@@ -230,23 +230,14 @@ namespace GrassControl
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
 
-			struct CellSelection2
-			{
-				static void thunk(uintptr_t arg_1, uintptr_t arg_2, int arg_3, int arg_4, uintptr_t arg_5, uintptr_t arg_6)
-				{
-					func(arg_1, arg_2, arg_3 * 12, arg_4 * 12, arg_5, arg_6);
-				}
-				static inline REL::Relocation<decltype(thunk)> func;
-			};
-
 			static void Install()
 			{
 				if(Config::ExtendGrassDistance) {
-					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
-#ifdef SKYRIM_AE
-					stl::write_thunk_call<CellSelection>(REL_ID(15206, 15374).address() + OFFSET(0x645C - 0x6200, 0x645C - 0x6200));
-					stl::write_thunk_call<CellSelection>(REL_ID(15204, 15372).address() + OFFSET(0x2F5, 0x2F5));
-#endif
+					stl::write_thunk_jump<WriteProgress>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0xF));
+                    if(REL::Module::GetRuntime() == REL::Module::Runtime::AE) {
+					    stl::write_thunk_call<CellSelection>(RELOCATION_ID(15206, 15374).address() + REL::Relocate(0x645C - 0x6200, 0x645C - 0x6200));
+					    stl::write_thunk_call<CellSelection>(RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x2F5, 0x2F5));
+                    }	
 				}
 			}
 		};

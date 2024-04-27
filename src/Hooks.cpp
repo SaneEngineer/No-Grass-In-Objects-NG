@@ -60,7 +60,7 @@ namespace GrassControl
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
-			Cache = std::make_unique<RaycastHelper>(std::stof(Version::NAME.data()), Config::RayCastHeight, Config::RayCastDepth, Config::RayCastCollisionLayers, cachedList);
+			Cache = std::make_unique<RaycastHelper>(std::stoi(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string()), Config::RayCastHeight, Config::RayCastDepth, Config::RayCastCollisionLayers, cachedList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
@@ -110,78 +110,84 @@ namespace GrassControl
 		}
 
 		if (Config::RayCast) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3((0x723A - 0x6CE0), 0x664, 0x56C);
+			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x723A - 0x6CE0, 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t b_func, std::uintptr_t a_target)
+				Patch(std::uintptr_t a_func, std::uintptr_t a_target)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
 					Xbyak::Label jump;
 					Xbyak::Label notIf;
-#ifndef SKYRIMVR
-#	ifdef SKYRIM_AE
-					movss(xmm1, ptr[rsp + 0x50]);  // x
-					movss(xmm2, ptr[rsp + 0x54]);  // y
-					movss(xmm3, xmm7);             // z
 
-					mov(rcx, rdi);
-#	else
-					movss(xmm1, ptr[rsp + 0x40]);  // x
-					movss(xmm2, ptr[rsp + 0x44]);  // y
-					movss(xmm3, xmm7);             // z
+					if (REL::Module::GetRuntime() == REL::Module::Runtime::AE) {
+						movss(xmm1, ptr[rsp + 0x50]);  // x
+						movss(xmm2, ptr[rsp + 0x54]);  // y
+						movss(xmm3, xmm7);             // z
 
-					mov(rcx, rsi);
-#	endif
+						mov(rcx, rdi);
 
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
+						sub(rsp, 0x20);
+						call(ptr[rip + funcLabel]);  // call our function
+						add(rsp, 0x20);
 
-					test(al, al);
-					jne(notIf);
-					jmp(ptr[rip + jump]);
+						test(al, al);
+						jne(notIf);
+						jmp(ptr[rip + jump]);
 
-					L(notIf);
-#	ifdef SKYRIM_AE
-					movss(xmm6, ptr[rbp - 0x68]);
-#	else
-					movss(xmm6, ptr[rbp - 0x48]);
-#	endif
-					jmp(ptr[rip + retnLabel]);
+						L(notIf);
+						movss(xmm6, ptr[rbp - 0x68]);
+						jmp(ptr[rip + retnLabel]);
 
-					L(jump);
-#	ifdef SKYRIM_AE
-					dq(a_target - 0x156);
-#	else
-					dq(a_target + 0x5 + (0x661 - 0x23F));  // VR 515
-#	endif
-#else
-					movss(xmm1, ptr[rsp + 0x50]);  // x
-					movss(xmm2, ptr[rsp + 0x54]);  // y
-					movss(xmm3, xmm14);            // z
+						L(jump);
+						dq(a_target - 0x156);
+					} else if (REL::Module::GetRuntime() == REL::Module::Runtime::SE) {
+						movss(xmm1, ptr[rsp + 0x40]);  // x
+						movss(xmm2, ptr[rsp + 0x44]);  // y
+						movss(xmm3, xmm7);             // z
 
-					mov(rcx, rbx);
+						mov(rcx, rsi);
 
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
+						sub(rsp, 0x20);
+						call(ptr[rip + funcLabel]);  // call our function
+						add(rsp, 0x20);
 
-					test(al, al);
-					jne(notIf);
-					jmp(ptr[rip + jump]);
+						test(al, al);
+						jne(notIf);
+						jmp(ptr[rip + jump]);
 
-					L(notIf);
-					movss(xmm6, ptr[rbp - 0x38]);
-					jmp(ptr[rip + retnLabel]);
+						L(notIf);
+						movss(xmm6, ptr[rbp - 0x48]);
+						jmp(ptr[rip + retnLabel]);
 
-					L(jump);
-					dq(a_target + 0x5 + 0x510);
-#endif  //VR
+						L(jump);
+						dq(a_target + 0x5 + (0x661 - 0x23F));  // VR 515
+					} else if (REL::Module::GetRuntime() == REL::Module::Runtime::VR) {
+						movss(xmm1, ptr[rsp + 0x50]);  // x
+						movss(xmm2, ptr[rsp + 0x54]);  // y
+						movss(xmm3, xmm14);            // z
+
+						mov(rcx, rbx);
+
+						sub(rsp, 0x20);
+						call(ptr[rip + funcLabel]);  // call our function
+						add(rsp, 0x20);
+
+						test(al, al);
+						jne(notIf);
+						jmp(ptr[rip + jump]);
+
+						L(notIf);
+						movss(xmm6, ptr[rbp - 0x38]);
+						jmp(ptr[rip + retnLabel]);
+
+						L(jump);
+						dq(a_target + 0x5 + 0x510);
+					}
 
 					L(funcLabel);
-					dq(b_func);
+					dq(a_func);
 
 					L(retnLabel);
 					dq(a_target + 0x5);
@@ -196,8 +202,8 @@ namespace GrassControl
 
 		if (Config::SuperDenseGrass) {
 			// Make amount big.
-			auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xAE5 - 0x890, 0x258);
-			int mode = std::max(0, std::min(12, static_cast<int>(Config::SuperDenseMode)));
+			auto addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xAE5 - 0x890, 0x258);
+			int mode = std::max(0, std::min(12, Config::SuperDenseMode));
 			if (mode != 7) {
 				Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
 			}
@@ -205,10 +211,10 @@ namespace GrassControl
 
 		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
-			if (auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
+			if (auto addr = RELOCATION_ID(15220, 15385).address() + REL::Relocate(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
 			}
-			if (auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
+			if (auto addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
 				//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -264,29 +270,26 @@ namespace GrassControl
 		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-			if (auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
+			if (auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
-				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
+				uint32_t max = std::max(Config::EnsureMaxGrassTypesPerTextureSetting, Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
 
 				struct Patch : Xbyak::CodeGenerator
 				{
-					Patch(uint32_t max, std::uintptr_t a_target)
+					Patch(uint32_t max, std::uintptr_t a_target, Xbyak::Reg a_grassTypeReg)
 					{
 						Xbyak::Label retnLabel;
 
-#ifdef SKYRIM_AE
-						mov(edi, max);
-#else
-						mov(r12d, max);
-#endif
+						mov(a_grassTypeReg, max);
+
 						jmp(ptr[rip + retnLabel]);
 
 						L(retnLabel);
 						dq(a_target + 0x7);
 					}
 				};
-				Patch patch(max, addr);
+				Patch patch(max, addr, Xbyak::Reg32(REL::Relocate(Xbyak::Reg::R12D, Xbyak::Reg::EDI)));
 				patch.ready();
 
 				auto& trampoline = SKSE::GetTrampoline();
@@ -332,7 +335,7 @@ namespace GrassControl
 		}
 
 		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3(0x93a, 0xab4, 0xa0c);
+			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x93a, 0xab4, 0xa0c);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t a_func,
@@ -363,7 +366,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(addr + OFFSET_3(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(OFFSET_3(14, 14, 12)), Xbyak::Xmm(OFFSET_3(11, 10, 11)), Xbyak::Reg64(OFFSET_3(Xbyak::Reg::RSI, Xbyak::Reg::RBX, 13)));
+			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(REL::Relocate(14, 14, 12)), Xbyak::Xmm(REL::Relocate(11, 10, 11)), Xbyak::Reg64(REL::Relocate(Xbyak::Reg::RSI, Xbyak::Reg::RBX, Xbyak::Reg::R13)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();

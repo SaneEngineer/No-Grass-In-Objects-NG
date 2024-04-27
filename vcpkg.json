@@ -1,15 +1,20 @@
 {
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/main/scripts/vcpkg.schema.json",
   "name": "ngio-ng",
-  "builtin-baseline": "b7dba7f9aad09a56900f21cd78cfda1258e54e38",
-  "dependencies": [
-    "glm",
-    "nlohmann-json",
-    "rapidcsv",
-    "rsm-binary-io",
-    "simpleini",
-    "spdlog",
-    "xbyak"
-  ],
-  "license": "Apache-2.0",
-  "version-string": "1.0.0"
+  "version-string": "1.0.12",
+  "port-version": 0,
+  "license": "MIT",
+  "features": {
+    "plugin": {
+      "description": "Build the SKSE plugin.",
+      "dependencies": [
+        "commonlibsse-ng",
+        "directxtk",
+        "glm",
+        "simpleini"
+      ]
+    }
+  },
+  "default-features": [ "plugin" ],
+  "builtin-baseline": "53bef8994c541b6561884a8395ea35715ece75db"
 }

@@ -164,7 +164,7 @@ namespace GrassControl
 					func(GrassMgr, cell, unk);
 					if (IsApplying) {
 						if (cell != nullptr) {
-							auto ws = cell->worldSpace;
+							auto ws = cell->GetRuntimeData().worldSpace;
 							if (ws != nullptr) {
 								std::string wsn = ws->editorID.c_str();
 								int x = cell->GetCoordinates()->cellX;
@@ -182,11 +182,11 @@ namespace GrassControl
 			static void Install()
 			{
 				if (Config::UseGrassCache) {
-					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
-					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
+					stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
+					stl::write_thunk_call<GrassCountIncrement>(RELOCATION_ID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0xD0));
 
 					if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
-						stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
+						stl::write_thunk_jump<WriteProgress>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0xF));
 					}
 				}
 			}

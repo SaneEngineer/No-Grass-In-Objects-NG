@@ -14,8 +14,8 @@ namespace GrassControl
 		static inline bool DebugLogEnable = false;
 
 		static inline bool RayCast = true;
-		static inline double RayCastHeight = 150.0;
-		static inline double RayCastDepth = 5.0;
+		static inline float RayCastHeight = 150.0;
+		static inline float RayCastDepth = 5.0;
 		static inline std::string RayCastCollisionLayers = "1 2 13 20 31";
 		static inline std::string RayCastIgnoreForms = "";
 
@@ -26,10 +26,10 @@ namespace GrassControl
 		static inline bool ExtendGrassDistance = false;
 		static inline bool ExtendGrassCount = true;
 		static inline int EnsureMaxGrassTypesPerTextureSetting = 7;
-		static inline double OverwriteGrassDistance = 6000.0;
-		static inline double OverwriteGrassFadeRange = 3000.0;
+		static inline float OverwriteGrassDistance = 6000.0;
+		static inline float OverwriteGrassFadeRange = 3000.0;
 		static inline int OverwriteMinGrassSize = -1;
-		static inline double GlobalGrassScale = 1.0;
+		static inline float GlobalGrassScale = 1.0;
 		static inline bool OnlyLoadFromCache = false;
 		static inline std::string SkipPregenerateWorldSpaces = "DLC2ApocryphaWorld;DLC01Boneyard;WindhelmPitWorldspace";
 		static inline std::string OnlyPregenerateWorldSpaces = "";

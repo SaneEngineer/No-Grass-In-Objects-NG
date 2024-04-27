@@ -21,7 +21,7 @@ namespace GrassControl
 		}
 	}
 
-	void ReadDoubleSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, double& a_setting)
+	void ReadFloatSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, float& a_setting)
 	{
 		const char* bFound = nullptr;
 		bFound = a_ini.GetValue(a_sectionName, a_settingName);
@@ -53,8 +53,8 @@ namespace GrassControl
 
 				//Raycast
 				ReadBoolSetting(ini, "RayCastConfig", "Ray-cast-enabled", RayCast);
-				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-height", RayCastHeight);
-				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-depth", RayCastDepth);
+				ReadFloatSetting(ini, "RayCastConfig", "Ray-cast-height", RayCastHeight);
+				ReadFloatSetting(ini, "RayCastConfig", "Ray-cast-depth", RayCastDepth);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-collision-layers", RayCastCollisionLayers);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-ignore-forms", RayCastIgnoreForms);
 
@@ -66,10 +66,10 @@ namespace GrassControl
 				ReadBoolSetting(ini, "GrassConfig", "Extend-grass-distance", ExtendGrassDistance);
 				ReadBoolSetting(ini, "GrassConfig", "Extend-grass-count", ExtendGrassCount);
 				ReadIntSetting(ini, "GrassConfig", "Ensure-max-grass-types-setting", EnsureMaxGrassTypesPerTextureSetting);
-				ReadDoubleSetting(ini, "GrassConfig", "Overwrite-grass-distance", OverwriteGrassDistance);
-				ReadDoubleSetting(ini, "GrassConfig", "Overwrite-grass-fade-range", OverwriteGrassFadeRange);
+				ReadFloatSetting(ini, "GrassConfig", "Overwrite-grass-distance", OverwriteGrassDistance);
+				ReadFloatSetting(ini, "GrassConfig", "Overwrite-grass-fade-range", OverwriteGrassFadeRange);
 				ReadIntSetting(ini, "GrassConfig", "Overwrite-min-grass-size", OverwriteMinGrassSize);
-				ReadDoubleSetting(ini, "GrassConfig", "Global-grass-scale", GlobalGrassScale);
+				ReadFloatSetting(ini, "GrassConfig", "Global-grass-scale", GlobalGrassScale);
 				ReadBoolSetting(ini, "GrassConfig", "Only-load-from-cache", OnlyLoadFromCache);
 				ReadStringSetting(ini, "GrassConfig", "Skip-pregenerate-world-spaces", SkipPregenerateWorldSpaces);
 				ReadStringSetting(ini, "GrassConfig", "Only-pregenerate-world-spaces", OnlyPregenerateWorldSpaces);
