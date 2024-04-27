@@ -925,7 +925,6 @@ namespace GrassControl
 			Patch patch6(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), OFFSET_3(0x20, 0x20, 0x28), addr + OFFSET(0x8, 0x5), addr + OFFSET(0x8 + (0xA9 - 0x8F), 0x141));
 			patch6.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
 			if (!AE) {
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 			}
