@@ -140,7 +140,7 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	result.hit = av != nullptr;
 
 	if (result.hit) {
-		auto ref = av->GetUserData();
+		//auto ref = av->GetUserData();
 		result.hitObject = av;
 	}
 

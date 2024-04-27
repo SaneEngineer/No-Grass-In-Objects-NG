@@ -1,0 +1,29 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "SE-AUTO-DEPLOYMENT",
+      "cacheVariables": {
+        "COPY_BUILD": "ON",
+        "BUILD_ZIP": "ON"
+      },
+      "inherits": "vs2022-windows-vcpkg-se"
+    },
+    {
+      "name": "AE-AUTO-DEPLOYMENT",
+      "cacheVariables": {
+        "COPY_BUILD": "ON",
+        "BUILD_ZIP": "ON"
+      },
+      "inherits": "vs2022-windows-vcpkg-ae"
+    },
+    {
+      "name": "VR-AUTO-DEPLOYMENT",
+      "cacheVariables": {
+        "COPY_BUILD": "ON",
+        "BUILD_ZIP": "ON"
+      },
+      "inherits": "vs2022-windows-vcpkg-vr"
+    }
+  ]
+}
