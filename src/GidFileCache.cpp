@@ -178,11 +178,10 @@ namespace GrassControl
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
 
+		setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 		if (!only_load) {
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = true;
 		} else {
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
 			setting->data.b = false;
 		}
 
