@@ -400,7 +400,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + (OFFSET((0xB5F - 0xA0C), 0x15C)), Reg32(OFFSET(Reg::R14D, Reg::EDI)), Reg32(OFFSET(Reg::EBP, Reg::R14D)));
+			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + OFFSET(0x159, 0x17D), Reg32(OFFSET(Reg::R14D, Reg::EDI)), Reg32(OFFSET(Reg::EBP, Reg::R14D)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -690,12 +690,12 @@ namespace GrassControl
 
 		struct Patch2 : Xbyak::CodeGenerator
 		{
-			explicit Patch2(uintptr_t a_target, Reg a_X)
+			explicit Patch2(uintptr_t a_target, Reg a_X, uintptr_t rsp_offset, uintptr_t rsp_stackOffset)
 			{
 				Xbyak::Label retnLabel;
 
-				mov(ptr[rsp + 0x48 + 4], a_X.cvt16());
-				mov(ptr[rsp + 0x48 + 6], bx);
+				mov(ptr[rsp + rsp_offset + 4], a_X.cvt16());
+				mov(ptr[rsp + rsp_offset + 6], bx);
 
 				movsx(eax, a_X.cvt16());  // x
 				mov(a_X, rcx);
@@ -714,23 +714,23 @@ namespace GrassControl
 				mov(rcx, rbx);
 				mov(ebx, eax);
 
-				mov(ptr[rsp + 0x258 + 0x58], a_X.cvt32());  // x
-				mov(ptr[rsp + 0x258 + 0x60], ebx);          // y
+				mov(ptr[rsp + rsp_stackOffset + 0x58], a_X.cvt32());  // x
+				mov(ptr[rsp + rsp_stackOffset + 0x60], ebx);          // y
 
 				jmp(ptr[rip + retnLabel]);
 
 				L(retnLabel);
-				dq(a_target + (0xC2 - 0xB7));
+				dq(a_target + 0xB);
 			}
 		};
-		Patch2 patch2(addr, Reg32(OFFSET(Reg::R15, Reg::R14)));
+		Patch2 patch2(addr, Reg32(OFFSET(Reg::R15, Reg::R14)), OFFSET(0x48, 0x50), OFFSET(0x258, 0x288));
 		patch2.ready();
 
 		DWORD flOldProtect = 0;
-		BOOL change_protection = VirtualProtect((LPVOID)addr, (0xC2 - 0xB7), PAGE_EXECUTE_READWRITE, &flOldProtect);
+		BOOL change_protection = VirtualProtect((LPVOID)addr, 0xB, PAGE_EXECUTE_READWRITE, &flOldProtect);
 		// Pass address of the DWORD variable ^
 		if (change_protection) {
-			memset((void*)(addr), 0x90, (0xC2 - 0xB7));
+			memset((void*)(addr), 0x90, 0xB);
 		}
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
