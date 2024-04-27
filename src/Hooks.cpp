@@ -158,7 +158,7 @@ namespace GrassControl
 				Xmm(OFFSET_3(7, 7, 14)),
 				Reg64(OFFSET_3(Reg::RSI, Reg::RDI, Reg::RBX)),
 				OFFSET_3(0x48, 0x68, 0x38),
-				OFFSET_3(0x5 + (0x661 - 0x23F), -0x156, 0x5 + 0x510));
+				OFFSET_3(0x5 + (0x661 - 0x23F), static_cast<uintptr_t>(-0x156), 0x5 + 0x510));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
