@@ -1,11 +1,11 @@
 #include "GrassControl/Main.h"
-
+using namespace Xbyak;
 namespace GrassControl
 {
 	static float SetScale(float a_input)
 	{
 		// we need to only interact with floats so the input/ouput register xmm0 is proper precision
-		return a_input * Config::GlobalGrassScale;
+		return static_cast<float>(a_input * Config::GlobalGrassScale);
 	}
 
 	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
@@ -36,7 +36,7 @@ namespace GrassControl
 
 			GidFileGenerationTask::cur_state = 1;
 
-			GidFileGenerationTask::_lastDidSomething = static_cast<volatile long long>(GetTickCount64());
+			GidFileGenerationTask::_lastDidSomething = GetTickCount64();
 			std::thread t(GidFileGenerationTask::run_freeze_check);
 			t.detach();
 
@@ -113,20 +113,23 @@ namespace GrassControl
 			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x723A - 0x6CE0, 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t a_func, std::uintptr_t a_target)
+				Patch(std::uintptr_t b_func, std::uintptr_t a_target,
+					std::uintptr_t a_rspOffset,
+					Xbyak::Reg a_z,
+					Xbyak::Reg a_rcxSource,
+					std::uintptr_t a_rbpOffset,
+					std::uintptr_t a_targetJumpOffset)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
 
 					Xbyak::Label jump;
 					Xbyak::Label notIf;
+					movss(xmm1, ptr[rsp + a_rspOffset]);        // x
+					movss(xmm2, ptr[rsp + a_rspOffset + 0x4]);  // y
+					movss(xmm3, a_z);                           // z
 
-					if (REL::Module::GetRuntime() == REL::Module::Runtime::AE) {
-						movss(xmm1, ptr[rsp + 0x50]);  // x
-						movss(xmm2, ptr[rsp + 0x54]);  // y
-						movss(xmm3, xmm7);             // z
-
-						mov(rcx, rdi);
+					mov(rcx, a_rcxSource);
 
 						sub(rsp, 0x20);
 						call(ptr[rip + funcLabel]);  // call our function
@@ -136,55 +139,12 @@ namespace GrassControl
 						jne(notIf);
 						jmp(ptr[rip + jump]);
 
-						L(notIf);
-						movss(xmm6, ptr[rbp - 0x68]);
-						jmp(ptr[rip + retnLabel]);
+					L(notIf);
+					movss(xmm6, ptr[rbp - a_rbpOffset]);
+					jmp(ptr[rip + retnLabel]);
 
-						L(jump);
-						dq(a_target - 0x156);
-					} else if (REL::Module::GetRuntime() == REL::Module::Runtime::SE) {
-						movss(xmm1, ptr[rsp + 0x40]);  // x
-						movss(xmm2, ptr[rsp + 0x44]);  // y
-						movss(xmm3, xmm7);             // z
-
-						mov(rcx, rsi);
-
-						sub(rsp, 0x20);
-						call(ptr[rip + funcLabel]);  // call our function
-						add(rsp, 0x20);
-
-						test(al, al);
-						jne(notIf);
-						jmp(ptr[rip + jump]);
-
-						L(notIf);
-						movss(xmm6, ptr[rbp - 0x48]);
-						jmp(ptr[rip + retnLabel]);
-
-						L(jump);
-						dq(a_target + 0x5 + (0x661 - 0x23F));  // VR 515
-					} else if (REL::Module::GetRuntime() == REL::Module::Runtime::VR) {
-						movss(xmm1, ptr[rsp + 0x50]);  // x
-						movss(xmm2, ptr[rsp + 0x54]);  // y
-						movss(xmm3, xmm14);            // z
-
-						mov(rcx, rbx);
-
-						sub(rsp, 0x20);
-						call(ptr[rip + funcLabel]);  // call our function
-						add(rsp, 0x20);
-
-						test(al, al);
-						jne(notIf);
-						jmp(ptr[rip + jump]);
-
-						L(notIf);
-						movss(xmm6, ptr[rbp - 0x38]);
-						jmp(ptr[rip + retnLabel]);
-
-						L(jump);
-						dq(a_target + 0x5 + 0x510);
-					}
+					L(jump);
+					dq(a_target + a_targetJumpOffset);
 
 					L(funcLabel);
 					dq(a_func);
@@ -193,7 +153,12 @@ namespace GrassControl
 					dq(a_target + 0x5);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr);
+			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr,
+				REL::Relocate(0x40, 0x50, 0x50),
+				Xmm(REL::Relocate(7, 7, 14)),
+				Reg64(REL::Relocate(Reg::RSI, Reg::RDI, Reg::RBX)),
+				REL::Relocate(0x48, 0x68, 0x38),
+				REL::Relocate(0x5 + (0x661 - 0x23F), static_cast<uintptr_t>(-0x156), 0x5 + 0x510));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -307,7 +272,7 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = Config::OverwriteGrassDistance;
+			setting->data.f = static_cast<float>(Config::OverwriteGrassDistance);
 		}
 
 		if (Config::OverwriteGrassFadeRange >= 0.0) {
@@ -319,7 +284,7 @@ namespace GrassControl
 					return;
 				}
 			}
-			setting->data.f = Config::OverwriteGrassFadeRange;
+			setting->data.f = static_cast<float>(Config::OverwriteGrassFadeRange);
 		}
 
 		if (Config::OverwriteMinGrassSize >= 0) {
@@ -366,7 +331,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(REL::Relocate(14, 14, 12)), Xbyak::Xmm(REL::Relocate(11, 10, 11)), Xbyak::Reg64(REL::Relocate(Xbyak::Reg::RSI, Xbyak::Reg::RBX, Xbyak::Reg::R13)));
+			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(REL::Relocate(14, 14, 12)), Xbyak::Xmm(REL::Relocate(11, 10, 11)), Xbyak::Reg64(REL::Relocate(Reg::RSI, Reg::RBX, Reg::R13)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();

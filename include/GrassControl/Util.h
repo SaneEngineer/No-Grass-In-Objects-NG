@@ -57,7 +57,7 @@ namespace Util
 		{
 			std::wstring s(a);
 			for (auto& c : s) {
-				c = tolower(c);
+				c = static_cast<wchar_t>(tolower(c));
 			}
 			//	transform(a.begin(), a.end(), a.begin(), ::tolower);
 			return s;

@@ -15,17 +15,9 @@ namespace GrassControl
 		Active
 	};
 
-	static std::mutex& NRlocker()
-	{
-		static std::mutex NRlocker;
-		return NRlocker;
-	}
+	static std::mutex NRlocker;
 
-	static std::recursive_mutex& locker()
-	{
-		static std::recursive_mutex locker;
-		return locker;
-	}
+	static std::recursive_mutex locker;
 
 	class DistantGrass final
 	{

@@ -96,7 +96,7 @@ namespace GrassControl
 	{
 		int count = 0;
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			for (const auto& val : map | std::views::values) {
 				if (val->State != _cell_data::_cell_states::None) {
 					count++;
@@ -124,7 +124,7 @@ namespace GrassControl
 		unsigned int wsId = ws != nullptr ? ws->formID : 0;
 
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(locker);
 			for (const auto& val : this->map | std::views::values) {
 				if (val->State == _cell_data::_cell_states::None) {
 					continue;
@@ -151,7 +151,7 @@ namespace GrassControl
 
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			if (!this->map.contains(key)) {
 				d = std::make_shared<_cell_data>();
 				this->map.insert_or_assign(key, d);
@@ -166,7 +166,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			if (d->State != _cell_data::_cell_states::None) {
 				return;
 			}
@@ -200,7 +200,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			if (d->State == _cell_data::_cell_states::None || d->State == _cell_data::_cell_states::Abort) {
 				return;
 			}
@@ -237,7 +237,7 @@ namespace GrassControl
 		std::string key = MakeKey(ws->editorID.c_str(), x, y);
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			if (!this->map.empty()) {
 				auto it = this->map.find(key);
 				d = it == this->map.end() ? nullptr : it->second;
@@ -258,7 +258,7 @@ namespace GrassControl
 		std::string key = MakeKey(ws->editorID.c_str(), x, y);
 		std::shared_ptr<_cell_data> d;
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			auto it = this->map.find(key);
 			d = it == this->map.end() ? nullptr : it->second;
 		}
@@ -267,7 +267,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(NRlocker());
+			std::scoped_lock lock(NRlocker);
 			if (d->State == _cell_data::_cell_states::Loaded) {
 				// This shouldn't happen
 			} else if (d->State == _cell_data::_cell_states::Loading) {
@@ -396,7 +396,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + (REL::Relocate((0xB5F - 0xA0C), 0x177)), Reg32(REL::Relocate(Reg::R14D, Reg::EDI)), Reg32(REL::Relocate(Reg::EBP, Reg::R14D)));
+			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + REL::Relocate(0x159, 0x17D), Reg32(REL::Relocate(Reg::R14D, Reg::EDI)), Reg32(REL::Relocate(Reg::EBP, Reg::R14D)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -455,7 +455,7 @@ namespace GrassControl
 					Xbyak::Label retnLabel;
 
 					push(rcx);
-					mov(r9d, -1);
+					mov(r9d, static_cast<uint32_t>(-1));
 					mov(r8d, 0);
 					mov(edx, 0);
 
@@ -667,31 +667,30 @@ namespace GrassControl
 
 						jmp(ptr[rip + retnLabel]);
 
-						L(retnLabel);
-						dq(a_target + 0x6);
-					}
-				};
-				Patch patch(addr);
-				patch.ready();
+					L(retnLabel);
+					dq(a_target + 0x6);
+				}
+			};
+			Patch patch2(addr);
+			patch2.ready();
 
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
-			} else {
-				stl::report_and_fail("Failed to fix shape selection");
-			}
+			trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
+		} else {
+			stl::report_and_fail("Failed to fix shape selection");
 		}
+#endif
 
 		addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x78B7 - 0x7830, 0x7E);
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 0xC2 - 0xB7, Before = [&] (std::any ctx)
 
 		struct Patch2 : Xbyak::CodeGenerator
 		{
-			explicit Patch2(uintptr_t a_target, Reg a_X)
+			explicit Patch2(uintptr_t a_target, Reg a_X, uintptr_t rsp_offset, uintptr_t rsp_stackOffset)
 			{
 				Xbyak::Label retnLabel;
 
-				mov(ptr[rsp + 0x48 + 4], a_X.cvt16());
-				mov(ptr[rsp + 0x48 + 6], bx);
+				mov(ptr[rsp + rsp_offset + 4], a_X.cvt16());
+				mov(ptr[rsp + rsp_offset + 6], bx);
 
 				movsx(eax, a_X.cvt16());  // x
 				mov(a_X, rcx);
@@ -710,23 +709,23 @@ namespace GrassControl
 				mov(rcx, rbx);
 				mov(ebx, eax);
 
-				mov(ptr[rsp + 0x258 + 0x58], a_X.cvt32());  // x
-				mov(ptr[rsp + 0x258 + 0x60], ebx);          // y
+				mov(ptr[rsp + rsp_stackOffset + 0x58], a_X.cvt32());  // x
+				mov(ptr[rsp + rsp_stackOffset + 0x60], ebx);          // y
 
 				jmp(ptr[rip + retnLabel]);
 
 				L(retnLabel);
-				dq(a_target + (0xC2 - 0xB7));
+				dq(a_target + 0xB);
 			}
 		};
-		Patch2 patch2(addr, Reg32(REL::Relocate(Reg::R15, Reg::R14)));
+		Patch2 patch2(addr, Reg32(REL::Relocate(Reg::R15, Reg::R14)), REL::Relocate(0x48, 0x50), REL::Relocate(0x258, 0x288));
 		patch2.ready();
 
 		DWORD flOldProtect = 0;
-		BOOL change_protection = VirtualProtect((LPVOID)addr, (0xC2 - 0xB7), PAGE_EXECUTE_READWRITE, &flOldProtect);
+		BOOL change_protection = VirtualProtect((LPVOID)addr, 0xB, PAGE_EXECUTE_READWRITE, &flOldProtect);
 		// Pass address of the DWORD variable ^
 		if (change_protection) {
-			memset((void*)(addr), 0x90, (0xC2 - 0xB7));
+			memset((void*)(addr), 0x90, 0xB);
 		}
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
@@ -752,10 +751,9 @@ namespace GrassControl
 						dq(a_target + 0x6);
 					}
 				};
-				Patch patch(addr, &Max);
-				patch.ready();
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<6>(addr, trampoline.allocate(patch));
+				Patch patch3(addr, &Max);
+				patch3.ready();
+				trampoline.write_branch<6>(addr, trampoline.allocate(patch3));
 			} else {
 				stl::report_and_fail("Failed to extend cell buffer");
 			}
@@ -791,11 +789,10 @@ namespace GrassControl
 						dq(a_target + 0x5);
 					}
 				};
-				Patch patch(addr);
-				patch.ready();
+				Patch patch4(addr);
+				patch4.ready();
 
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+				trampoline.write_branch<5>(addr, trampoline.allocate(patch4));
 			} else {
 				stl::report_and_fail("Failed to Create Grass");
 			}
@@ -841,11 +838,10 @@ namespace GrassControl
 						dq(a_target + 0x5);
 					}
 				};
-				Patch patch(reinterpret_cast<uintptr_t>(CellUnloadHook), reinterpret_cast<uintptr_t>(ClearCellAddGrassTask), addr);
-				patch.ready();
+				Patch patch5(reinterpret_cast<uintptr_t>(CellUnloadHook), reinterpret_cast<uintptr_t>(ClearCellAddGrassTask), addr);
+				patch5.ready();
 
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+				trampoline.write_branch<5>(addr, trampoline.allocate(patch5));
 			} else {
 				stl::report_and_fail("Failed to unload cell");
 			}
@@ -922,19 +918,18 @@ namespace GrassControl
 					dq(a_targetSkip);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), REL::Relocate(0x20, 0x20, 0x28), addr + REL::Relocate(0x8, 0x5), addr + REL::Relocate(0x8 + (0xA9 - 0x8F), 0x141));
-			patch.ready();
+			Patch patch6(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), REL::Relocate(0x20, 0x20, 0x28), addr + REL::Relocate(0x8, 0x5), addr + REL::Relocate(0x8 + (0xA9 - 0x8F), 0x141));
+			patch6.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
 			if (!AE) {
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 			}
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch6));
 
 			addr = RELOCATION_ID(18150, 18541).address() + REL::Relocate(0xB094 - 0xAF20, 0x1CA, 0x177);
-			struct Patch2 : Xbyak::CodeGenerator
+			struct Patch7 : Xbyak::CodeGenerator
 			{
-				Patch2(uintptr_t a_func, uintptr_t a_target, uintptr_t rbx_offset)
+				Patch7(uintptr_t a_func, uintptr_t a_target, uintptr_t rbx_offset)
 				{
 					Xbyak::Label funcLabel;
 					Xbyak::Label retnLabel;
@@ -963,15 +958,15 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch2 patch2(reinterpret_cast<uintptr_t>(CellLoadHook), addr + REL::Relocate(0x7, 0xB), REL::Relocate(0x30, 0x30, 0x38));
-			patch2.ready();
+			Patch7 patch7(reinterpret_cast<uintptr_t>(CellLoadHook), addr + REL::Relocate(0x7, 0xB), REL::Relocate(0x30, 0x30, 0x38));
+			patch7.ready();
 
 			if (!AE) {
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
 			} else {
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
 			}
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch7));
 
 			addr = RELOCATION_ID(18149, 18540).address() + REL::Relocate(0xE1B - 0xCC0, 0x167, 0x15E);
 			struct Patch3 : Xbyak::CodeGenerator
@@ -1119,7 +1114,7 @@ namespace GrassControl
 
 	float DistantGrass::getChosenGrassFadeRange()
 	{
-		float r = Config::OverwriteGrassFadeRange;
+		float r = static_cast<float>(Config::OverwriteGrassFadeRange);
 		if (r < 0.0f) {
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassFadeRange:Grass");
 			r = setting->data.f;
@@ -1134,7 +1129,7 @@ namespace GrassControl
 	{
 		int r = _chosenGrassGridRadius;
 		if (r < 0) {
-			float dist = Config::OverwriteGrassDistance;
+			float dist = static_cast<float>(Config::OverwriteGrassDistance);
 			if (dist < 0.0f) {
 				auto addr = RELOCATION_ID(501108, 359413).address();
 				dist = Memory::Internal::read<float>(addr + 8);
@@ -1328,8 +1323,8 @@ namespace GrassControl
 				Func();
 
 				try {
-					REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int16_t, int16_t)> Func{ RELOCATION_ID(20026, 20460) };
-					cell = Func(ws, x, y);
+					REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int16_t, int16_t)> Func2{ RELOCATION_ID(20026, 20460) };
+					cell = Func2(ws, x, y);
 					if (IsValidLoadedCell(cell, quickLoad)) {
 						if (*cell->GetName()) {
 							logger::debug(fmt::runtime("add_GetCell({}, {}) (0): Name: " + std::string(cell->GetName()) + ", FormId: {:X}"), x, y, cell->formID);
@@ -1348,9 +1343,9 @@ namespace GrassControl
 				Fnc();
 			}
 			if (cell != nullptr) {
-				REL::Relocation<RE::TESObjectLAND* (*)(RE::TESObjectCELL*)> func{ RELOCATION_ID(18513, 18970) };
+				REL::Relocation<RE::TESObjectLAND* (*)(RE::TESObjectCELL*)> func2{ RELOCATION_ID(18513, 18970) };
 
-				auto landPtr = func(cell);
+				auto landPtr = func2(cell);
 				if (landPtr != 0 && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
 					REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> Func{ RELOCATION_ID(18331, 18747) };
 
@@ -1385,7 +1380,7 @@ namespace GrassControl
 			return;
 
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(locker);
 			auto c = Map->FindByCell(cell);
 			if (!c) {
 				logger::debug("AddedGrass(null): warning: c == null");
@@ -1452,7 +1447,7 @@ namespace GrassControl
 			return;
 		}
 		{
-			std::scoped_lock lock(locker());
+			std::scoped_lock lock(locker);
 			auto c = Map->FindByCell(cell);
 			if (c) {
 				if (c->self_data >> 24 != 0) {
@@ -1663,7 +1658,7 @@ namespace GrassControl
 		auto invokeList = std::vector<RE::TESObjectCELL*>();
 		if (addType <= 0) {
 			{
-				std::scoped_lock lock(locker());
+				std::scoped_lock lock(locker);
 				Map->unsafe_ForeachWithState([&](cell_info c) {
 					auto want = addType < 0 ? GrassStates::None : GetWantState(c, nowX, nowY, uGrids, grassRadius, false, "");
 					if (want == GrassStates::None) {
@@ -1695,7 +1690,7 @@ namespace GrassControl
 
 		if (addType >= 0) {
 			{
-				std::scoped_lock lock(locker());
+				std::scoped_lock lock(locker);
 				int minX = nowX - bigSide;
 				int maxX = nowX + bigSide;
 				int minY = nowY - bigSide;

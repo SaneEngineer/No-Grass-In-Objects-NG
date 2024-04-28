@@ -75,8 +75,8 @@ namespace Raycast
 
 				rayHitShapeInfo colA;
 				rayHitShapeInfo colB;
-			};
-		};
+			} s;
+		} u;
 
 		// Custom utility data, not part of the game
 
