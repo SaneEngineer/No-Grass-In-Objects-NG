@@ -1,5 +1,48 @@
 add_library("${PROJECT_NAME}" SHARED)
 
+option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
+option(BUILD_ZIP "Create a 7z archive." FALSE)
+
+if(COPY_BUILD)
+	if(DEFINED SkyrimPath)
+		add_custom_command(
+			TARGET ${PROJECT_NAME}
+			POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/SKSE/Plugins/
+		)
+	else()
+		message(
+			WARNING
+			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
+		)
+	endif()
+endif()
+
+if(BUILD_ZIP)
+	set(ZIP_DIR "${CMAKE_CURRENT_BINARY_DIR}/zip")
+	add_custom_target(build-time-make-directory ALL
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
+		"${ZIP_DIR}/SKSE/Plugins/"
+	)
+
+	message("Copying mod into ${ZIP_DIR}.")
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/"
+	)
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/")
+
+	set(TARGET_ZIP "${PROJECT_NAME}_${PROJECT_VERSION}.7z")
+	message("Zipping ${ZIP_DIR} to ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_ZIP}.")
+	ADD_CUSTOM_COMMAND(
+		TARGET ${PROJECT_NAME}
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E tar cf ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_ZIP} --format=7zip -- .
+		WORKING_DIRECTORY ${ZIP_DIR}
+	)
+endif()
+
 target_compile_features(
 	"${PROJECT_NAME}"
 	PRIVATE

@@ -113,7 +113,7 @@ namespace GrassControl
 			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x723A - 0x6CE0, 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t b_func, std::uintptr_t a_target,
+				Patch(std::uintptr_t a_func, std::uintptr_t a_target,
 					std::uintptr_t a_rspOffset,
 					Xbyak::Reg a_z,
 					Xbyak::Reg a_rcxSource,
@@ -131,13 +131,13 @@ namespace GrassControl
 
 					mov(rcx, a_rcxSource);
 
-						sub(rsp, 0x20);
-						call(ptr[rip + funcLabel]);  // call our function
-						add(rsp, 0x20);
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);  // call our function
+					add(rsp, 0x20);
 
-						test(al, al);
-						jne(notIf);
-						jmp(ptr[rip + jump]);
+					test(al, al);
+					jne(notIf);
+					jmp(ptr[rip + jump]);
 
 					L(notIf);
 					movss(xmm6, ptr[rbp - a_rbpOffset]);
@@ -158,7 +158,7 @@ namespace GrassControl
 				Xmm(REL::Relocate(7, 7, 14)),
 				Reg64(REL::Relocate(Reg::RSI, Reg::RDI, Reg::RBX)),
 				REL::Relocate(0x48, 0x68, 0x38),
-				REL::Relocate(0x5 + (0x661 - 0x23F), static_cast<uintptr_t>(-0x156), 0x5 + 0x510));
+				REL::Relocate(0x5 + (0x661 - 0x23F), -0x156, 0x5 + 0x510));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();

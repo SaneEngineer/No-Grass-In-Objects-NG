@@ -667,22 +667,20 @@ namespace GrassControl
 
 						jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x6);
-				}
-			};
-			Patch patch2(addr);
-			patch2.ready();
+						L(retnLabel);
+						dq(a_target + 0x6);
+					}
+				};
+				Patch patch2(addr);
+				patch2.ready();
 
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
-		} else {
-			stl::report_and_fail("Failed to fix shape selection");
+				trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
+			} else {
+				stl::report_and_fail("Failed to fix shape selection");
+			}
 		}
-#endif
-
 		addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x78B7 - 0x7830, 0x7E);
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 0xC2 - 0xB7, Before = [&] (std::any ctx)
-
 		struct Patch2 : Xbyak::CodeGenerator
 		{
 			explicit Patch2(uintptr_t a_target, Reg a_X, uintptr_t rsp_offset, uintptr_t rsp_stackOffset)
