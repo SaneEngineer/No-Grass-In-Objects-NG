@@ -1,6 +1,6 @@
 ## No Grass in Objects NG
 
-This is a port of [No Grass in Objects](https://www.nexusmods.com/skyrimspecialedition/mods/42161) rewritten using Commonlib. The main features of Caching and Raycasting (No grass in objects part). Extended grass distance, is working but is incomplete and may result in crashes. The config is roughly the same with a change to ini that should be created while the mod is first loaded, minor renaming of settings and an option for debug logs. To my knowledge all features except for grass scale should be working in SE/VR, the same goes for AE.
+This is a port of [No Grass in Objects](https://www.nexusmods.com/skyrimspecialedition/mods/42161) rewritten using Commonlib. The config is roughly the same with a change to ini that should be created while the mod is first loaded, minor renaming of settings and an option for debug logs. To my knowledge all features should be working in SE/VR, the same goes for AE.
 
 ---
 
