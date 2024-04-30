@@ -1,10 +1,14 @@
 name: "format code"
 
-# run on pull requests to develop
+# run on push to main
 on:
-  pull_request:
+  push:
     branches:
-      - develop
+      - main
+  pull_request_target:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   format:
