@@ -41,6 +41,8 @@ namespace Util
 		std::vector<RE::TESForm*> getAll() const;
 	};
 
+	void report_and_fail_timed(const std::string& a_message);
+
 	// Function object for case insensitive comparison
 	struct case_insensitive_compare
 	{

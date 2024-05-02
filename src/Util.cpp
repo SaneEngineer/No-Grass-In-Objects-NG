@@ -2,6 +2,13 @@
 
 namespace Util
 {
+	void report_and_fail_timed(const std::string& a_message)
+    {
+        logger::error(fmt::runtime(a_message));
+		MessageBoxTimeoutA(nullptr, a_message.c_str(), a_message.c_str(), MB_SYSTEMMODAL, 0, 7000);
+		TerminateProcess(GetCurrentProcess(), 1);
+    }
+
 	std::string Util::getProgressFilePath()
 	{
 		std::string n = _ovFilePath;

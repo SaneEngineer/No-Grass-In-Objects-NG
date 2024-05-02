@@ -256,7 +256,7 @@ namespace GrassControl
 			}
 
 			RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
-			stl::report_and_fail("Grass generation appears to have frozen! Restart the game.");
+			Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
 		}
 	}
 
@@ -361,7 +361,7 @@ namespace GrassControl
 
 			if (!cur_instance->RunOne()) {
 				if (Crashed) {
-					stl::report_and_fail("Grass Generation has Crashed!");
+					Util::report_and_fail_timed("Grass Generation has Crashed!");
 				}
 
 				cur_state = 2;
@@ -746,7 +746,7 @@ namespace GrassControl
 		if (_grid[ix] == t) {
 			_grid[ix] = nullptr;
 		} else {
-			stl::report_and_fail("Grass generation has crashed!");
+			Util::report_and_fail_timed("Grass generation has crashed!");
 		}
 	}
 
@@ -776,9 +776,7 @@ namespace GrassControl
 
 			cellPtr = Func2(this->Parent->WorldSpace, this->X, this->Y);
 		} catch (...) {
-			logger::error("Grass Generation has Crashed!");
-			MessageBoxTimeoutA(nullptr, "Grass Generation has Crashed!", "Grass Generation has Crashed!", MB_SYSTEMMODAL, 0, 5000);
-			TerminateProcess(GetCurrentProcess(), 1);
+			Util::report_and_fail_timed("Grass Generation has Crashed!");
 		}
 
 		REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
@@ -845,9 +843,7 @@ namespace GrassControl
 				REL::Relocation<void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
 				func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10, Cell, 0);
 			} catch (...) {
-				logger::error("Grass Generation has Crashed!");
-				MessageBoxTimeoutA(nullptr, "Grass Generation has Crashed!", "Grass Generation has Crashed!", MB_SYSTEMMODAL, 0, 5000);
-				TerminateProcess(GetCurrentProcess(), 1);
+				Util::report_and_fail_timed("Grass Generation has Crashed!");
 			}
 		}
 		if (std::filesystem::exists(fileKey)) {
