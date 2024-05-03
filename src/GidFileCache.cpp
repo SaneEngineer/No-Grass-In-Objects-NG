@@ -216,7 +216,7 @@ namespace GrassControl
 	uintptr_t GidFileCache::CustomGrassLodFileName;
 
 	GidFileGenerationTask::GidFileGenerationTask() :
-		IsResuming(false), ProgressDone(std::make_unique<std::unordered_set<std::string, case_insensitive_unordered_set::hash>>())
+		IsResuming(false), ProgressDone(std::unordered_set<std::string, case_insensitive_unordered_set::hash>())
 	{
 		if (cur_instance != nullptr) {
 			stl::report_and_fail("Only one instance of GidFileGenerationTask can be created at a time!");
@@ -389,7 +389,7 @@ namespace GrassControl
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (exists(fi)) {
 			{
-				std::scoped_lock lock(ProgressLocker());
+				std::scoped_lock lock(ProgressLocker);
 
 				auto fs = std::ifstream(Util::getProgressFilePath());
 				std::string l;
@@ -398,14 +398,14 @@ namespace GrassControl
 
 					if (l.empty())
 						continue;
-					ProgressDone->insert(l);
+					ProgressDone.insert(l);
 				}
 			}
 
-			IsResuming = !ProgressDone->empty();
+			IsResuming = !ProgressDone.empty();
 		}
 
-		if (ProgressDone->empty()) {
+		if (ProgressDone.empty()) {
 			auto dir = std::filesystem::path("Data/Grass");
 			if (!exists(dir)) {
 				create_directories(dir);
@@ -420,7 +420,7 @@ namespace GrassControl
 
 		std::string tx;
 		if (IsResuming) {
-			auto entries = ProgressDone.get()->size();
+			auto entries = ProgressDone.size();
 			tx = "Resuming grass cache generation now with " + std::to_string(entries) + " entries completed.\n\nThis will take a while !\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
 		} else {
 			tx = "Generating new grass cache now.\n\nThis will take a while!\n\nIf the game crashes you can run it again to resume.\n\nWhen all is finished the game will say.\n\nOpen console to see progress.";
@@ -441,8 +441,8 @@ namespace GrassControl
 	{
 		std::string text = GenerateProgressKey(key, wsName, x, y);
 		{
-			std::scoped_lock lock(ProgressLocker());
-			return ProgressDone->contains(text);
+			std::scoped_lock lock(ProgressLocker);
+			return ProgressDone.contains(text);
 		}
 	}
 
@@ -474,15 +474,15 @@ namespace GrassControl
 		return bld;
 	}
 
-	void GidFileGenerationTask::WriteProgressFile(const std::string& key, const std::string& wsName, const int x, const int y) const
+	void GidFileGenerationTask::WriteProgressFile(const std::string& key, const std::string& wsName, const int x, const int y)
 	{
 		std::string text = GenerateProgressKey(key, wsName, x, y);
 		if (text.empty())
 			return;
 
 		{
-			std::scoped_lock lock(ProgressLocker());
-			auto [fst, snd] = ProgressDone->insert(text);
+			std::scoped_lock lock(ProgressLocker);
+			auto [fst, snd] = ProgressDone.insert(text);
 			if (!snd)
 				return;
 

@@ -12,7 +12,7 @@ namespace GrassControl
 	{
 		struct comp
 		{
-			bool operator()(const std::string& Left, const std::string& Right) const
+			bool operator()(const std::string& Left, const std::string& Right) const noexcept
 			{
 				return Left.size() == Right.size() && std::equal(Left.begin(), Left.end(), Right.begin(),
 														  [](char a, char b) {
@@ -22,7 +22,7 @@ namespace GrassControl
 		};
 		struct hash
 		{
-			size_t operator()(const std::string& Keyval) const
+			size_t operator()(const std::string& Keyval) const noexcept
 			{
 				size_t h = 0;
 				std::ranges::for_each(Keyval.begin(), Keyval.end(), [&](char c) {
@@ -32,6 +32,8 @@ namespace GrassControl
 			}
 		};
 	};
+
+	static std::mutex ProgressLocker;
 
 	class GidFileCache final
 	{
@@ -86,12 +88,7 @@ namespace GrassControl
 	private:
 		bool IsResuming;
 
-		std::unique_ptr<std::unordered_set<std::string, case_insensitive_unordered_set::hash>> ProgressDone;
-		static std::mutex& ProgressLocker()
-		{
-			static std::mutex ProgressLocker;
-			return ProgressLocker;
-		}
+		std::unordered_set<std::string, case_insensitive_unordered_set::hash> ProgressDone;
 
 	public:
 		static const std::string KeyWS;
@@ -115,7 +112,7 @@ namespace GrassControl
 
 		[[nodiscard]] std::string GenerateProgressKey(const std::string& key, const std::string& wsName, int x = INT_MIN, int y = INT_MIN) const;
 
-		void WriteProgressFile(const std::string& key, const std::string& wsName, int x = INT_MIN, int y = INT_MIN) const;
+		void WriteProgressFile(const std::string& key, const std::string& wsName, int x = INT_MIN, int y = INT_MIN);
 
 	private:
 		std::vector<std::unique_ptr<GidFileWorldGenerateTask>> WorldTodo;
