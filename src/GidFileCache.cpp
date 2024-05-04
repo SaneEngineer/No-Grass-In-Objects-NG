@@ -497,6 +497,9 @@ namespace GrassControl
 		char Char = ';';
 		auto skip = Util::StringHelpers::split(Config::SkipPregenerateWorldSpaces, Char, true);
 		auto skipSet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
+#ifdef SKYRIMVR
+		skipSet.insert("VRPlayroom");
+#endif
 		for (auto& x : skip) {
 			logger::info("Skipping: {}", x);
 			skipSet.insert(x);
