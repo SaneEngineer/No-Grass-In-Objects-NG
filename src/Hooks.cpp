@@ -81,6 +81,19 @@ namespace GrassControl
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (Config::UseGrassCache && exists(fi)) {
+
+#ifdef SKYRIMVR
+			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
+			if (!setting) {
+				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
+				if (!setting) {
+					logger::error("Failed to find bLoadVRPlayroom");
+					return;
+				}
+			}
+			setting->data.b = false;
+#endif
+
 			Config::OnlyLoadFromCache = false;
 
 			GidFileGenerationTask::apply();
@@ -267,7 +280,7 @@ namespace GrassControl
 		}
 
 		if (Config::OverwriteGrassDistance >= 0.0) {
-			auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
+			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
 			if (!setting) {
 				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("fGrassStartFadeDistance:Grass");
 				if (!setting) {
