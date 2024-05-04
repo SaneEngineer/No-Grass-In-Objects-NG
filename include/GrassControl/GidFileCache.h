@@ -148,9 +148,7 @@ namespace GrassControl
 			{
 				static void thunk(RE::TESObjectCELL* cell)
 				{
-					if(strcmp(cell->worldSpace->editorID.c_str(), "VRPlayroom") != 0) {
-					    InterlockedIncrement64(&queued_grass_counter);
-					}
+					InterlockedIncrement64(&queued_grass_counter);
 					func(cell);
 				}
 				static inline REL::Relocation<decltype(thunk)> func;
@@ -161,7 +159,7 @@ namespace GrassControl
 				static void thunk(uintptr_t GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
 					func(GrassMgr, cell, unk);
-					if (IsApplying && strcmp(cell->worldSpace->editorID.c_str(), "VRPlayroom") != 0) {
+					if (IsApplying) {
 						if (cell != nullptr) {
 							auto ws = cell->worldSpace;
 							if (ws != nullptr) {

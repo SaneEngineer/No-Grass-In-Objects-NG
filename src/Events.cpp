@@ -16,8 +16,6 @@ RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuO
 	if (a_event) {
 #ifndef NDEBUG
 		if (a_event->menuName == RE::Console::MENU_NAME) {
-#elif SKYRIMVR
-		if (a_event->menuName == RE::Console::MENU_NAME) {
 #else
 		if (a_event->menuName == RE::MainMenu::MENU_NAME) {
 #endif
