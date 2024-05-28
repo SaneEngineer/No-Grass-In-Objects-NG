@@ -1,5 +1,11 @@
 #include "GrassControl/Events.h"
 
+cellLoadEventHandler* cellLoadEventHandler::GetSingleton()
+{
+    static cellLoadEventHandler singleton;
+    return &singleton;
+}
+
 MenuOpenCloseEventHandler* MenuOpenCloseEventHandler::GetSingleton()
 {
 	static MenuOpenCloseEventHandler singleton;
@@ -9,6 +15,24 @@ MenuOpenCloseEventHandler* MenuOpenCloseEventHandler::GetSingleton()
 void MenuOpenCloseEventHandler::Register()
 {
 	RE::UI::GetSingleton()->AddEventSink(GetSingleton());
+}
+
+void cellLoadEventHandler::Register()
+{
+	RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink(GetSingleton());
+}
+
+RE::BSEventNotifyControl cellLoadEventHandler::ProcessEvent(const RE::TESCellFullyLoadedEvent* a_event, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>*)
+{
+	if (a_event) {
+		if(a_event->cell->IsInteriorCell()) {
+		    if (GrassControl::Config::OnlyLoadFromCache) {
+			     GrassControl::DistantGrass::LO2Map->UnloadAll();
+		    }
+		}
+	}
+	
+	return RE::BSEventNotifyControl::kContinue;
 }
 
 RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)

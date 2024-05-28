@@ -291,6 +291,14 @@ namespace GrassControl
 		}
 	}
 
+	void DistantGrass::LoadOnlyCellInfoContainer2::UnloadAll()
+    {
+        for (const auto& val : this->map | std::views::values) {
+            _DoUnload(val);
+        }
+        this->map.clear();
+    }
+
 	void DistantGrass::RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1)
 	{
 		if (cell != nullptr) {

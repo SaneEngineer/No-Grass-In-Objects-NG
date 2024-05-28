@@ -96,11 +96,11 @@ namespace GrassControl
 		};
 
 		static unsigned char CellLoadHook(int x, int y);
-
+	public:
 		inline static std::unique_ptr<CellInfoContainer> Map;
 		//private static LoadOnlyCellInfoContainer LOMap;
 		inline static std::unique_ptr<LoadOnlyCellInfoContainer2> LO2Map;
-
+	private:
 		static bool IsValidLoadedCell(RE::TESObjectCELL* cell, bool quickLoad);
 
 		static RE::TESObjectCELL* GetCurrentWorldspaceCell(const RE::TES* tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
@@ -187,6 +187,8 @@ namespace GrassControl
 			void Unload(const RE::TESWorldSpace* ws, int x, int y);
 
 			void _DoLoad(const RE::TESWorldSpace* ws, int x, int y) const;
+
+			void UnloadAll();
 		};
 
 	protected:
