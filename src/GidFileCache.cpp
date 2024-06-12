@@ -31,12 +31,14 @@ namespace GrassControl
 
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
-		try {
-			auto dir = std::filesystem::path("data/grass");
-			if (!exists(dir)) {
-				create_directories(dir);
-			}
-		} catch (...) {
+		if(exists(std::filesystem::path(Util::getProgressFilePath()))) {
+	        try {
+		        auto dir = std::filesystem::path("data/grass");
+		        if (!exists(dir)) {
+			        create_directories(dir);
+		        }
+	        } catch (...) {
+	        }
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
