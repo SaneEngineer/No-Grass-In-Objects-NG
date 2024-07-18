@@ -120,8 +120,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-	GrassControl::Config::ReadSettings();
 	InitializeLog();
+	GrassControl::Config::ReadSettings();
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 

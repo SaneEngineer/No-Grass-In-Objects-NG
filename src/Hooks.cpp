@@ -100,6 +100,10 @@ namespace GrassControl
 
 			Config::ExtendGrassDistance = false;
 			Config::DynDOLODGrassMode = 0;
+		} else if (Config::UseGrassCache) {
+			logger::info("Grass Cache is Enabled. PrecacheGrass.txt is not detected, assuming normal usage.");
+		} else {
+		    logger::info("Grass Cache is Disabled");
 		}
 
 		switch (Config::DynDOLODGrassMode) {
