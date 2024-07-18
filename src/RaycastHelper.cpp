@@ -95,7 +95,8 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	pickData.rayHitCollectorA8 = reinterpret_cast<RE::hkpClosestRayHitCollector*>(collector);
 
 	const auto ply = RE::PlayerCharacter::GetSingleton();
-	if (!ply->parentCell)
+	auto cell = ply->GetParentCell();
+	if (!cell)
 		return {};
 
 	if (ply->loadedData && ply->loadedData->data3D)
@@ -121,12 +122,15 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 
 	RayResult result;
 
-	auto physicsWorld = ply->parentCell->GetbhkWorld();
-	if (physicsWorld) {
-		//physicsWorld->PickObject(pickData);
-		if (physicsWorld->PickObject(pickData); pickData.rayOutput.HasHit()) {
-			result.CollisionLayer = static_cast<RE::COL_LAYER>(pickData.rayOutput.rootCollidable->broadPhaseHandle.collisionFilterInfo & 0x7F);
+	try {
+		auto physicsWorld = cell->GetbhkWorld();
+		if (physicsWorld) {
+			//physicsWorld->PickObject(pickData);
+			if (physicsWorld->PickObject(pickData); pickData.rayOutput.HasHit()) {
+				result.CollisionLayer = static_cast<RE::COL_LAYER>(pickData.rayOutput.rootCollidable->broadPhaseHandle.collisionFilterInfo & 0x7F);
+			}
 		}
+	} catch (...) {
 	}
 
 	result.hitArray = collector->GetHits();

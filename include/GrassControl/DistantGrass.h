@@ -198,16 +198,14 @@ namespace GrassControl
 			{
 				static void thunk(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t unk)
 				{
-					if (exists(std::filesystem::path(Util::getProgressFilePath())))
+					if (exists(std::filesystem::path(Util::getProgressFilePath())) || cell == nullptr)
 						return;
 
 					if (Config::OnlyLoadFromCache) {
-						if (cell != nullptr) {
-							auto ext = cell->GetCoordinates();
-							auto x = ext->cellX;
-							auto y = ext->cellY;
-							LO2Map->_DoLoad(cell->worldSpace, x, y);
-						}
+						auto ext = cell->GetCoordinates();
+						auto x = ext->cellX;
+						auto y = ext->cellY;
+						LO2Map->_DoLoad(cell->worldSpace, x, y);
 					} else {
 						Call_AddGrassNow(GrassMgr, cell, unk);
 					}

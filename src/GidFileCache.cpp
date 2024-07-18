@@ -31,12 +31,14 @@ namespace GrassControl
 
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
-		try {
-			auto dir = std::filesystem::path("data/grass");
-			if (!exists(dir)) {
-				create_directories(dir);
-			}
-		} catch (...) {
+		if(exists(std::filesystem::path(Util::getProgressFilePath()))) {
+	        try {
+		        auto dir = std::filesystem::path("data/grass");
+		        if (!exists(dir)) {
+			        create_directories(dir);
+		        }
+	        } catch (...) {
+	        }
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
@@ -254,9 +256,12 @@ namespace GrassControl
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
-
-			RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
-			Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
+			if(Config::FreezeCheck) {
+			    RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
+			    Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
+			} else {
+			    logger::info("Grass generation appears to have frozen!");
+			}
 		}
 	}
 
@@ -767,8 +772,7 @@ namespace GrassControl
 
 	bool GidFileCellGenerateTask::Begin()
 	{
-		REL::Relocation<void (*)()> Func{ RELOCATION_ID(13188, 13333) };
-		Func();
+		RE::TES::GetSingleton()->lock.Lock();
 
 		RE::TESObjectCELL* cellPtr = nullptr;
 		try {
@@ -779,8 +783,7 @@ namespace GrassControl
 			Util::report_and_fail_timed("Grass Generation has Crashed!");
 		}
 
-		REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
-		Fnc();
+		RE::TES::GetSingleton()->lock.Unlock();
 
 		if (cellPtr == nullptr)
 			return false;

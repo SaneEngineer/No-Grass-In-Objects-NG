@@ -30,7 +30,7 @@ void InitializeMessaging()
 				// It is now safe to access form data.
 				cellLoadEventHandler::Register();
 				MenuOpenCloseEventHandler::Register();
-				if (GrassControl::Config::UseGrassCache && is_empty(std::filesystem::path("data/grass")) && !std::filesystem::exists(Util::getProgressFilePath())) {
+				if (GrassControl::Config::UseGrassCache && (exists(std::filesystem::path("data/grass")) ? is_empty(std::filesystem::path("data/grass")) : true) && !std::filesystem::exists(Util::getProgressFilePath())) {
 					logger::info("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
 					RE::DebugMessageBox("Grass cache files are missing. You will see no grass unless you generate a Cache by creating a new text file named PrecacheGrass next to SkyrimSE.exe or SkyrimVR.exe or downloading a pre-generated Cache from the Nexus");
 				}
@@ -120,8 +120,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-	GrassControl::Config::ReadSettings();
 	InitializeLog();
+	GrassControl::Config::ReadSettings();
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 

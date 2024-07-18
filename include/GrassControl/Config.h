@@ -35,6 +35,7 @@ namespace GrassControl
 		static inline std::string OnlyPregenerateWorldSpaces = "";
 		static inline int DynDOLODGrassMode = 0;
 		static inline int MaxFailures = 2;
+		static inline bool FreezeCheck = true;
 
 		constexpr static inline std::string_view iniPath = "Data/SKSE/Plugins/GrassControl.ini";
 	};

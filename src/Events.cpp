@@ -26,7 +26,7 @@ RE::BSEventNotifyControl cellLoadEventHandler::ProcessEvent(const RE::TESCellFul
 {
 	if (a_event) {
 		if(a_event->cell->IsInteriorCell()) {
-		    if (GrassControl::Config::OnlyLoadFromCache) {
+		    if (GrassControl::Config::OnlyLoadFromCache && GrassControl::Config::ExtendGrassDistance) {
 			     GrassControl::DistantGrass::LO2Map->UnloadAll();
 		    }
 		}
