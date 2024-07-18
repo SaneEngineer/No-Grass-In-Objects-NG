@@ -772,8 +772,7 @@ namespace GrassControl
 
 	bool GidFileCellGenerateTask::Begin()
 	{
-		REL::Relocation<void (*)()> Func{ RELOCATION_ID(13188, 13333) };
-		Func();
+		RE::TES::GetSingleton()->lock.Lock();
 
 		RE::TESObjectCELL* cellPtr = nullptr;
 		try {
@@ -784,8 +783,7 @@ namespace GrassControl
 			Util::report_and_fail_timed("Grass Generation has Crashed!");
 		}
 
-		REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
-		Fnc();
+		RE::TES::GetSingleton()->lock.Unlock();
 
 		if (cellPtr == nullptr)
 			return false;

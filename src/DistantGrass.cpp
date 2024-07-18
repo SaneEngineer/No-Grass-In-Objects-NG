@@ -1326,9 +1326,7 @@ namespace GrassControl
 				InterlockedCompareExchange64(&c->furtherLoad, 0, 2);
 			}
 			{
-				REL::Relocation<void (*)()> Func{ RELOCATION_ID(13188, 13333) };
-				Func();
-
+				tes->lock.Lock();
 				try {
 					REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int16_t, int16_t)> Func2{ RELOCATION_ID(20026, 20460) };
 					cell = Func2(ws, x, y);
@@ -1341,19 +1339,14 @@ namespace GrassControl
 						return cell;
 					}
 				} catch (...) {
-					REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
-					Fnc();
-
-					logger::debug(fmt::runtime("Error Loading Cell({}, {})"), x, y);
 				}
-				REL::Relocation<void (*)()> Fnc{ RELOCATION_ID(13189, 13334) };
-				Fnc();
+				tes->lock.Unlock();
 			}
 			if (cell != nullptr) {
 				REL::Relocation<RE::TESObjectLAND* (*)(RE::TESObjectCELL*)> func2{ RELOCATION_ID(18513, 18970) };
 
 				auto landPtr = func2(cell);
-				if (landPtr != 0 && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
+				if (landPtr != nullptr && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
 					REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> Func{ RELOCATION_ID(18331, 18747) };
 
 					Func(landPtr, 0, 1);
