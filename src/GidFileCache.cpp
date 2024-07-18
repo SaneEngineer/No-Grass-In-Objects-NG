@@ -256,9 +256,12 @@ namespace GrassControl
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
-
-			RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
-			Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
+			if(Config::FreezeCheck) {
+			    RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
+			    Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
+			} else {
+			    logger::info("Grass generation appears to have frozen!");
+			}
 		}
 	}
 

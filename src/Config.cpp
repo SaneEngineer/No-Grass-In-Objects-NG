@@ -75,6 +75,7 @@ namespace GrassControl
 				ReadStringSetting(ini, "GrassConfig", "Only-pregenerate-world-spaces", OnlyPregenerateWorldSpaces);
 				ReadIntSetting(ini, "GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode);
 				ReadIntSetting(ini, "GrassConfig", "Max-Failures", MaxFailures);
+				ReadBoolSetting(ini, "GrassConfig", "Freeze-check-enabled", FreezeCheck);
 
 				return true;
 			}
@@ -126,6 +127,7 @@ namespace GrassControl
 		ini.SetValue("GrassConfig", "Only-pregenerate-world-spaces", OnlyPregenerateWorldSpaces.c_str(), ";If this is not empty then skip every worldspace that isn't in this list.");
 		ini.SetLongValue("GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode, ";Enable grass compatibility mode with DynDOLOD Grass LODs. Valid values: 0 = Disabled; 1 = Display grass only in active cells(without fade) and let DynDOLOD handle inactive cell Grass; 2 = Display grass only in active cells and large ref loaded cells(without fade) and let DynDOLOD handle grass outside of large ref cells ");
 		ini.SetLongValue("GrassConfig", "Max-Failures", MaxFailures, ";Maximum number of attempts to generate a grass cache before skipping a cell.");
+		ini.SetBoolValue("GrassConfig", "Freeze-check-enabled", FreezeCheck, ";Enable or disable the freeze check that is run while generating a grass cache. Recommended to leave enabled unless the message repeately appears.");
 
 		ini.SaveFile(iniPath.data());
 
