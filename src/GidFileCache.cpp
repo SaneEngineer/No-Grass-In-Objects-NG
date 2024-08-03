@@ -510,10 +510,8 @@ namespace GrassControl
 		auto only = Util::StringHelpers::split(Config::OnlyPregenerateWorldSpaces, Char, true);
 		auto onlySet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
 		for (const auto& x : only) {
-			std::string sy = Util::StringHelpers::trim(x);
-			if (sy.length() != 0) {
-				onlySet.insert(x);
-			}
+			logger::info("Only Generating: {}", x);
+		    onlySet.insert(x);
 		}
 
 		auto& all = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESWorldSpace>();
