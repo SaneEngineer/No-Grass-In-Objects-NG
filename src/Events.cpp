@@ -2,8 +2,8 @@
 
 cellLoadEventHandler* cellLoadEventHandler::GetSingleton()
 {
-    static cellLoadEventHandler singleton;
-    return &singleton;
+	static cellLoadEventHandler singleton;
+	return &singleton;
 }
 
 MenuOpenCloseEventHandler* MenuOpenCloseEventHandler::GetSingleton()
@@ -22,16 +22,22 @@ void cellLoadEventHandler::Register()
 	RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink(GetSingleton());
 }
 
-RE::BSEventNotifyControl cellLoadEventHandler::ProcessEvent(const RE::TESCellFullyLoadedEvent* a_event, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>*)
+RE::BSEventNotifyControl cellLoadEventHandler::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>*)
 {
 	if (a_event) {
-		if(a_event->cell->IsInteriorCell()) {
-		    if (GrassControl::Config::OnlyLoadFromCache && GrassControl::Config::ExtendGrassDistance) {
-			     GrassControl::DistantGrass::LO2Map->UnloadAll();
-		    }
+		auto refr = a_event->reference;
+		if (!refr)
+			return RE::BSEventNotifyControl::kContinue;
+		auto cell = refr->GetParentCell();
+		if (!cell)
+			return RE::BSEventNotifyControl::kContinue;
+		if (cell->IsInteriorCell()) {
+			if (GrassControl::Config::OnlyLoadFromCache && GrassControl::Config::ExtendGrassDistance) {
+				GrassControl::DistantGrass::LO2Map->UnloadAll();
+			}
 		}
 	}
-	
+
 	return RE::BSEventNotifyControl::kContinue;
 }
 
