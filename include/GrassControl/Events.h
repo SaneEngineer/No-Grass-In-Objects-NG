@@ -3,11 +3,11 @@
 #include "GrassControl/Config.h"
 #include "GrassControl/DistantGrass.h"
 
-class cellLoadEventHandler : public RE::BSTEventSink<RE::TESCellFullyLoadedEvent>
+class cellLoadEventHandler : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
 {
 public:
 	static cellLoadEventHandler* GetSingleton();
-	virtual RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent* a_event, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>* a_eventSource);
+	virtual RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
 	static void Register();
 };
 
