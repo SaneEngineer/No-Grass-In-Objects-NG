@@ -31,14 +31,14 @@ namespace GrassControl
 
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
-		if(exists(std::filesystem::path(Util::getProgressFilePath()))) {
-	        try {
-		        auto dir = std::filesystem::path("data/grass");
-		        if (!exists(dir)) {
-			        create_directories(dir);
-		        }
-	        } catch (...) {
-	        }
+		if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
+			try {
+				auto dir = std::filesystem::path("data/grass");
+				if (!exists(dir)) {
+					create_directories(dir);
+				}
+			} catch (...) {
+			}
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
@@ -256,11 +256,11 @@ namespace GrassControl
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
-			if(Config::FreezeCheck) {
-			    RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
-			    Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
+			if (Config::FreezeCheck) {
+				RE::DebugMessageBox("Grass generation appears to have frozen! Restart the game.");
+				Util::report_and_fail_timed("Grass generation appears to have frozen! Restart the game.");
 			} else {
-			    logger::info("Grass generation appears to have frozen!");
+				logger::info("Grass generation appears to have frozen!");
 			}
 		}
 	}
@@ -365,10 +365,6 @@ namespace GrassControl
 			InterlockedExchange64(&_lastDidSomething, GetTickCount64());
 
 			if (!cur_instance->RunOne()) {
-				if (Crashed) {
-					Util::report_and_fail_timed("Grass Generation has Crashed!");
-				}
-
 				cur_state = 2;
 
 				RE::ConsoleLog::GetSingleton()->Print("Grass generation finished successfully!");
@@ -511,7 +507,7 @@ namespace GrassControl
 		auto onlySet = std::unordered_set<std::string, case_insensitive_unordered_set::hash, case_insensitive_unordered_set::comp>();
 		for (const auto& x : only) {
 			logger::info("Only Generating: {}", x);
-		    onlySet.insert(x);
+			onlySet.insert(x);
 		}
 
 		auto& all = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESWorldSpace>();
@@ -552,8 +548,6 @@ namespace GrassControl
 		}
 	}
 
-	bool GidFileGenerationTask::Crashed = false;
-
 	bool GidFileGenerationTask::RunOne()
 	{
 		if (_istate == 0) {
@@ -568,9 +562,6 @@ namespace GrassControl
 			auto& t = WorldTodo.back();
 
 			if (!t->RunOne()) {
-				if (Crashed)
-					return false;
-
 				WorldTodo.pop_back();
 				DoneWS++;
 
@@ -701,9 +692,6 @@ namespace GrassControl
 				stl::report_and_fail("Grass generation has crashed!");
 
 			if (!t->RunOne()) {
-				if (GidFileGenerationTask::Crashed)
-					return false;
-
 				Remove(t);
 				Parent->WriteProgressFile(GidFileGenerationTask::KeyCell, Name, t->X, t->Y);
 				DidCellDo++;
@@ -773,13 +761,9 @@ namespace GrassControl
 		RE::TES::GetSingleton()->lock.Lock();
 
 		RE::TESObjectCELL* cellPtr = nullptr;
-		try {
-			REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func2{ RELOCATION_ID(20026, 20460) };
-
-			cellPtr = Func2(this->Parent->WorldSpace, this->X, this->Y);
-		} catch (...) {
-			Util::report_and_fail_timed("Grass Generation has Crashed!");
-		}
+		//Better to let this crash if it fails, so that it is logged.
+		REL::Relocation<RE::TESObjectCELL* (*)(RE::TESWorldSpace*, int32_t, int32_t)> Func2{ RELOCATION_ID(20026, 20460) };
+		cellPtr = Func2(this->Parent->WorldSpace, this->X, this->Y);
 
 		RE::TES::GetSingleton()->lock.Unlock();
 
@@ -840,12 +824,9 @@ namespace GrassControl
 			Memory::Internal::write<float>(reinterpret_cast<uintptr_t>(alloc) + 4, static_cast<float>(Cell->GetCoordinates()->cellY) * 4096.0f + 2048.0f);
 			Memory::Internal::write<float>(reinterpret_cast<uintptr_t>(alloc) + 8, 0.0f);
 
-			try {
-				REL::Relocation<void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
-				func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10, Cell, 0);
-			} catch (...) {
-				Util::report_and_fail_timed("Grass Generation has Crashed!");
-			}
+			//Let this crash if it fails, so that it is logged.
+			REL::Relocation<void (*)(RE::PlayerCharacter*, uintptr_t, uintptr_t, RE::TESObjectCELL*, int)> func{ RELOCATION_ID(39657, 40744) };
+			func(RE::PlayerCharacter::GetSingleton(), reinterpret_cast<uintptr_t>(alloc), reinterpret_cast<uintptr_t>(alloc) + 0x10, Cell, 0);
 		}
 		if (std::filesystem::exists(fileKey)) {
 			std::filesystem::remove(fileKey);

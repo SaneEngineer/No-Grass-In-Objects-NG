@@ -124,8 +124,6 @@ namespace GrassControl
 		static inline int _istate = 0;
 
 	public:
-		static bool Crashed;
-
 		static void Update();
 
 	private:
