@@ -409,9 +409,11 @@ namespace GrassControl
 				create_directories(dir);
 			}
 
-			for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-				if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid" || entry.path().extension() == ".fail") {
-					remove(entry.path());
+			if (!Config::Updating) {
+				for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+					if (entry.path().extension() == ".dgid" || entry.path().extension() == ".cgid" || entry.path().extension() == ".fail") {
+						remove(entry.path());
+					}
 				}
 			}
 		}

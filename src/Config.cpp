@@ -128,6 +128,7 @@ namespace GrassControl
 		ini.SetLongValue("GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode, ";Enable grass compatibility mode with DynDOLOD Grass LODs. Valid values: 0 = Disabled; 1 = Display grass only in active cells(without fade) and let DynDOLOD handle inactive cell Grass; 2 = Display grass only in active cells and large ref loaded cells(without fade) and let DynDOLOD handle grass outside of large ref cells ");
 		ini.SetLongValue("GrassConfig", "Max-Failures", MaxFailures, ";Maximum number of attempts to generate a grass cache before skipping a cell.");
 		ini.SetBoolValue("GrassConfig", "Freeze-check-enabled", FreezeCheck, ";Enable or disable the freeze check that is run while generating a grass cache. Recommended to leave enabled unless the message repeately appears.");
+		ini.SetBoolValue("GrassConfig", "Updating-Cache", Updating, ";If you are generating a cache for a worldspace you have not generated yet, set this true. Otherwise, the cache files in your grass folder will be deleted. If you are updating a worldspace, then move all files you do not want to be deleted to a new folder and replace the old files in the folder once you have generated new cache files. Then rename/move the folder back.");
 
 		ini.SaveFile(iniPath.data());
 
