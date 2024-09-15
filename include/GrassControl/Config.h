@@ -36,7 +36,7 @@ namespace GrassControl
 		static inline int DynDOLODGrassMode = 0;
 		static inline int MaxFailures = 2;
 		static inline bool FreezeCheck = true;
-		static inline bool Updating = true;
+		static inline bool Updating = false;
 
 		constexpr static inline std::string_view iniPath = "Data/SKSE/Plugins/GrassControl.ini";
 	};

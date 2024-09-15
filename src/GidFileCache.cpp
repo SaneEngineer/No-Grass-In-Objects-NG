@@ -187,6 +187,11 @@ namespace GrassControl
 			setting->data.b = false;
 		}
 
+		if (Config::Updating) {
+			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
+			setting->data.b = true;
+		}
+
 		// Disable grass console.
 		if (auto addr = (RELOCATION_ID(15204, 15372).address() + 0x896); REL::make_pattern<"48 8D 05">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
