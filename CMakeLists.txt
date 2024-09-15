@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "NGIO-NG" CACHE STRING "")
-set(VERSION 1.0.14 CACHE STRING "")
+set(VERSION 1.1.0 CACHE STRING "")
 set(VR_VERSION 1)
 set(AE_VERSION 1)
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
-option(BUILD_ZIP "Create a 7z archive." FALSE)
+option(BUILD_ZIP "Create a 7z archive." TRUE)
 
 # ---- Cache build vars ----
 macro(set_from_environment VARIABLE)

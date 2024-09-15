@@ -36,9 +36,11 @@ namespace GrassControl
 
 			GidFileGenerationTask::cur_state = 1;
 
-			GidFileGenerationTask::_lastDidSomething = GetTickCount64();
-			std::thread t(GidFileGenerationTask::run_freeze_check);
-			t.detach();
+			if (Config::FreezeCheck) {
+				GidFileGenerationTask::_lastDidSomething = GetTickCount64();
+				std::thread t(GidFileGenerationTask::run_freeze_check);
+				t.detach();
+			}
 
 			auto gf = std::make_unique<GidFileGenerationTask>();
 			GidFileGenerationTask::cur_instance = std::move(gf);
@@ -81,7 +83,6 @@ namespace GrassControl
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (Config::UseGrassCache && exists(fi)) {
-
 #ifdef SKYRIMVR
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
 			if (!setting) {
@@ -103,7 +104,7 @@ namespace GrassControl
 		} else if (Config::UseGrassCache) {
 			logger::info("Grass Cache is Enabled. PrecacheGrass.txt is not detected, assuming normal usage.");
 		} else {
-		    logger::info("Grass Cache is Disabled");
+			logger::info("Grass Cache is Disabled");
 		}
 
 		switch (Config::DynDOLODGrassMode) {
