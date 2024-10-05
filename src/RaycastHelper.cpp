@@ -169,7 +169,9 @@ namespace GrassControl
 
 	bool RaycastHelper::CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const
 	{
-		RE::TESObjectCELL* cell = land->GetSaveParentCell();
+		RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton();
+		auto cell = player->GetParentCell();
+		//RE::TESObjectCELL* cell = land->GetSaveParentCell();
 
 		if (cell == nullptr) {
 			return true;
