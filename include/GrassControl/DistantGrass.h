@@ -49,10 +49,7 @@ namespace GrassControl
 		static uintptr_t addr_uLargeRef;
 		static uintptr_t addr_QueueLoadCellUnkGlobal;
 
-		// This is only ever called from when we are adding grass, calling from outside is not valid.
 	public:
-		static bool IsLodCell(RE::TESObjectCELL* cell);
-
 		static void InstallHooks()
 		{
 			Hooks::Install();

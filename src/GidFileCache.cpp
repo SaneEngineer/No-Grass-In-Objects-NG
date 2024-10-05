@@ -7,19 +7,6 @@ namespace GrassControl
 	uintptr_t GidFileGenerationTask::addr_GrassMgr = RELOCATION_ID(514292, 400452).address();
 	uintptr_t GidFileGenerationTask::addr_uGrids = RELOCATION_ID(501244, 359675).address();
 
-	const char* IsLodCell(RE::TESObjectCELL* Cell)
-	{
-		// Use a different file extension because we don't want to load the broken .gid files from BSA.
-		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
-		auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
-
-		if (DistantGrass::IsLodCell(Cell)) {
-			return GrassFileLodString;
-		}
-
-		return GrassFileString;
-	}
-
 	void FixSaving(uintptr_t r8, uintptr_t ptrbuf, uintptr_t ptrThing)
 	{
 		REL::Relocation<void (*)(uintptr_t, uintptr_t, uint32_t)> func{ RELOCATION_ID(74621, 76352) };
@@ -83,99 +70,6 @@ namespace GrassControl
 			stl::report_and_fail("Failed to find Gid Saving Function");
 		}
 
-		// Use a different file extension because we don't want to load the broken .gid files from BSA.
-		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
-		CustomGrassFileName = reinterpret_cast<uintptr_t>(&GrassFileString);
-		auto GrassFileLodString = "Grass\\\\%sx%04dy%04d.dgid";
-		CustomGrassLodFileName = reinterpret_cast<uintptr_t>(&GrassFileLodString);
-
-		// Saving.
-		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(addr)) {
-			struct Patch : Xbyak::CodeGenerator
-			{
-				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					Xbyak::Label j_else;
-
-					mov(rcx, rsi);
-
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);
-					add(rsp, 0x20);
-
-					mov(r8, rax);
-
-					/*
-				    test(al, al);
-					je(j_else);
-					mov(r8, CustomGrassLodFileName);
-					jmp(ptr[rip + retnLabel]);
-
-					L(j_else);
-					mov(r8, CustomGrassFileName);
-					*/
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(a_func);
-
-					L(retnLabel);
-					dq(a_target + 0x7);
-				}
-			};
-			Patch patch(reinterpret_cast<uintptr_t>(IsLodCell), addr);
-			patch.ready();
-
-			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		} else {
-			stl::report_and_fail("Failed to find Save Gid Files");
-		}
-
-		// Loading.
-		//HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-		if (auto addr = (RELOCATION_ID(15206, 15374).address() + OFFSET(0xC4, 0xC4)); (REL::make_pattern<"4C 8D 05">().match(addr))) {
-			// R13 is cell
-			struct Patch : Xbyak::CodeGenerator
-			{
-				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
-				{
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					Xbyak::Label j_else;
-
-					mov(rcx, r13);
-
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
-
-					mov(r8, rax);
-
-					jmp(ptr[rip + retnLabel]);
-
-					L(funcLabel);
-					dq(a_func);
-
-					L(retnLabel);
-					dq(a_target + 0x7);
-				}
-			};
-			Patch patch(reinterpret_cast<uintptr_t>(IsLodCell), addr);
-			patch.ready();
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-		} else {
-			stl::report_and_fail("Failed to load Gid Files");
-		}
-
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
@@ -218,9 +112,6 @@ namespace GrassControl
 			stl::report_and_fail("Failed to Disable Grass Console");
 		}
 	}
-
-	uintptr_t GidFileCache::CustomGrassFileName;
-	uintptr_t GidFileCache::CustomGrassLodFileName;
 
 	GidFileGenerationTask::GidFileGenerationTask() :
 		IsResuming(false), ProgressDone(std::unordered_set<std::string, case_insensitive_unordered_set::hash>())

@@ -1226,24 +1226,6 @@ namespace GrassControl
 		}
 	}
 
-	bool DistantGrass::IsLodCell(RE::TESObjectCELL* cell)
-	{
-		if (!DidApply || load_only)
-			return false;
-
-		if (cell == nullptr)
-			return false;
-
-		auto c = Map->FindByCell(cell);
-		if (!c)
-			return false;
-
-		int d = c->self_data;
-		if ((d >> 8 & 0xFF) == static_cast<int>(GrassStates::Lod))
-			return true;
-		return false;
-	}
-
 	bool DistantGrass::ClearCellAddGrassTask(const RE::TESObjectCELL* cell)
 	{
 		if (cell == nullptr)

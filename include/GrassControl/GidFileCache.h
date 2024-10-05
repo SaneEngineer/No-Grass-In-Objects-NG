@@ -39,11 +39,6 @@ namespace GrassControl
 	{
 	public:
 		static void FixFileFormat(bool only_load);
-
-	private:
-		static uintptr_t CustomGrassFileName;
-
-		static uintptr_t CustomGrassLodFileName;
 	};
 
 	class GidFileGenerationTask final
@@ -132,6 +127,17 @@ namespace GrassControl
 	protected:
 		struct Hooks
 		{
+			struct PathFileName
+			{
+				static int thunk(char* buffer, size_t a_size, const char* fileName, va_list a_list)
+				{
+					// Use a different file extension because we don't want to load the broken .gid files from BSA.
+					auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+					return func(buffer, a_size, GrassFileString, a_list);
+				}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
 			struct MainUpdate_Nullsub
 			{
 				static void thunk(RE::Main* a_this, float a2)
@@ -177,6 +183,8 @@ namespace GrassControl
 			static void Install()
 			{
 				if (Config::UseGrassCache) {
+					stl::write_thunk_call<PathFileName>(REL_ID(15204, 15372).address() + OFFSET(0x65A, 0x656));
+					stl::write_thunk_call<PathFileName>(REL_ID(15206, 15374).address() + OFFSET(0xD4, 0xD4));
 					stl::write_thunk_call<MainUpdate_Nullsub>(REL_ID(35551, 36544).address() + OFFSET(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(REL_ID(13190, 13335).address() + OFFSET(0xD40 - 0xC70, 0xD0));
 
