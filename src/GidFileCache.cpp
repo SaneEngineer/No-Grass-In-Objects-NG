@@ -75,13 +75,14 @@ namespace GrassControl
 		setting->data.b = true;
 
 		setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowCreateGrass:Grass");
-		if (!only_load) {
+		if (!only_load || Config::Updating) {
 			setting->data.b = true;
 		} else {
 			setting->data.b = false;
 		}
 
 		if (Config::Updating) {
+			logger::info("Cache Updating Mode Enabled.");
 			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
 			setting->data.b = true;
 		}

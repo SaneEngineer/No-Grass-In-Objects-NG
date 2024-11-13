@@ -76,6 +76,7 @@ namespace GrassControl
 				ReadIntSetting(ini, "GrassConfig", "DynDOLOD-Grass-Mode", DynDOLODGrassMode);
 				ReadIntSetting(ini, "GrassConfig", "Max-Failures", MaxFailures);
 				ReadBoolSetting(ini, "GrassConfig", "Freeze-check-enabled", FreezeCheck);
+				ReadBoolSetting(ini, "GrassConfig", "Updating-Cache", Updating);
 
 				return true;
 			}
