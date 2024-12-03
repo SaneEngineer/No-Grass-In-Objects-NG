@@ -82,10 +82,8 @@ namespace Raycast
 
 		// True if the trace hit something before reaching it's end position
 		bool hit = false;
-		// If the ray hit a character actor, this will point to it
-		RE::Character* hitCharacter = nullptr;
-		// If the ray hits a havok object, this will point to it
-		RE::NiAVObject* hitObject = nullptr;
+		// If the ray hits a havok object, this will point to its reference
+		RE::TESObjectREFR* hitObject = nullptr;
 		RE::COL_LAYER CollisionLayer;
 		// The length of the ray from start to hitPos
 		float rayLength = 0.0f;
@@ -93,7 +91,7 @@ namespace Raycast
 		std::vector<RayCollector::HitResult> hitArray{};
 
 		// pad to 128
-		//uint64_t _pad{};
+		uint64_t _pad{};
 	} RayResult;
 	static_assert(sizeof(RayResult) == 128);
 #pragma warning(pop)
@@ -123,7 +121,7 @@ namespace GrassControl
 			delete Ignore;
 		}
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures);
 
 		const int Version = 0;
 
@@ -135,20 +133,17 @@ namespace GrassControl
 
 		Util::CachedFormList* const Ignore = nullptr;
 
+		Util::CachedFormList* const Textures = nullptr;
+
 		bool CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const;
 
 	private:
 		/// @brief Iterate the Raycast Hit object and provide the first TESForm*
 		/// @param r The Rayresult to iterate
 		/// @return True if the predicate function returns true
-		RE::TESForm* GetRaycastHitBaseForm(Raycast::RayResult r) const;
+		RE::TESForm* GetRaycastHitBaseForm(const Raycast::RayResult& r) const;
 
-		/// @brief Iterate the Raycast Hit object and use provided test func
-		/// @param r The Rayresult to iterate
-		/// @param func The predicate function that tests based on formID
-		/// @return True if the predicate function returns true
-		bool IsRaycastHitTest(Raycast::RayResult r, std::function<bool(RE::FormID)> func) const;
-		bool IsIgnoredObject(Raycast::RayResult r) const;
+		bool IsIgnoredObject(const Raycast::RayResult& r) const;
 	};
 
 }

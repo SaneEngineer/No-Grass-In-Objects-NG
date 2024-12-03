@@ -18,6 +18,7 @@ namespace GrassControl
 		static inline double RayCastDepth = 5.0;
 		static inline std::string RayCastCollisionLayers = "1 2 13 20 31";
 		static inline std::string RayCastIgnoreForms = "";
+		static inline std::string RayCastTextureForms = "";
 
 		static inline bool SuperDenseGrass = false;
 		static inline int SuperDenseMode = 8;

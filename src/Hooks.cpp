@@ -62,7 +62,14 @@ namespace GrassControl
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
-			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(Version::NAME.data())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList);
+
+			std::string textureFormsStr = Config::RayCastTextureForms;
+			auto cachedTextureList = Util::CachedFormList::TryParse(textureFormsStr, "GrassControl", "RayCastTextureForms", false, false);
+			if (cachedTextureList != nullptr && cachedTextureList->getAll().empty()) {
+				cachedTextureList = nullptr;
+			}
+
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(Version::NAME.data())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
@@ -149,9 +156,9 @@ namespace GrassControl
 
 					mov(rcx, a_rcxSource);
 
-					sub(rsp, 0x20);
+					sub(rsp, 0x30);
 					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
+					add(rsp, 0x30);
 
 					test(al, al);
 					jne(notIf);

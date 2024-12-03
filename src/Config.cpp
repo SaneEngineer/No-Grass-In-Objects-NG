@@ -57,6 +57,7 @@ namespace GrassControl
 				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-depth", RayCastDepth);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-collision-layers", RayCastCollisionLayers);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-ignore-forms", RayCastIgnoreForms);
+				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-texture-forms", RayCastTextureForms);
 
 				//GrassConfig
 				ReadBoolSetting(ini, "GrassConfig", "Super-dense-grass", SuperDenseGrass);
@@ -110,6 +111,7 @@ namespace GrassControl
 		ini.SetDoubleValue("RayCastConfig", "Ray-cast-depth", RayCastDepth, ";The distance below grass that must be free.");
 		ini.SetValue("RayCastConfig", "Ray-cast-collision-layers", RayCastCollisionLayers.c_str(), ";Which collision layers to check when raycasting. Not recommended to change unless you know what you're doing. These are collision layer index from CK separated by space.");
 		ini.SetValue("RayCastConfig", "Ray-cast-ignore-forms", RayCastIgnoreForms.c_str(), ";Which objects will raycast ignore. This can be useful if you want grass to still grow from some objects (such as roads).The format is formid : formfile separated by; for example \"1812A:Skyrim.esm;1812D:Skyrim.esm\" would add RoadChunkL01 and RoadChunkL02 forms to ignore list. Base forms go here not object references !");
+		ini.SetValue("RayCastConfig", "Ray-cast-texture-forms", RayCastTextureForms.c_str(), ";Which landcape textures raycast will check for. This can be useful if you want to prevent grass from growing on certain landscape textures (such as roads textures from Northern Roads). The format is formid : formfile separated by; for example \"110425FE:Northern Roads.esp;112D5520:Northern Roads.esp\" would add COTN_LRoadStone01 and COTN_LRoadDirt01Trail77 forms to the texture list to check. Lanscape textures go here not texturesets !");
 
 		//GrassConfig
 		ini.SetBoolValue("GrassConfig", "Super-dense-grass", SuperDenseGrass, ";Enable much more grass without having to change mod files.");

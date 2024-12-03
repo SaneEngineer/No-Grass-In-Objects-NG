@@ -115,6 +115,7 @@ namespace Util
 			}
 			auto form = RE::TESForm::LookupByID(id);
 			if (ls->Ids.insert(id).second) {
+				logger::info(fmt::runtime("Form 0x{:x} was successfully added to Raycast Ignore FormID list"), id);
 				ls->Forms.push_back(form);
 			}
 		}
