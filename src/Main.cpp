@@ -93,12 +93,7 @@ void InitializeLog()
 	*path /= Version::PROJECT;
 	*path += ".log"sv;
 	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-	spdlog::level::level_enum level;
-	if (GrassControl::Config::DebugLogEnable) {
-		level = spdlog::level::trace;
-	} else {
-		level = spdlog::level::info;
-	}
+	spdlog::level::level_enum level = spdlog::level::info;
 
 	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
 	log->set_level(level);
@@ -122,6 +117,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	InitializeLog();
 	GrassControl::Config::ReadSettings();
+	if (GrassControl::Config::DebugLogEnable) {
+		spdlog::default_logger()->set_level(spdlog::level::trace);
+	}
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 
