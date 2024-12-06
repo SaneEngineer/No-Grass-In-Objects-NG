@@ -32,7 +32,7 @@ namespace Util
 		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
 
 	public:
-		static CachedFormList* TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
+		static CachedFormList* TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
 
 		bool Contains(RE::TESForm* form);
 

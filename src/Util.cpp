@@ -40,13 +40,10 @@ namespace Util
 
 	CachedFormList::CachedFormList() = default;
 
-	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string pluginForLog, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
+	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
 	{
 		if (settingNameForLog.empty()) {
 			settingNameForLog = "unknown form list setting";
-		}
-		if (pluginForLog.empty()) {
-			pluginForLog = "unknown plugin";
 		}
 
 		auto ls = new CachedFormList();
@@ -59,7 +56,7 @@ namespace Util
 			auto ix = x.find(L':');
 			if (ix <= 0) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid input: `" + x + "`."));
+					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid input: `" + x + "`."));
 				}
 
 				delete ls;
@@ -71,7 +68,7 @@ namespace Util
 
 			if (!std::ranges::all_of(idstr.begin(), idstr.end(), [](wchar_t q) { return (q >= L'0' && q <= L'9') || (q >= L'a' && q <= L'f') || (q >= L'A' && q <= L'F'); })) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
+					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -80,7 +77,7 @@ namespace Util
 
 			if (fileName.empty()) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Missing file name."));
+					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Missing file name."));
 				}
 
 				delete ls;
@@ -97,7 +94,7 @@ namespace Util
 			}
 			if (!sucess) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Failed to parse " + settingNameForLog + " for " + pluginForLog + "! Invalid form ID: `" + idstr + "`."));
+					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + " for " + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -108,14 +105,14 @@ namespace Util
 			if (auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName); file) {
 				if (!file->IsFormInMod(id)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
-						logger::warn(fmt::runtime("Failed to find form " + settingNameForLog + " for " + pluginForLog + "! Form ID was " + std::to_string(id) + " and file was " + fileName + "."));
+						logger::warn(fmt::runtime("Failed to find form for " + settingNameForLog + "! Form ID was 0x{:x} and file was " + fileName + "."), id);
 					}
 					continue;
 				}
 			}
 			auto form = RE::TESForm::LookupByID(id);
 			if (ls->Ids.insert(id).second) {
-				logger::info(fmt::runtime("Form 0x{:x} was successfully added to Raycast Ignore FormID list"), id);
+				logger::info(fmt::runtime("Form 0x{:x} was successfully added to " + settingNameForLog), id);
 				ls->Forms.push_back(form);
 			}
 		}

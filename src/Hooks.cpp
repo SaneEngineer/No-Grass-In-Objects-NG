@@ -58,13 +58,13 @@ namespace GrassControl
 
 		if (Config::RayCast) {
 			std::string formsStr = Config::RayCastIgnoreForms;
-			auto cachedList = Util::CachedFormList::TryParse(formsStr, "GrassControl", "RayCastIgnoreForms", false, false);
+			auto cachedList = Util::CachedFormList::TryParse(formsStr, "Ray-cast-ignore-forms", true, false);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
 			}
 
 			std::string textureFormsStr = Config::RayCastTextureForms;
-			auto cachedTextureList = Util::CachedFormList::TryParse(textureFormsStr, "GrassControl", "RayCastTextureForms", false, false);
+			auto cachedTextureList = Util::CachedFormList::TryParse(textureFormsStr, "Ray-cast-texture-forms", true, false);
 			if (cachedTextureList != nullptr && cachedTextureList->getAll().empty()) {
 				cachedTextureList = nullptr;
 			}
