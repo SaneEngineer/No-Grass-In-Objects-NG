@@ -103,7 +103,7 @@ namespace Util
 
 			id &= 0x00FFFFFF;
 			if (auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName); file) {
-				if (!file->IsFormInMod(id)) {
+				if (!RE::TESDataHandler::GetSingleton()->LookupFormID(id, fileName)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
 						logger::warn(fmt::runtime("Failed to find form for " + settingNameForLog + "! Form ID was 0x{:x} and file was " + fileName + "."), id);
 					}
