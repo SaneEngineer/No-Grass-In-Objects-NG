@@ -30,9 +30,9 @@ namespace GrassControl
 
 		static void ReplaceGrassGrid(bool _loadOnly);
 
-	private:
 		static bool _canUpdateGridNormal;
 
+	private:
 		static bool load_only;
 
 		static float getChosenGrassFadeRange();
@@ -93,10 +93,12 @@ namespace GrassControl
 		};
 
 		static unsigned char CellLoadHook(int x, int y);
+
 	public:
 		inline static std::unique_ptr<CellInfoContainer> Map;
 		//private static LoadOnlyCellInfoContainer LOMap;
 		inline static std::unique_ptr<LoadOnlyCellInfoContainer2> LO2Map;
+
 	private:
 		static bool IsValidLoadedCell(RE::TESObjectCELL* cell, bool quickLoad);
 
@@ -230,7 +232,7 @@ namespace GrassControl
 
 			static void Install()
 			{
-				if(Config::ExtendGrassDistance) {
+				if (Config::ExtendGrassDistance) {
 					stl::write_thunk_jump<WriteProgress>(REL_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
 #ifdef SKYRIM_AE
 					stl::write_thunk_call<CellSelection>(REL_ID(15206, 15374).address() + OFFSET(0x645C - 0x6200, 0x645C - 0x6200));

@@ -52,6 +52,10 @@ RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuO
 			if (a_event->opening) {
 				GrassControl::GrassControlPlugin::OnMainMenuOpen();
 			}
+		} else if (a_event->menuName == RE::LoadingMenu::MENU_NAME && !a_event->opening) {
+			if (GrassControl::Config::ExtendGrassDistance) {
+				GrassControl::DistantGrass::_canUpdateGridNormal = false;
+			}
 		}
 	}
 
