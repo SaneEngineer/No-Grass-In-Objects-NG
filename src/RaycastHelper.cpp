@@ -146,7 +146,7 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 namespace GrassControl
 {
 	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures) :
-		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored)
+		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored), Textures(textures)
 	{
 		auto spl = Util::StringHelpers::Split_at_any(layers, { ' ', ',', '\t', '+' }, true);
 		unsigned long long mask = 0;

@@ -3,11 +3,11 @@
 namespace Util
 {
 	void report_and_fail_timed(const std::string& a_message)
-    {
-        logger::error(fmt::runtime(a_message));
+	{
+		logger::error(fmt::runtime(a_message));
 		MessageBoxTimeoutA(nullptr, a_message.c_str(), a_message.c_str(), MB_SYSTEMMODAL, 0, 7000);
 		TerminateProcess(GetCurrentProcess(), 1);
-    }
+	}
 
 	std::string Util::getProgressFilePath()
 	{
@@ -94,7 +94,7 @@ namespace Util
 			}
 			if (!sucess) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + " for " + "! Invalid form ID: `" + idstr + "`."));
+					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
 				delete ls;
@@ -110,9 +110,16 @@ namespace Util
 					continue;
 				}
 			}
-			auto form = RE::TESForm::LookupByID(id);
-			if (ls->Ids.insert(id).second) {
-				logger::info(fmt::runtime("Form 0x{:x} was successfully added to " + settingNameForLog), id);
+			auto form = RE::TESDataHandler::GetSingleton()->LookupForm(id, fileName);
+			auto formID = RE::TESDataHandler::GetSingleton()->LookupFormID(id, fileName);
+			if (!form || !formID) {
+				if (!dontWriteAnythingToLog) {
+					logger::warn(fmt::runtime("Invalid form detected while adding form to " + settingNameForLog + "! Possible invalid form ID: `0x{:x}`."), formID);
+				}
+				continue;
+			}
+			if (ls->Ids.insert(formID).second) {
+				logger::info(fmt::runtime("Form 0x{:x} was successfully added to " + settingNameForLog), formID);
 				ls->Forms.push_back(form);
 			}
 		}
