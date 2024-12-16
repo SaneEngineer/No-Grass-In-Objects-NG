@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "NGIO-NG" CACHE STRING "")
-set(VERSION 1.1.6 CACHE STRING "")
+set(VERSION 1.2.4 CACHE STRING "")
 set(VR_VERSION 1)
 set(AE_VERSION 1)
 
