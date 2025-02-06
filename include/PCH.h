@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <ranges>
+
 #include <typeinfo>
 
 #define GLM_FORCE_INLINE
