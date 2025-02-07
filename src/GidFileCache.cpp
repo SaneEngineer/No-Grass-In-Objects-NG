@@ -29,7 +29,7 @@ namespace GrassControl
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
+		if (auto addr = RELOCATION_ID(74601, 76329).address() + REL::Relocate(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
@@ -173,11 +173,11 @@ namespace GrassControl
 	{
 		unsigned long long addr;
 
-		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
 
-		addr = RELOCATION_ID(13190, 13335).address() + OFFSET(0x106, 0x106);
+		addr = RELOCATION_ID(13190, 13335).address() + REL::Relocate(0x106, 0x106);
 		struct Patch : Xbyak::CodeGenerator
 		{
 			Patch(uintptr_t Exchange, const uintptr_t a_target)
@@ -206,7 +206,7 @@ namespace GrassControl
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
+		if (addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
@@ -240,7 +240,7 @@ namespace GrassControl
 		IsApplying = true;
 
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
-		addr = RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x216 - 0x1E0, 0x51, 0x4b);
+		addr = RELOCATION_ID(35565, 36564).address() + REL::Relocate(0x216 - 0x1E0, 0x51, 0x4b);
 		Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 

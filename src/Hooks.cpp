@@ -69,7 +69,7 @@ namespace GrassControl
 				cachedTextureList = nullptr;
 			}
 
-			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(Version::NAME.data())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList);
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
@@ -135,7 +135,7 @@ namespace GrassControl
 		}
 
 		if (Config::RayCast) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3((0x723A - 0x6CE0), 0x664, 0x56C);
+			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate((0x723A - 0x6CE0), 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(std::uintptr_t b_func, std::uintptr_t a_target,
@@ -179,11 +179,11 @@ namespace GrassControl
 				}
 			};
 			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr,
-				OFFSET_3(0x40, 0x50, 0x50),
-				Xmm(OFFSET_3(7, 7, 14)),
-				Reg64(OFFSET_3(Reg::RSI, Reg::RDI, Reg::RBX)),
-				OFFSET_3(0x48, 0x68, 0x38),
-				OFFSET_3(0x5 + (0x661 - 0x23F), static_cast<uintptr_t>(-0x156), 0x5 + 0x510));
+				REL::Relocate(0x40, 0x50, 0x50),
+				Xmm(REL::Relocate(7, 7, 14)),
+				Reg64(REL::Relocate(Reg::RSI, Reg::RDI, Reg::RBX)),
+				REL::Relocate(0x48, 0x68, 0x38),
+				REL::Relocate(0x5 + (0x661 - 0x23F), -0x156, 0x5 + 0x510));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -192,7 +192,7 @@ namespace GrassControl
 
 		if (Config::SuperDenseGrass) {
 			// Make amount big.
-			auto addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xAE5 - 0x890, 0x258);
+			auto addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xAE5 - 0x890, 0x258);
 			int mode = std::max(0, std::min(12, static_cast<int>(Config::SuperDenseMode)));
 			if (mode != 7) {
 				Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
@@ -201,10 +201,10 @@ namespace GrassControl
 
 		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
-			if (auto addr = RELOCATION_ID(15220, 15385).address() + OFFSET(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
+			if (auto addr = RELOCATION_ID(15220, 15385).address() + REL::Relocate(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
 			}
-			if (auto addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
+			if (auto addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
 				//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -260,7 +260,7 @@ namespace GrassControl
 		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-			if (auto addr = RELOCATION_ID(18342, 18758).address() + OFFSET(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
+			if (auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
 				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
@@ -328,7 +328,7 @@ namespace GrassControl
 		}
 
 		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
-			auto addr = RELOCATION_ID(15212, 15381).address() + OFFSET_3(0x93a, 0xab4, 0xa0c);
+			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x93a, 0xab4, 0xa0c);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t a_func,
@@ -359,7 +359,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(addr + OFFSET_3(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(OFFSET_3(14, 14, 12)), Xbyak::Xmm(OFFSET_3(11, 10, 11)), Xbyak::Reg64(OFFSET_3(Reg::RSI, Reg::RBX, Reg::R13)));
+			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(REL::Relocate(14, 14, 12)), Xbyak::Xmm(REL::Relocate(11, 10, 11)), Xbyak::Reg64(REL::Relocate(Reg::RSI, Reg::RBX, Reg::R13)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();

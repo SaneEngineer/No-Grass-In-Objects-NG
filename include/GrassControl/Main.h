@@ -7,6 +7,7 @@
 #include "GrassControl/Logging.h"
 #include "GrassControl/Profiler.h"
 #include "GrassControl/RaycastHelper.h"
+#include "Plugin.h"
 
 #include "Shared/Utility/Assembly.h"
 #include "Shared/Utility/Memory.h"
@@ -100,19 +101,19 @@ namespace GrassControl
 
 			static void Install()
 			{
-				bool marketplace = OFFSET(false, REL::Module::get().version() >= SKSE::RUNTIME_1_6_1130);
-				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x748, (marketplace ? 0xC2b : 0xC26), 0x7EE));
+				bool marketplace = REL::Relocate(false, REL::Module::get().version() >= SKSE::RUNTIME_SSE_1_6_1130);
+				stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35565, 36564).address() + REL::Relocate(0x748, (marketplace ? 0xC2b : 0xC26), 0x7EE));
 
 				if (Config::ProfilerReport) {
 					if (marketplace) {
 						stl::write_thunk_call<ConsoleOpen>(REL::ID(442669).address() + 0x15D);
 					} else {
-						stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + OFFSET_3(0x142, 0x15C, 0x14F));
+						stl::write_thunk_call<ConsoleOpen>(RELOCATION_ID(50155, 51082).address() + REL::Relocate(0x142, 0x15C, 0x14F));
 					}
 
-					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + OFFSET(0x905, 0xb29));
-					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + OFFSET(0xF, 0xF));
-					stl::write_thunk_call<GrassCreationEnd, 6>(RELOCATION_ID(15204, 15372).address() + OFFSET(0xBDD, 0xbd9));
+					stl::write_thunk_call<GrassCreationStart>(RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x905, 0xb29));
+					stl::write_thunk_jump<GrassCreationStart>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0xF));
+					stl::write_thunk_call<GrassCreationEnd, 6>(RELOCATION_ID(15204, 15372).address() + REL::Relocate(0xBDD, 0xbd9));
 				}
 			}
 		};

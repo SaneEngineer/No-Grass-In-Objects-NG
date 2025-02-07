@@ -7,106 +7,146 @@
   },
   "configurePresets": [
     {
-      "name": "cmake-dev",
+      "name": "common",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
-        "CMAKE_CXX_FLAGS": "/EHa /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
+        "SKSE_SUPPORT_XBYAK": "ON"
       },
-      "errors": {
-        "deprecated": true
-      },
-      "warnings": {
-        "deprecated": true,
-        "dev": true
-      }
+      "binaryDir": "${sourceDir}/build"
     },
     {
       "name": "vcpkg",
       "hidden": true,
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports/"
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "STRING",
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_OVERLAY_PORTS": {
+          "type": "STRING",
+          "value": "${sourceDir}/cmake/ports/"
+        },
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
       }
     },
     {
-      "name": "windows",
+      "name": "win64",
       "hidden": true,
+      "architecture": "x64",
       "cacheVariables": {
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
       }
     },
     {
-      "name": "vs2022",
+      "name": "msvc",
       "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "/EHa /MP /W4 /WX $penv{CXXFLAGS}"
+      },
       "generator": "Visual Studio 17 2022",
-      "toolset": "v143"
-    },
-    {
-      "name": "se",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/build"
-    },
-    {
-      "name": "ae",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/buildae",
-      "cacheVariables": {
-        "BUILD_SKYRIMAE": true
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-msvc-x64",
+          "enableMicrosoftCodeAnalysis": true,
+          "enableClangTidyCodeAnalysis": true
+        }
       }
     },
     {
-      "name": "vr",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/buildvr",
+      "name": "AE",
       "cacheVariables": {
-        "BUILD_SKYRIMVR": true
-      }
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "ON",
+        "ENABLE_SKYRIM_SE": "OFF",
+        "ENABLE_SKYRIM_VR": "OFF",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-se",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "se"]
+      "name": "SE",
+      "cacheVariables": {
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "OFF",
+        "ENABLE_SKYRIM_SE": "ON",
+        "ENABLE_SKYRIM_VR": "OFF",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-ae",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "ae"]
+      "name": "VR",
+      "cacheVariables": {
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "OFF",
+        "ENABLE_SKYRIM_SE": "OFF",
+        "ENABLE_SKYRIM_VR": "ON",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-vr",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "vr"]
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "vs2022-windows-vcpkg-ae-rel",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
-      "configuration": "Release"
+      "name": "ALL",
+      "cacheVariables": {
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "ON",
+        "ENABLE_SKYRIM_SE": "ON",
+        "ENABLE_SKYRIM_VR": "ON",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-ae-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
-      "configuration": "Debug"
+      "name": "PRE-AE",
+      "cacheVariables": {
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "OFF",
+        "ENABLE_SKYRIM_SE": "ON",
+        "ENABLE_SKYRIM_VR": "ON",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-se-rel",
-      "configurePreset": "vs2022-windows-vcpkg-se",
-      "configuration": "Release"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-se-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-se",
-      "configuration": "Debug"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-vr-rel",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Release"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-vr-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Debug"
+      "name": "FLATRIM",
+      "cacheVariables": {
+        "BUILD_SKYRIM": true,
+        "ENABLE_SKYRIM_AE": "ON",
+        "ENABLE_SKYRIM_SE": "ON",
+        "ENABLE_SKYRIM_VR": "OFF",
+        "BUILD_TESTS": "OFF"
+      },
+      "inherits": [
+        "common",
+        "vcpkg",
+        "win64",
+        "msvc"
+      ]
     }
   ]
 }

@@ -43,45 +43,23 @@ void InitializeMessaging()
 	}
 }
 
-#ifdef SKYRIM_AE
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
 	SKSE::PluginVersionData v;
-	v.PluginVersion(Version::MAJOR);
-	v.PluginName(Version::PROJECT);
-	v.AuthorName("DewemerEngineer");
+	v.PluginName(Plugin::NAME.data());
+	v.PluginVersion(Plugin::VERSION);
 	v.UsesAddressLibrary();
 	v.UsesNoStructs();
-	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
-
 	return v;
 }();
-#else
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+
+extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* pluginInfo)
 {
-	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = Version::PROJECT.data();
-	a_info->version = Version::MAJOR;
-
-	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
-		return false;
-	}
-
-	const auto ver = a_skse->RuntimeVersion();
-	if (ver <
-#	ifdef SKYRIMVR
-		SKSE::RUNTIME_VR_1_4_15
-#	else
-		SKSE::RUNTIME_1_5_97
-#	endif
-	) {
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-		return false;
-	}
+	pluginInfo->name = SKSEPlugin_Version.pluginName;
+	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
+	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
 
 	return true;
 }
-#endif
 
 void InitializeLog()
 {
@@ -90,7 +68,7 @@ void InitializeLog()
 		report_and_fail("Failed to find standard logging directory"sv);
 	}
 
-	*path /= Version::PROJECT;
+	*path /= PluginDeclaration::GetSingleton()->GetName();
 	*path += ".log"sv;
 	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 	spdlog::level::level_enum level = spdlog::level::info;
@@ -102,16 +80,15 @@ void InitializeLog()
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("[%H:%M:%S:%e][%l] %v"s);
 
-	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
+	logger::info(FMT_STRING("{} v{}"), PluginDeclaration::GetSingleton()->GetName(), PluginDeclaration::GetSingleton()->GetVersion());
 }
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-#ifndef NDEBUG
+
 	while (!IsDebuggerPresent()) {
 		Sleep(100);
 	}
-#endif
 
 	SKSE::Init(a_skse);
 
