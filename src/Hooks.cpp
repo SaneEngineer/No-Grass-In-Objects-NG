@@ -90,17 +90,17 @@ namespace GrassControl
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (Config::UseGrassCache && exists(fi)) {
-#ifdef SKYRIMVR
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
-			if (!setting) {
-				setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
+			if (REL::Module::get().IsVR()) {
+				auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
 				if (!setting) {
-					logger::error("Failed to find bLoadVRPlayroom");
-					return;
+					setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
+					if (!setting) {
+						logger::error("Failed to find bLoadVRPlayroom");
+						return;
+					}
 				}
+				setting->data.b = false;
 			}
-			setting->data.b = false;
-#endif
 
 			Config::OnlyLoadFromCache = false;
 
@@ -271,11 +271,11 @@ namespace GrassControl
 					{
 						Xbyak::Label retnLabel;
 
-#ifdef SKYRIM_AE
-						mov(edi, max);
-#else
-						mov(r12d, max);
-#endif
+						if (REL::Module::get().IsAE()) {
+							mov(edi, max);
+						} else {
+							mov(r12d, max);
+						}
 						jmp(ptr[rip + retnLabel]);
 
 						L(retnLabel);

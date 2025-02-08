@@ -43,23 +43,16 @@ void InitializeMessaging()
 	}
 }
 
+#ifndef _DEBUG
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
 	SKSE::PluginVersionData v;
-	v.PluginName(Plugin::NAME.data());
-	v.PluginVersion(Plugin::VERSION);
+	v.PluginName("NGIO-NG"sv);
+	v.PluginVersion(REL::Version{ Version::MAJOR, Version::MINOR, Version::PATCH, 0 });
 	v.UsesAddressLibrary();
 	v.UsesNoStructs();
 	return v;
 }();
-
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* pluginInfo)
-{
-	pluginInfo->name = SKSEPlugin_Version.pluginName;
-	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
-	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
-
-	return true;
-}
+#endif
 
 void InitializeLog()
 {
@@ -83,12 +76,18 @@ void InitializeLog()
 	logger::info(FMT_STRING("{} v{}"), PluginDeclaration::GetSingleton()->GetName(), PluginDeclaration::GetSingleton()->GetVersion());
 }
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 {
-
+#ifdef _DEBUG
 	while (!IsDebuggerPresent()) {
 		Sleep(100);
 	}
+#endif
+
+	const auto plugin{ SKSE::PluginDeclaration::GetSingleton() };
+    const auto version{ plugin->GetVersion() };
+    auto runtimcompat = plugin->GetRuntimeCompatibility();
+
 
 	SKSE::Init(a_skse);
 

@@ -2,151 +2,110 @@
   "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 21,
+    "minor": 28,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "common",
+      "name": "base",
       "hidden": true,
       "cacheVariables": {
-        "SKSE_SUPPORT_XBYAK": "ON"
-      },
-      "binaryDir": "${sourceDir}/build"
+        "CMAKE_CXX_FLAGS": "$env{COMMONLIBSSE_COMPILER} $env{COMMONLIBSSE_PLATFORM} $env{COMMONLIBSSE_TEXT} $penv{CXXFLAGS}",
+        "CMAKE_SHARED_LINKER_FLAGS": "$env{COMMONLIBSSE_LINKER} $penv{SHARED_LINKER_FLAGS}",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      }
     },
     {
       "name": "vcpkg",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "STRING",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        },
-        "VCPKG_OVERLAY_PORTS": {
-          "type": "STRING",
-          "value": "${sourceDir}/cmake/ports/"
-        },
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-skse",
+        "VCPKG_HOST_TRIPLET": "x64-windows-skse",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports/"
       }
     },
     {
-      "name": "win64",
+      "name": "win32",
       "hidden": true,
-      "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      "environment": {
+        "COMMONLIBSSE_PLATFORM": "-DWIN32_LEAN_AND_MEAN -DNOMINMAX"
+      }
+    },
+    {
+      "name": "win32-unicode",
+      "hidden": true,
+      "inherits": "win32",
+      "environment": {
+        "COMMONLIBSSE_TEXT": "-DUNICODE -D_UNICODE"
+      }
+    },
+    {
+      "name": "x64",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
       }
     },
     {
       "name": "msvc",
       "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/EHa /MP /W4 /WX $penv{CXXFLAGS}"
+      "generator": "Ninja",
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+      "environment": {
+        "COMMONLIBSSE_COMPILER": "/cgthreads8 /diagnostics:caret /EHsc /fp:contract /fp:except- /guard:cf- /MP /permissive- /sdl /W4 /Zc:__cplusplus /Zc:enumTypes /Zc:lambda /Zc:preprocessor /Zc:referenceBinding /Zc:rvalueCast /Zc:templateScope /Zc:ternary",
+        "COMMONLIBSSE_LINKER": "/CGTHREADS:8 /MACHINE:x64 /DEBUG:FULL"
       },
-      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/fp:fast /GR- /Gw /O2 /Ob3 /Qpar",
+        "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "/LTCG:INCREMENTAL /OPT:REF,ICF=4",
+        "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "/DEBUGTYPE:FIXUP"
+      },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "intelliSenseMode": "windows-msvc-x64",
-          "enableMicrosoftCodeAnalysis": true,
-          "enableClangTidyCodeAnalysis": true
+          "enableMicrosoftCodeAnalysis": true
         }
       }
     },
     {
-      "name": "AE",
-      "cacheVariables": {
-        "BUILD_SKYRIM": true,
-        "ENABLE_SKYRIM_AE": "ON",
-        "ENABLE_SKYRIM_SE": "OFF",
-        "ENABLE_SKYRIM_VR": "OFF",
-        "BUILD_TESTS": "OFF"
-      },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
-    },
-    {
-      "name": "SE",
-      "cacheVariables": {
-        "BUILD_SKYRIM": true,
-        "ENABLE_SKYRIM_AE": "OFF",
-        "ENABLE_SKYRIM_SE": "ON",
-        "ENABLE_SKYRIM_VR": "OFF",
-        "BUILD_TESTS": "OFF"
-      },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
-    },
-    {
-      "name": "VR",
-      "cacheVariables": {
-        "BUILD_SKYRIM": true,
-        "ENABLE_SKYRIM_AE": "OFF",
-        "ENABLE_SKYRIM_SE": "OFF",
-        "ENABLE_SKYRIM_VR": "ON",
-        "BUILD_TESTS": "OFF"
-      },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
-    },
-    {
-      "name": "ALL",
+      "name": "build-release-msvc",
+      "inherits": [ "base", "vcpkg", "win32-unicode", "x64", "msvc" ],
       "cacheVariables": {
         "BUILD_SKYRIM": true,
         "ENABLE_SKYRIM_AE": "ON",
         "ENABLE_SKYRIM_SE": "ON",
-        "ENABLE_SKYRIM_VR": "ON",
-        "BUILD_TESTS": "OFF"
+        "ENABLE_SKYRIM_VR": "ON"
       },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
+      "displayName": "Release",
+      "description": "Optimized release build.",
+      "binaryDir": "${sourceDir}/build/release-msvc"
     },
     {
-      "name": "PRE-AE",
+      "name": "build-debug-msvc",
+      "inherits": [ "base", "vcpkg", "win32-unicode", "x64", "msvc" ],
       "cacheVariables": {
-        "BUILD_SKYRIM": true,
-        "ENABLE_SKYRIM_AE": "OFF",
-        "ENABLE_SKYRIM_SE": "ON",
-        "ENABLE_SKYRIM_VR": "ON",
-        "BUILD_TESTS": "OFF"
+        "CMAKE_BUILD_TYPE": "Debug"
       },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
+      "displayName": "Debug",
+      "description": "Debug build.",
+      "binaryDir": "${sourceDir}/build/debug-msvc"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release-msvc",
+      "displayName": "1. Release (MSVC)",
+      "configurePreset": "build-release-msvc",
+      "description": "Optimized release build."
     },
     {
-      "name": "FLATRIM",
-      "cacheVariables": {
-        "BUILD_SKYRIM": true,
-        "ENABLE_SKYRIM_AE": "ON",
-        "ENABLE_SKYRIM_SE": "ON",
-        "ENABLE_SKYRIM_VR": "OFF",
-        "BUILD_TESTS": "OFF"
-      },
-      "inherits": [
-        "common",
-        "vcpkg",
-        "win64",
-        "msvc"
-      ]
+      "name": "debug-msvc",
+      "displayName": "2. Debug (MSVC)",
+      "configurePreset": "build-debug-msvc",
+      "description": "Debug build."
     }
   ]
 }

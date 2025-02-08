@@ -7,7 +7,6 @@
 #include "GrassControl/Logging.h"
 #include "GrassControl/Profiler.h"
 #include "GrassControl/RaycastHelper.h"
-#include "Plugin.h"
 
 #include "Shared/Utility/Assembly.h"
 #include "Shared/Utility/Memory.h"

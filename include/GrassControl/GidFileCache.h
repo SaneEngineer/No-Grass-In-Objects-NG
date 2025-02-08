@@ -129,10 +129,10 @@ namespace GrassControl
 		{
 			struct PathFileName
 			{
-				static int thunk(wchar_t* buffer, size_t a_size, const wchar_t* fileName, va_list a_list)
+				static int thunk(char* buffer, size_t a_size, const char* fileName, va_list a_list)
 				{
 					// Use a different file extension because we don't want to load the broken .gid files from BSA.
-					auto GrassFileString = L"Grass\\\\%sx%04dy%04d.cgid";
+					auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
 					return func(buffer, a_size, GrassFileString, a_list);
 				}
 				static inline REL::Relocation<decltype(thunk)> func;

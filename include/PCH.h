@@ -41,6 +41,8 @@ using vec4ui = glm::vec<4, int, glm::highp>;
 #include <REL/Relocation.h>
 #include <SKSE/SKSE.h>
 
+#include "Version.h"
+
 #include <Windows.h>
 #include <xbyak/xbyak.h>
 

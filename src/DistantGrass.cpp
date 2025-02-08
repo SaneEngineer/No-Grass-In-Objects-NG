@@ -174,8 +174,14 @@ namespace GrassControl
 			d->State = _cell_data::_cell_states::Loading;
 
 			if (d->DummyCell_Ptr == nullptr) {
-				auto tempPtr = new char[sizeof(RE::TESObjectCELL)];
-				memset(tempPtr, 0, sizeof(RE::TESObjectCELL));
+				char* tempPtr = nullptr;
+				if (REL::Relocate(false, REL::Module::get().version() >= SKSE::RUNTIME_SSE_1_6_629)) {
+					tempPtr = new char[0x148];
+					memset(tempPtr, 0, 0x148);
+				} else {
+					tempPtr = new char[0x140];
+					memset(tempPtr, 0, 0x140);
+				}
 
 				d->DummyCell_Ptr = reinterpret_cast<RE::TESObjectCELL*>(tempPtr);
 
@@ -609,7 +615,7 @@ namespace GrassControl
 
 		// Fix weird shape selection.
 		// Vanilla game groups shape selection by 12 x 12 cells, we want a shape per cell.
-		if (!REL::Module::IsAE()) {
+		if (!AE) {
 			if (addr = RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D1C); REL::make_pattern<"E8">().match(RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D10))) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
@@ -660,8 +666,8 @@ namespace GrassControl
 		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		// Some reason in AE doesnt't generate a functional hook, using a thunk instead should work the same
-		if (!REL::Module::IsAE()) {
+		// Some reason in AE doesn't generate a functional hook, using a thunk instead should work the same
+		if (!AE) {
 			if (addr = RELOCATION_ID(15206, 15374).address() + (0x645C - 0x620D); REL::make_pattern<"E8">().match(RELOCATION_ID(15206, 15374).address() + (0x645C - 0x6200))) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
@@ -929,7 +935,7 @@ namespace GrassControl
 			Patch patch6(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), REL::Relocate(0x20, 0x20, 0x28), addr + REL::Relocate(0x8, 0x5), addr + REL::Relocate(0x8 + (0xA9 - 0x8F), 0x141));
 			patch6.ready();
 
-			if (!REL::Module::IsAE) {
+			if (!AE) {
 				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch6));
