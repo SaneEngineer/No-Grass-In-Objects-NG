@@ -79,17 +79,17 @@ namespace GrassControl
 		public:
 			CellInfoContainer();
 
-			[[nodiscard]] std::optional<cell_info> GetFromGrid(int x, int y) const;
+			[[nodiscard]] std::shared_ptr<cell_info> GetFromGrid(int x, int y) const;
 
 		private:
-			std::vector<cell_info> grid{};
+			std::vector<std::shared_ptr<cell_info>> grid{};
 
 		public:
-			std::unordered_map<RE::TESObjectCELL*, cell_info> map = std::unordered_map<RE::TESObjectCELL*, cell_info>(1024);
+			std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>> map = std::unordered_map<RE::TESObjectCELL*, std::shared_ptr<cell_info>>(1024);
 
-			void unsafe_ForeachWithState(const std::function<bool(cell_info)>& action);
+			void unsafe_ForeachWithState(const std::function<bool(std::shared_ptr<cell_info>)>& action);
 
-			std::optional<cell_info> FindByCell(RE::TESObjectCELL* cell);
+			std::shared_ptr<cell_info> FindByCell(RE::TESObjectCELL* cell);
 		};
 
 		static unsigned char CellLoadHook(int x, int y);
@@ -104,11 +104,9 @@ namespace GrassControl
 
 		static RE::TESObjectCELL* GetCurrentWorldspaceCell(const RE::TES* tes, RE::TESWorldSpace* ws, int x, int y, bool quickLoad, bool allowLoadNow);
 
-		static uintptr_t tryCheckCell(RE::TESObjectCELL* cell, RE::TESWorldSpace* ws, int x, int y, bool quickLoad);
-
 		static void Call_AddGrassNow(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t customArg);
 
-		static GrassStates GetWantState(const cell_info& c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
+		static GrassStates GetWantState(const std::shared_ptr<cell_info> c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
 
 		static void Handle_RemoveGrassFromCell_Call(RE::TESObjectCELL* cell);
 
@@ -156,9 +154,9 @@ namespace GrassControl
 				{
 					std::size_t operator()(std::string str) const
 					{
-						for (std::size_t index = 0; index < str.size(); ++index) {
-							auto ch = static_cast<unsigned char>(str[index]);
-							str[index] = static_cast<unsigned char>(std::tolower(ch));
+						for (char& index : str) {
+							auto ch = static_cast<unsigned char>(index);
+							index = static_cast<unsigned char>(std::tolower(ch));
 						}
 						return std::hash<std::string>{}(str);
 					}

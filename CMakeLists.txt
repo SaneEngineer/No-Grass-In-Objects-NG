@@ -3,7 +3,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 
 project(
   NGIO-NG
-  VERSION 1.3.0
+  VERSION 1.3.2
   LANGUAGES CXX
 )
 
@@ -81,7 +81,8 @@ set(SOURCES ${headers} ${sources})
  target_link_libraries(
 ${PROJECT_NAME}
 PRIVATE
-${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
+debug ${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Debug/CasualLibrary.lib
+optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
 )
 target_include_directories(
   ${PROJECT_NAME}

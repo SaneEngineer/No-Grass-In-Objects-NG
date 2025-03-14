@@ -43,17 +43,6 @@ void InitializeMessaging()
 	}
 }
 
-#ifndef _DEBUG
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
-	SKSE::PluginVersionData v;
-	v.PluginName("NGIO-NG"sv);
-	v.PluginVersion(REL::Version{ Version::MAJOR, Version::MINOR, Version::PATCH, 0 });
-	v.UsesAddressLibrary();
-	v.UsesNoStructs();
-	return v;
-}();
-#endif
-
 void InitializeLog()
 {
 	auto path = logger::log_directory();
@@ -76,18 +65,28 @@ void InitializeLog()
 	logger::info(FMT_STRING("{} v{}"), PluginDeclaration::GetSingleton()->GetName(), PluginDeclaration::GetSingleton()->GetVersion());
 }
 
+/*
+#ifdef _DEBUG
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
+	SKSE::PluginVersionData v;
+	v.PluginName("NGIO-NG"sv);
+	v.PluginVersion(REL::Version{ Version::MAJOR, Version::MINOR, Version::PATCH, 0 });
+	v.UsesAddressLibrary();
+	v.UsesNoStructs();
+	return v;
+}();
+#endif
+*/
+
 SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 {
+	REL::Module::reset();
+
 #ifdef _DEBUG
 	while (!IsDebuggerPresent()) {
 		Sleep(100);
 	}
 #endif
-
-	const auto plugin{ SKSE::PluginDeclaration::GetSingleton() };
-    const auto version{ plugin->GetVersion() };
-    auto runtimcompat = plugin->GetRuntimeCompatibility();
-
 
 	SKSE::Init(a_skse);
 
