@@ -49,16 +49,16 @@ namespace GrassControl
 	}
 
 	DistantGrass::CellInfoContainer::CellInfoContainer() :
-		grid(std::vector<cell_info>(16641))  // 129 * 129
+		grid(std::vector<std::shared_ptr<cell_info>>(16641))  // 129 * 129
 	{
 		for (int x = 0; x <= 128; x++) {
 			for (int y = 0; y <= 128; y++) {
-				grid[x * 129 + y] = cell_info(x - 64, y - 64);
+				grid[x * 129 + y] = std::make_shared<cell_info>(x - 64, y - 64);
 			}
 		}
 	}
 
-	std::optional<DistantGrass::cell_info> DistantGrass::CellInfoContainer::GetFromGrid(int x, int y) const
+	std::shared_ptr<DistantGrass::cell_info> DistantGrass::CellInfoContainer::GetFromGrid(int x, int y) const
 	{
 		if (x < -64 || y < -64 || x > 64 || y > 64)
 			return {};
@@ -68,20 +68,24 @@ namespace GrassControl
 		return grid[x * 129 + y];
 	}
 
-	void DistantGrass::CellInfoContainer::unsafe_ForeachWithState(const std::function<bool(cell_info)>& action)
+	void DistantGrass::CellInfoContainer::unsafe_ForeachWithState(const std::function<bool(std::shared_ptr<cell_info>)>& action)
 	{
 		try {
-			for (auto& [fst, snd] : map) {
-				if (!action(snd)) {
-					map.erase(fst);
-				}
+			for (auto& [fst, snd] : this->map) {
+				if (fst != nullptr) {
+					if (!action(snd)) {
+						this->map.erase(fst);
+					}
+				} 
 			}
 		} catch (...) {
-			//Terrible idea but fuck it. Erase keeps throwing a read access violation.
+			logger::error("Exception occurred while trying to erase cell from loaded reference map. Attempting to continue.");
+			//Terrible idea but fuck it. Erase keeps throwing a read access violation in Debug. Release should be fine, but just in case.
+			//Probably because of Debug Iterators
 		}
 	}
 
-	std::optional<DistantGrass::cell_info> DistantGrass::CellInfoContainer::FindByCell(RE::TESObjectCELL* cell)
+	std::shared_ptr<DistantGrass::cell_info> DistantGrass::CellInfoContainer::FindByCell(RE::TESObjectCELL* cell)
 	{
 		{
 			auto it = this->map.find(cell);
@@ -707,20 +711,20 @@ namespace GrassControl
 				mov(ptr[rsp + rsp_offset + 6], bx);
 
 				movsx(eax, a_X.cvt16());  // x
-				mov(a_X, rcx);
+				mov(a_X, ecx);
 				cdq();
 				mov(ecx, 12);  // x/12
 				idiv(ecx);
 
-				mov(rcx, a_X);
+				mov(ecx, a_X);
 				mov(a_X.cvt32(), eax);
 
 				movsx(eax, bx);  // y
-				mov(rbx, rcx);
+				mov(ebx, ecx);
 				cdq();
 				mov(ecx, 12);  // y/12
 				idiv(ecx);
-				mov(rcx, rbx);
+				mov(ecx, ebx);
 				mov(ebx, eax);
 
 				mov(ptr[rsp + rsp_stackOffset + 0x58], a_X.cvt32());  // x
@@ -753,11 +757,11 @@ namespace GrassControl
 				int Max = std::max(ugrids, ggrids);
 				struct Patch : Xbyak::CodeGenerator
 				{
-					explicit Patch(uintptr_t a_target, int* max)
+					explicit Patch(uintptr_t a_target, int max)
 					{
 						Xbyak::Label retnLabel;
 
-						mov(rax, (uintptr_t)max);
+						mov(rax, max);
 
 						jmp(ptr[rip + retnLabel]);
 
@@ -765,7 +769,7 @@ namespace GrassControl
 						dq(a_target + 0x6);
 					}
 				};
-				Patch patch3(addr, &Max);
+				Patch patch3(addr, Max);
 				patch3.ready();
 				trampoline.write_branch<6>(addr, trampoline.allocate(patch3));
 			} else {
@@ -1020,11 +1024,11 @@ namespace GrassControl
 					push(rax);
 					push(rsi);
 					if (AE) {
-						mov(r8d, r12w);  //movedX
+						movsx(r8d, r12w);  //movedX
 					} else {
 						mov(r8d, ptr[rsp + 0x90]);  //movedX
 					}
-					mov(r9d, a_movedY);  //movedY
+					movsx(r9d, a_movedY);  //movedY
 					mov(esi, r8d);
 
 					mov(rax, ptr[rbx + 0x140]);  // ws
@@ -1400,10 +1404,10 @@ namespace GrassControl
 			c->self_data = tg;
 		}
 	}
-	GrassStates DistantGrass::GetWantState(const cell_info& c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
+	GrassStates DistantGrass::GetWantState(const std::shared_ptr<cell_info> c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
 	{
-		int diffX = std::abs(curX - c.x);
-		int diffY = std::abs(curY - c.y);
+		int diffX = std::abs(curX - c->x);
+		int diffY = std::abs(curY - c->y);
 
 		if (diffX > grassRadius || diffY > grassRadius) {
 			return GrassStates::None;
@@ -1416,7 +1420,7 @@ namespace GrassControl
 		int uHalf = uGrid / 2;
 		if (diffX > uHalf || diffY > uHalf) {
 			// Special case: if we are loading and not generating anyway and already have active file we can take active instead of lod
-			if (canLoadFromFile && c.checkHasFile(wsName, false)) {
+			if (canLoadFromFile && c->checkHasFile(wsName, false)) {
 				return GrassStates::Active;
 			}
 
@@ -1647,15 +1651,15 @@ namespace GrassControl
 		if (addType <= 0) {
 			{
 				std::scoped_lock lock(locker);
-				Map->unsafe_ForeachWithState([&](cell_info c) {
+				Map->unsafe_ForeachWithState([&](std::shared_ptr<cell_info> c) {
 					auto want = addType < 0 ? GrassStates::None : GetWantState(c, nowX, nowY, uGrids, grassRadius, false, "");
 					if (want == GrassStates::None) {
-						auto cell = c.cell;
-						c.cell = nullptr;
-						c.self_data = 0;
+						auto cell = c->cell;
+						c->cell = nullptr;
+						c->self_data = 0;
 						ClearCellAddGrassTask(cell);
 
-						logger::debug("RemoveGrassGrid({}, {})", c.x, c.y);
+						logger::debug("RemoveGrassGrid({}, {})", c->x, c->y);
 
 						invokeList.push_back(cell);
 						return false;
@@ -1705,7 +1709,7 @@ namespace GrassControl
 						int d = c->self_data;
 						bool busy = d >> 24 != 0;
 
-						auto want = GetWantState(c.value(), nowX, nowY, uGrids, grassRadius, canLoadGrass, wsName);
+						auto want = GetWantState(c, nowX, nowY, uGrids, grassRadius, canLoadGrass, wsName);
 						if (want > static_cast<GrassStates>(d & 0xFF))  // this check is using > because there's no need to set lod grass if we already have active grass
 						{
 							bool canQuickLoad = want == GrassStates::Active || (canLoadGrass && c->checkHasFile(wsName, true));
@@ -1717,7 +1721,7 @@ namespace GrassControl
 										logger::debug("c.cell({}, {}) warning: already had cell!", c->x, c->y);
 									}
 									c->cell = cellPtr;
-									Map->map.try_emplace(cellPtr, c.value());
+									Map->map.try_emplace(cellPtr, c);
 								}
 
 								// set busy and target
