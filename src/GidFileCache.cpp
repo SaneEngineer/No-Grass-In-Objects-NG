@@ -16,6 +16,12 @@ namespace GrassControl
 		func(r8, ptrBuf, ptrSize);
 	}
 
+	const char* replaceFileName()
+	{
+		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+		return GrassFileString;
+	}
+
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
 		if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
@@ -70,6 +76,41 @@ namespace GrassControl
 			stl::report_and_fail("Failed to find Gid Saving Function");
 		}
 
+		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+
+		if (auto addr = RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(addr)) {
+			struct Patch : Xbyak::CodeGenerator
+			{
+				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);
+					add(rsp, 0x20);
+
+					mov(r8, rax);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(a_func);
+
+					L(retnLabel);
+					dq(a_target + 0x7);
+				}
+			};
+			Patch patch(reinterpret_cast<uintptr_t>(replaceFileName), addr);
+			patch.ready();
+
+			auto& trampoline = SKSE::GetTrampoline();
+			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+		} else {
+			stl::report_and_fail("Failed to find Save Gid Files");
+		}
+
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
@@ -83,7 +124,7 @@ namespace GrassControl
 
 		if (Config::Updating) {
 			logger::info("Cache Updating Mode Enabled.");
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
+			setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
 			setting->data.b = true;
 		}
 
@@ -286,7 +327,17 @@ namespace GrassControl
 			{
 				std::scoped_lock lock(ProgressLocker);
 
-				auto fs = std::ifstream(Util::getProgressFilePath());
+				std::ifstream fs;
+				try {
+					fs = std::ifstream(Util::getProgressFilePath());
+					if (!fs) {
+						throw std::system_error(errno, std::system_category(), "failed to open " + Util::getProgressFilePath());
+					}
+				} catch (std::system_error& e) {
+					logger::error(fmt::runtime("Error reading PrecacheGrass.txt: " + std::string(e.what())));
+					RE::DebugMessageBox(e.what());
+				}
+
 				std::string l;
 				while (std::getline(fs, l)) {
 					l = Util::StringHelpers::trim(l);
