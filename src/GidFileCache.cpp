@@ -16,6 +16,12 @@ namespace GrassControl
 		func(r8, ptrBuf, ptrSize);
 	}
 
+	const char* replaceFileName()
+	{
+		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+		return GrassFileString;
+	}
+
 	void GidFileCache::FixFileFormat(const bool only_load)
 	{
 		if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
@@ -29,7 +35,7 @@ namespace GrassControl
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + OFFSET(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
+		if (auto addr = RELOCATION_ID(74601, 76329).address() + REL::Relocate(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
@@ -70,6 +76,41 @@ namespace GrassControl
 			stl::report_and_fail("Failed to find Gid Saving Function");
 		}
 
+		auto GrassFileString = "Grass\\\\%sx%04dy%04d.cgid";
+
+		if (auto addr = RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x5357 - 0x4D10, 0x643); REL::make_pattern<"4C 8D 05">().match(addr)) {
+			struct Patch : Xbyak::CodeGenerator
+			{
+				Patch(const std::uintptr_t a_func, const std::uintptr_t a_target)
+				{
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);
+					add(rsp, 0x20);
+
+					mov(r8, rax);
+
+					jmp(ptr[rip + retnLabel]);
+
+					L(funcLabel);
+					dq(a_func);
+
+					L(retnLabel);
+					dq(a_target + 0x7);
+				}
+			};
+			Patch patch(reinterpret_cast<uintptr_t>(replaceFileName), addr);
+			patch.ready();
+
+			auto& trampoline = SKSE::GetTrampoline();
+			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation7);
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+		} else {
+			stl::report_and_fail("Failed to find Save Gid Files");
+		}
+
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
 		setting->data.b = true;
@@ -83,7 +124,7 @@ namespace GrassControl
 
 		if (Config::Updating) {
 			logger::info("Cache Updating Mode Enabled.");
-			auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
+			setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
 			setting->data.b = true;
 		}
 
@@ -173,11 +214,11 @@ namespace GrassControl
 	{
 		unsigned long long addr;
 
-		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
 			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 		}
 
-		addr = RELOCATION_ID(13190, 13335).address() + OFFSET(0x106, 0x106);
+		addr = RELOCATION_ID(13190, 13335).address() + REL::Relocate(0x106, 0x106);
 		struct Patch : Xbyak::CodeGenerator
 		{
 			Patch(uintptr_t Exchange, const uintptr_t a_target)
@@ -206,7 +247,7 @@ namespace GrassControl
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
+		if (addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
 			struct Patch : Xbyak::CodeGenerator
 			{
 				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
@@ -240,7 +281,7 @@ namespace GrassControl
 		IsApplying = true;
 
 		// Allow game to be alt-tabbed and make sure it's processing in the background correctly.
-		addr = RELOCATION_ID(35565, 36564).address() + OFFSET_3(0x216 - 0x1E0, 0x51, 0x4b);
+		addr = RELOCATION_ID(35565, 36564).address() + REL::Relocate(0x216 - 0x1E0, 0x51, 0x4b);
 		Memory::Internal::write<uint8_t>(addr, 0xEB, true);
 	}
 
@@ -286,7 +327,17 @@ namespace GrassControl
 			{
 				std::scoped_lock lock(ProgressLocker);
 
-				auto fs = std::ifstream(Util::getProgressFilePath());
+				std::ifstream fs;
+				try {
+					fs = std::ifstream(Util::getProgressFilePath());
+					if (!fs) {
+						throw std::system_error(errno, std::system_category(), "failed to open " + Util::getProgressFilePath());
+					}
+				} catch (std::system_error& e) {
+					logger::error(fmt::runtime("Error reading PrecacheGrass.txt: " + std::string(e.what())));
+					RE::DebugMessageBox(e.what());
+				}
+
 				std::string l;
 				while (std::getline(fs, l)) {
 					l = Util::StringHelpers::trim(l);

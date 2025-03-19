@@ -44,7 +44,7 @@ RE::BSEventNotifyControl cellLoadEventHandler::ProcessEvent(const RE::TESCellAtt
 RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
 {
 	if (a_event) {
-#ifndef NDEBUG
+#ifdef _DEBUG
 		if (a_event->menuName == RE::Console::MENU_NAME) {
 #else
 		if (a_event->menuName == RE::MainMenu::MENU_NAME) {

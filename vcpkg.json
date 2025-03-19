@@ -1,7 +1,8 @@
 {
   "name": "ngio-ng",
-  "builtin-baseline": "b7dba7f9aad09a56900f21cd78cfda1258e54e38",
+  "builtin-baseline": "edfc6163c554d7f613f459db2d20eb8f12704ff5",
   "dependencies": [
+    "directxtk",
     "glm",
     "nlohmann-json",
     "rapidcsv",

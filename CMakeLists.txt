@@ -1,259 +1,125 @@
-cmake_minimum_required(VERSION 3.21)
-set(NAME "NGIO-NG" CACHE STRING "")
-set(VERSION 1.2.4 CACHE STRING "")
-set(VR_VERSION 1)
-set(AE_VERSION 1)
+cmake_minimum_required(VERSION 3.28)
+message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
+
+project(
+  NGIO-NG
+  VERSION 1.3.2
+  LANGUAGES CXX
+)
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
-option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
-option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 option(BUILD_ZIP "Create a 7z archive." TRUE)
 
-# ---- Cache build vars ----
-macro(set_from_environment VARIABLE)
-	if(NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
-		set(${VARIABLE} $ENV{${VARIABLE}})
-	endif()
-endmacro()
-
-macro(find_commonlib_path)
-	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		# Check extern
-		find_path(CommonLibPath
-			include/REL/Relocation.h
-			PATHS external/${CommonLibName})
-
-		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-			# Check path
-			set_from_environment(${CommonLibName}Path)
-			set(CommonLibPath ${${CommonLibName}Path})
-		endif()
-	endif()
-endmacro()
-
-set_from_environment(VCPKG_ROOT)
-
-if(BUILD_SKYRIMAE)
-	add_compile_definitions(SKYRIM_AE)
-	add_compile_definitions(SKYRIM_SUPPORT_AE)
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(SkyrimAEPath)
-	set(SkyrimPath ${SkyrimAEPath})
-	set(SkyrimVersion "Skyrim AE")
-	set(VERSION ${VERSION}.${AE_VERSION})
-elseif(BUILD_SKYRIMVR)
-	add_compile_definitions(SKYRIMVR)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-	set(CommonLibName "CommonLibVR")
-	set_from_environment(SkyrimVRPath)
-	set(SkyrimPath ${SkyrimVRPath})
-	set(SkyrimVersion "Skyrim VR")
-	set(VERSION ${VERSION}.${VR_VERSION})
-else()
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(Skyrim64Path)
-	set(SkyrimPath ${Skyrim64Path})
-	set(SkyrimVersion "Skyrim SSE")
-endif()
-
-find_commonlib_path()
-message(
-	STATUS
-	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
-)
-
-if(DEFINED VCPKG_ROOT)
-	set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-	set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
-else()
-	message(
-		WARNING
-		"Variable VCPKG_ROOT is not set. Continuing without vcpkg."
-	)
-endif()
-
-set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
-
-# ---- Project ----
-project(
-	${NAME}
-	VERSION ${VERSION}
-	LANGUAGES CXX
-)
-
-configure_file(
-	${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in
-	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
-	@ONLY
-)
-
-configure_file(
-	${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
-	${CMAKE_CURRENT_BINARY_DIR}/version.rc
-	@ONLY
-)
-
-# ---- Include guards ----
-if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-	message(
-		FATAL_ERROR
-		"In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
-	)
-endif()
-
-# ---- Globals ----
-add_compile_definitions(
-	SKSE_SUPPORT_XBYAK
-)
-
-if(MSVC)
-	if(NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
-		add_compile_options(
-			/MP # Build with Multiple Processes
-		)
-	endif()
-endif()
-
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
+set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
+set(SKSE_SUPPORT_XBYAK ON)
 
-set(Boost_USE_STATIC_LIBS ON)
 
-# ---- Dependencies ----
-# dependency macros
-macro(find_dependency_path DEPENDENCY FILE)
-	# searches extern for dependencies and if not checks the environment variable
-	if(NOT ${DEPENDENCY} STREQUAL "")
-		# Check extern
-		message(
-			STATUS
-			"Searching for ${DEPENDENCY} using file ${FILE}"
-		)
-		find_path("${DEPENDENCY}Path"
-			${FILE}
-			PATHS "extern/${DEPENDENCY}"
-		)
+include(GNUInstallDirs)
 
-		if("${${DEPENDENCY}Path}" STREQUAL "${DEPENDENCY}Path-NOTFOUND")
-			# Check path
-			message(
-				STATUS
-				"Getting environment for ${DEPENDENCY}Path: $ENV{${DEPENDENCY}Path}"
-			)
-			set("${DEPENDENCY}Path" "$ENV{${DEPENDENCY}Path}")
-		endif()
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+  @ONLY
+)
 
-		message(
-			STATUS
-			"Found ${DEPENDENCY} in ${${DEPENDENCY}Path}; adding"
-		)
-		add_subdirectory("${${DEPENDENCY}Path}" ${DEPENDENCY})
-	endif()
-endmacro()
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+  @ONLY
+)
 
-if(DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
-	add_subdirectory(${CommonLibPath} ${CommonLibName})
-else()
-	message(
-		FATAL_ERROR
-		"Variable ${CommonLibName}Path is not set or in extern/."
-	)
-endif()
+set(PUBLIC_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME})
 
-# GLM
+# Add headers
+file(
+  GLOB_RECURSE
+  headers
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+  ${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+)
+list(REMOVE_ITEM headers ${CMAKE_CURRENT_SOURCE_DIR}/include/PCH.h)
+
+# Add sources
+file(
+  GLOB_RECURSE
+  sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+  ${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+)
+
+source_group(
+  TREE ${CMAKE_CURRENT_SOURCE_DIR}
+  FILES ${headers} ${sources}
+)
+
+set(BUILD_TESTS OFF)
+add_subdirectory(external/CommonLibSSE)
+include(external/CommonLibSSE/cmake/CommonLibSSE.cmake)
+
+add_commonlibsse_plugin(
+  ${PROJECT_NAME}
+  AUTHOR DwemerEngineer
+  SOURCES ${headers} ${sources}
+)
+
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+find_path(SIMPLEINI_INCLUDE_DIRS "SimpleIni.h")
+
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
-# ---- Add source files ----
-include(cmake/headerlist.cmake)
-include(cmake/sourcelist.cmake)
+set(SOURCES ${headers} ${sources})
 
-source_group(
-	TREE
-	${CMAKE_CURRENT_SOURCE_DIR}
-	FILES
-	${headers}
-	${sources}
+ target_link_libraries(
+${PROJECT_NAME}
+PRIVATE
+debug ${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Debug/CasualLibrary.lib
+optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
 )
-
-source_group(
-	TREE
-	${CMAKE_CURRENT_BINARY_DIR}
-	FILES
-	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
-)
-
-# ---- Create DLL ----
-add_library(
-	${PROJECT_NAME}
-	SHARED
-	${headers}
-	${sources}
-	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
-	${CMAKE_CURRENT_BINARY_DIR}/version.rc
-	.clang-format
-	.editorconfig
-)
-
-target_compile_features(
-	${PROJECT_NAME}
-	PRIVATE
-	cxx_std_23
-)
-
-target_compile_definitions(
-	${PROJECT_NAME}
-	PRIVATE
-	_UNICODE
-)
-
 target_include_directories(
-	${PROJECT_NAME}
-	PRIVATE
-	${CMAKE_CURRENT_BINARY_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CLIB_UTIL_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0
-)
-
-target_link_libraries(
-	${PROJECT_NAME}
-	PRIVATE
-	${CommonLibName}::${CommonLibName}
-	${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0/lib/x64/Release/CasualLibrary.lib
+  ${PROJECT_NAME}
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:src>
+  ${SIMPLEINI_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/CasualLibrary1.0
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 target_precompile_headers(
-	${PROJECT_NAME}
-	PRIVATE
-	include/PCH.h
+  ${PROJECT_NAME}
+  PRIVATE
+  include/PCH.h
+  ${SIMPLEINI_INCLUDE_DIRS}/SimpleIni.h
 )
 
-if(MSVC)
-	target_compile_options(
-		${PROJECT_NAME}
-		PRIVATE
-		/sdl # Enable Additional Security Checks
-		/utf-8 # Set Source and Executable character sets to UTF-8
-		/Zi # Debug Information Format
+install(
+  DIRECTORY ${PUBLIC_HEADER_DIR}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-		/permissive- # Standards conformance
-		/Zc:preprocessor # Enable preprocessor conformance mode
+install(
+  TARGETS ${PROJECT_NAME}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
-		/wd4200 # nonstandard extension used : zero-sized array in struct/union
-
-		"$<$<CONFIG:DEBUG>:>"
-		"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
-	)
-
-	target_link_options(
-		${PROJECT_NAME}
-		PRIVATE
-		"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
-		"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
-	)
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(BUILD_NAME Debug)
+else()
+  set(BUILD_NAME Release)
 endif()
+
 
 # ---- Post build ----
 if(COPY_BUILD)

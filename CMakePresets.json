@@ -2,111 +2,132 @@
   "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 21,
+    "minor": 28,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "cmake-dev",
+      "name": "common",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
-        "CMAKE_CXX_FLAGS": "/EHa /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
+        "SKSE_SUPPORT_XBYAK": "ON"
       },
-      "errors": {
-        "deprecated": true
-      },
-      "warnings": {
-        "deprecated": true,
-        "dev": true
-      }
-    },
-    {
-      "name": "vcpkg",
-      "hidden": true,
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-      "cacheVariables": {
-        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports/"
-      }
-    },
-    {
-      "name": "windows",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
-      }
-    },
-    {
-      "name": "vs2022",
-      "hidden": true,
-      "generator": "Visual Studio 17 2022",
-      "toolset": "v143"
-    },
-    {
-      "name": "se",
-      "hidden": true,
       "binaryDir": "${sourceDir}/build"
     },
     {
-      "name": "ae",
+      "name": "packaging-vcpkg",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildae",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "BUILD_SKYRIMAE": true
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports/",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_HOST_TRIPLET": "x64-windows-static-md"
       }
     },
     {
-      "name": "vr",
+      "name": "buildtype-debug-msvc",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildvr",
       "cacheVariables": {
-        "BUILD_SKYRIMVR": true
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS_RELEASE": "/EHa",
+        "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "/CGTHREADS:8 /DEBUG:FULL"
       }
     },
     {
-      "name": "vs2022-windows-vcpkg-se",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "se"]
+      "name": "buildtype-release-msvc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS_RELEASE": "/EHa /GR- /Qpar",
+        "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "/CGTHREADS:8 /OPT:ICF=4 /DEBUG"
+      }
     },
     {
-      "name": "vs2022-windows-vcpkg-ae",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "ae"]
+      "name": "x64",
+      "hidden": true,
+      "architecture": "x64"
     },
     {
-      "name": "vs2022-windows-vcpkg-vr",
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022", "vr"]
+      "name": "generator-vs2022",
+      "inherits": "x64",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "compiler-msvc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-msvc-x64",
+          "enableMicrosoftCodeAnalysis": true,
+          "enableClangTidyCodeAnalysis": true
+        }
+      }
+    },
+    {
+      "name": "debug-msvc",
+      "inherits": [
+        "common",
+        "packaging-vcpkg",
+        "buildtype-debug-msvc",
+        "generator-vs2022",
+        "compiler-msvc"
+      ]
+    },
+    {
+      "name": "release-msvc",
+      "inherits": [
+        "common",
+        "packaging-vcpkg",
+        "buildtype-release-msvc",
+        "generator-vs2022",
+        "compiler-msvc"
+      ]
     }
   ],
   "buildPresets": [
     {
-      "name": "vs2022-windows-vcpkg-ae-rel",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
-      "configuration": "Release"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-ae-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
+      "name": "debug-msvc",
+      "configurePreset": "debug-msvc",
+      "displayName": "1. (Debug) MSVC",
       "configuration": "Debug"
     },
     {
-      "name": "vs2022-windows-vcpkg-se-rel",
-      "configurePreset": "vs2022-windows-vcpkg-se",
+      "name": "release-msvc",
+      "configurePreset": "release-msvc",
+      "displayName": "2. (Release) MSVC",
       "configuration": "Release"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "release-msvc",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release-msvc"
+        },
+        {
+          "type": "build",
+          "name": "release-msvc"
+        }
+      ]
     },
     {
-      "name": "vs2022-windows-vcpkg-se-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-se",
-      "configuration": "Debug"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-vr-rel",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Release"
-    },
-    {
-      "name": "vs2022-windows-vcpkg-vr-dbg",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Debug"
+      "name": "debug-msvc",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug-msvc"
+        },
+        {
+          "type": "build",
+          "name": "debug-msvc"
+        }
+      ]
     }
   ]
 }

@@ -1,14 +1,10 @@
 #include "GrassControl/DistantGrass.h"
 using namespace Xbyak;
 
-// temporary define until NG
-#ifdef SKYRIM_AE
-bool AE = true;
-#else
-bool AE = false;
-#endif
 namespace GrassControl
 {
+	bool AE = REL::Module::get().IsAE();
+
 	uintptr_t DistantGrass::addr_uGrids = RELOCATION_ID(501244, 359675).address();
 	uintptr_t DistantGrass::addr_AllowLoadFile = RELOCATION_ID(501125, 359439).address();
 	uintptr_t DistantGrass::addr_DataHandler = RELOCATION_ID(514141, 400269).address();
@@ -53,16 +49,16 @@ namespace GrassControl
 	}
 
 	DistantGrass::CellInfoContainer::CellInfoContainer() :
-		grid(std::vector<cell_info>(16641))  // 129 * 129
+		grid(std::vector<std::shared_ptr<cell_info>>(16641))  // 129 * 129
 	{
 		for (int x = 0; x <= 128; x++) {
 			for (int y = 0; y <= 128; y++) {
-				grid[x * 129 + y] = cell_info(x - 64, y - 64);
+				grid[x * 129 + y] = std::make_shared<cell_info>(x - 64, y - 64);
 			}
 		}
 	}
 
-	std::optional<DistantGrass::cell_info> DistantGrass::CellInfoContainer::GetFromGrid(int x, int y) const
+	std::shared_ptr<DistantGrass::cell_info> DistantGrass::CellInfoContainer::GetFromGrid(int x, int y) const
 	{
 		if (x < -64 || y < -64 || x > 64 || y > 64)
 			return {};
@@ -72,20 +68,24 @@ namespace GrassControl
 		return grid[x * 129 + y];
 	}
 
-	void DistantGrass::CellInfoContainer::unsafe_ForeachWithState(const std::function<bool(cell_info)>& action)
+	void DistantGrass::CellInfoContainer::unsafe_ForeachWithState(const std::function<bool(std::shared_ptr<cell_info>)>& action)
 	{
 		try {
-			for (auto& [fst, snd] : map) {
-				if (!action(snd)) {
-					map.erase(fst);
-				}
+			for (auto& [fst, snd] : this->map) {
+				if (fst != nullptr) {
+					if (!action(snd)) {
+						this->map.erase(fst);
+					}
+				} 
 			}
 		} catch (...) {
-			//Terrible idea but fuck it. Erase keeps throwing a read access violation.
+			logger::error("Exception occurred while trying to erase cell from loaded reference map. Attempting to continue.");
+			//Terrible idea but fuck it. Erase keeps throwing a read access violation in Debug. Release should be fine, but just in case.
+			//Probably because of Debug Iterators
 		}
 	}
 
-	std::optional<DistantGrass::cell_info> DistantGrass::CellInfoContainer::FindByCell(RE::TESObjectCELL* cell)
+	std::shared_ptr<DistantGrass::cell_info> DistantGrass::CellInfoContainer::FindByCell(RE::TESObjectCELL* cell)
 	{
 		{
 			auto it = this->map.find(cell);
@@ -178,8 +178,14 @@ namespace GrassControl
 			d->State = _cell_data::_cell_states::Loading;
 
 			if (d->DummyCell_Ptr == nullptr) {
-				auto tempPtr = new char[sizeof(RE::TESObjectCELL)];
-				memset(tempPtr, 0, sizeof(RE::TESObjectCELL));
+				char* tempPtr = nullptr;
+				if (REL::Relocate(false, REL::Module::get().version() >= SKSE::RUNTIME_SSE_1_6_629)) {
+					tempPtr = new char[0x148];
+					memset(tempPtr, 0, 0x148);
+				} else {
+					tempPtr = new char[0x140];
+					memset(tempPtr, 0, 0x140);
+				}
 
 				d->DummyCell_Ptr = reinterpret_cast<RE::TESObjectCELL*>(tempPtr);
 
@@ -187,8 +193,8 @@ namespace GrassControl
 				exteriorData->cellX = x;
 				exteriorData->cellY = y;
 
-				d->DummyCell_Ptr->cellData.exterior = exteriorData;
-				d->DummyCell_Ptr->worldSpace = ws;
+				d->DummyCell_Ptr->GetRuntimeData().cellData.exterior = exteriorData;
+				d->DummyCell_Ptr->GetRuntimeData().worldSpace = ws;
 			}
 
 			using func_t = void (*)(RE::TESObjectCELL*);
@@ -219,7 +225,7 @@ namespace GrassControl
 			REL::Relocation<void (*)(RE::TESObjectCELL*, uintptr_t)> func2{ RELOCATION_ID(11932, 12071) };
 			func2(d->DummyCell_Ptr, 0);
 
-			delete d->DummyCell_Ptr->cellData.exterior;
+			delete d->DummyCell_Ptr->GetRuntimeData().cellData.exterior;
 
 			d->DummyCell_Ptr = nullptr;
 			d->State = _cell_data::_cell_states::None;
@@ -292,12 +298,12 @@ namespace GrassControl
 	}
 
 	void DistantGrass::LoadOnlyCellInfoContainer2::UnloadAll()
-    {
-        for (const auto& val : this->map | std::views::values) {
-            _DoUnload(val);
-        }
-        this->map.clear();
-    }
+	{
+		for (const auto& val : this->map | std::views::values) {
+			_DoUnload(val);
+		}
+		this->map.clear();
+	}
 
 	void DistantGrass::RemoveGrassHook(RE::TESObjectCELL* cell, uintptr_t arg_1)
 	{
@@ -375,7 +381,7 @@ namespace GrassControl
 		// Unload old grass, load new grass. But we have replaced how the grid works now.
 		uintptr_t addr;
 
-		if (addr = (RELOCATION_ID(13148, 13288).address() + OFFSET(0xA06 - 0x220, 0xA1D)); REL::make_pattern<"8B 3D">().match(addr)) {
+		if (addr = (RELOCATION_ID(13148, 13288).address() + REL::Relocate(0xA06 - 0x220, 0xA1D)); REL::make_pattern<"8B 3D">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
 
 			struct Patch : Xbyak::CodeGenerator
@@ -408,7 +414,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + OFFSET(0x159, 0x17D), Reg32(OFFSET(Reg::R14D, Reg::EDI)), Reg32(OFFSET(Reg::EBP, Reg::R14D)));
+			Patch patch(reinterpret_cast<uintptr_t>(UpdateGrassGridNow), addr + REL::Relocate(0x159, 0x17D), Reg32(REL::Relocate(Reg::R14D, Reg::EDI)), Reg32(REL::Relocate(Reg::EBP, Reg::R14D)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
@@ -554,7 +560,7 @@ namespace GrassControl
 
 		// unloading cell
 		if (!load_only) {
-			if (addr = RELOCATION_ID(13623, 13721).address() + OFFSET(0xC0F8 - 0xBF90, 0x1E8); REL::make_pattern<"E8">().match(addr)) {
+			if (addr = RELOCATION_ID(13623, 13721).address() + REL::Relocate(0xC0F8 - 0xBF90, 0x1E8); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
 				// This is not necessary because we want to keep grass on cell unload.
@@ -566,7 +572,7 @@ namespace GrassControl
 
 		// remove just before read grass so there's not so noticeable fade-in / fade-out, there is still somewhat noticeable effect though
 		if (!load_only) {
-			if (addr = RELOCATION_ID(15204, 15372).address() + OFFSET(0x8F - 0x10, 0x7D); REL::make_pattern<"E8">().match(addr)) {
+			if (addr = RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x8F - 0x10, 0x7D); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, After = [&] (std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -613,35 +619,35 @@ namespace GrassControl
 
 		// Fix weird shape selection.
 		// Vanilla game groups shape selection by 12 x 12 cells, we want a shape per cell.
-#ifndef SKYRIM_AE
-		if (addr = RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D1C); REL::make_pattern<"E8">().match(RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D10))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
-			{
-				Patch(uintptr_t a_target)
+		if (!AE) {
+			if (addr = RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D1C); REL::make_pattern<"E8">().match(RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D10))) {
+				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
+				struct Patch : Xbyak::CodeGenerator
 				{
-					Xbyak::Label retnLabel;
+					Patch(uintptr_t a_target)
+					{
+						Xbyak::Label retnLabel;
 
-					mov(r8d, ptr[rsp + 0x40]);
-					mov(r9d, ptr[rsp + 0x3C]);
+						mov(r8d, ptr[rsp + 0x40]);
+						mov(r9d, ptr[rsp + 0x3C]);
 
-					jmp(ptr[rip + retnLabel]);
+						jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x9);
-				}
-			};
-			Patch patch(addr);
-			patch.ready();
+						L(retnLabel);
+						dq(a_target + 0x9);
+					}
+				};
+				Patch patch(addr);
+				patch.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		} else {
-			stl::report_and_fail("Failed to fix shape selection");
+				auto& trampoline = SKSE::GetTrampoline();
+				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
+				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
+			} else {
+				stl::report_and_fail("Failed to fix shape selection");
+			}
 		}
-#endif
-		addr = RELOCATION_ID(15205, 15373).address() + OFFSET(0x617, 0x583);
+		addr = RELOCATION_ID(15205, 15373).address() + REL::Relocate(0x617, 0x583);
 		struct Patch : Xbyak::CodeGenerator
 		{
 			Patch(uintptr_t a_target)
@@ -664,35 +670,35 @@ namespace GrassControl
 		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-// Some reason in AE doesnt't generate a functional hook, using a thunk instead should work the same
-#ifndef SKYRIM_AE
-		if (addr = RELOCATION_ID(15206, 15374).address() + (0x645C - 0x620D); REL::make_pattern<"E8">().match(RELOCATION_ID(15206, 15374).address() + (0x645C - 0x6200))) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
-			{
-				Patch(uintptr_t a_target)
+		// Some reason in AE doesn't generate a functional hook, using a thunk instead should work the same
+		if (!AE) {
+			if (addr = RELOCATION_ID(15206, 15374).address() + (0x645C - 0x620D); REL::make_pattern<"E8">().match(RELOCATION_ID(15206, 15374).address() + (0x645C - 0x6200))) {
+				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
+				struct Patch : Xbyak::CodeGenerator
 				{
-					Xbyak::Label retnLabel;
+					Patch(uintptr_t a_target)
+					{
+						Xbyak::Label retnLabel;
 
-					mov(r8d, ptr[rsp + 0x34]);
-					mov(r9d, ptr[rsp + 0x30]);
+						mov(r8d, ptr[rsp + 0x34]);
+						mov(r9d, ptr[rsp + 0x30]);
 
-					jmp(ptr[rip + retnLabel]);
+						jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x6);
-				}
-			};
-			Patch patch2(addr);
-			patch2.ready();
+						L(retnLabel);
+						dq(a_target + 0x6);
+					}
+				};
+				Patch patch2(addr);
+				patch2.ready();
 
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
-		} else {
-			stl::report_and_fail("Failed to fix shape selection");
+				trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
+			} else {
+				stl::report_and_fail("Failed to fix shape selection");
+			}
 		}
-#endif
 
-		addr = RELOCATION_ID(15214, 15383).address() + OFFSET(0x78B7 - 0x7830, 0x7E);
+		addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x78B7 - 0x7830, 0x7E);
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 0xC2 - 0xB7, Before = [&] (std::any ctx)
 
 		struct Patch2 : Xbyak::CodeGenerator
@@ -705,20 +711,20 @@ namespace GrassControl
 				mov(ptr[rsp + rsp_offset + 6], bx);
 
 				movsx(eax, a_X.cvt16());  // x
-				mov(a_X, rcx);
+				mov(a_X, ecx);
 				cdq();
 				mov(ecx, 12);  // x/12
 				idiv(ecx);
 
-				mov(rcx, a_X);
+				mov(ecx, a_X);
 				mov(a_X.cvt32(), eax);
 
 				movsx(eax, bx);  // y
-				mov(rbx, rcx);
+				mov(ebx, ecx);
 				cdq();
 				mov(ecx, 12);  // y/12
 				idiv(ecx);
-				mov(rcx, rbx);
+				mov(ecx, ebx);
 				mov(ebx, eax);
 
 				mov(ptr[rsp + rsp_stackOffset + 0x58], a_X.cvt32());  // x
@@ -730,7 +736,7 @@ namespace GrassControl
 				dq(a_target + 0xB);
 			}
 		};
-		Patch2 patch2(addr, Reg32(OFFSET(Reg::R15, Reg::R14)), OFFSET(0x48, 0x50), OFFSET(0x258, 0x288));
+		Patch2 patch2(addr, Reg32(REL::Relocate(Reg::R15, Reg::R14)), REL::Relocate(0x48, 0x50), REL::Relocate(0x258, 0x288));
 		patch2.ready();
 
 		DWORD flOldProtect = 0;
@@ -751,11 +757,11 @@ namespace GrassControl
 				int Max = std::max(ugrids, ggrids);
 				struct Patch : Xbyak::CodeGenerator
 				{
-					explicit Patch(uintptr_t a_target, int* max)
+					explicit Patch(uintptr_t a_target, int max)
 					{
 						Xbyak::Label retnLabel;
 
-						mov(rax, (uintptr_t)max);
+						mov(rax, max);
 
 						jmp(ptr[rip + retnLabel]);
 
@@ -763,7 +769,7 @@ namespace GrassControl
 						dq(a_target + 0x6);
 					}
 				};
-				Patch patch3(addr, &Max);
+				Patch patch3(addr, Max);
 				patch3.ready();
 				trampoline.write_branch<6>(addr, trampoline.allocate(patch3));
 			} else {
@@ -772,13 +778,13 @@ namespace GrassControl
 		}
 
 		// Allow grass distance to extend beyond uGrids * 4096 units (20480).
-		if (addr = RELOCATION_ID(15202, 15370).address() + OFFSET(0xB06 - 0x890, 0x279); REL::make_pattern<"C1 E0 0C">().match(addr)) {
+		if (addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xB06 - 0x890, 0x279); REL::make_pattern<"C1 E0 0C">().match(addr)) {
 			Memory::Internal::write<uint8_t>(addr + 2, 16, true);
 		} else {
 			stl::report_and_fail("Failed to extend grass");
 		}
 
-		if (addr = RELOCATION_ID(528751, 15379).address() + OFFSET(0xFE - 0xE0, 0x1E); REL::make_pattern<"C1 E0 0C">().match(addr)) {
+		if (addr = RELOCATION_ID(528751, 15379).address() + REL::Relocate(0xFE - 0xE0, 0x1E); REL::make_pattern<"C1 E0 0C">().match(addr)) {
 			Memory::Internal::write<uint8_t>(addr + 2, 16, true);
 		} else {
 			stl::report_and_fail("Failed to extend grass");
@@ -812,7 +818,7 @@ namespace GrassControl
 
 		// Cell unload should clear queued task. Otherwise it will crash or not allow creating grass again later.
 		if (!load_only) {
-			if (addr = (RELOCATION_ID(18655, 19130).address() + OFFSET(0xC888 - 0xC7C0, 0xCA)); REL::make_pattern<"E8">().match(addr)) {
+			if (addr = (RELOCATION_ID(18655, 19130).address() + REL::Relocate(0xC888 - 0xC7C0, 0xCA)); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 				struct Patch : Xbyak::CodeGenerator
 				{
@@ -861,7 +867,7 @@ namespace GrassControl
 
 		// Create custom way to load cell.
 		if (!load_only) {
-			addr = RELOCATION_ID(18137, 18527).address() + OFFSET(0x17, 0x25);
+			addr = RELOCATION_ID(18137, 18527).address() + REL::Relocate(0x17, 0x25);
 			struct Patch : Xbyak::CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_rbxWorldSpaceOffset, uintptr_t a_targetReturn, uintptr_t a_targetSkip)
@@ -930,7 +936,7 @@ namespace GrassControl
 					dq(a_targetSkip);
 				}
 			};
-			Patch patch6(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), OFFSET_3(0x20, 0x20, 0x28), addr + OFFSET(0x8, 0x5), addr + OFFSET(0x8 + (0xA9 - 0x8F), 0x141));
+			Patch patch6(reinterpret_cast<uintptr_t>(CellLoadNow_Our), reinterpret_cast<uintptr_t>(ThrowOurMethodException), REL::Relocate(0x20, 0x20, 0x28), addr + REL::Relocate(0x8, 0x5), addr + REL::Relocate(0x8 + (0xA9 - 0x8F), 0x141));
 			patch6.ready();
 
 			if (!AE) {
@@ -938,7 +944,7 @@ namespace GrassControl
 			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch6));
 
-			addr = RELOCATION_ID(18150, 18541).address() + OFFSET_3(0xB094 - 0xAF20, 0x1CA, 0x177);
+			addr = RELOCATION_ID(18150, 18541).address() + REL::Relocate(0xB094 - 0xAF20, 0x1CA, 0x177);
 			struct Patch7 : Xbyak::CodeGenerator
 			{
 				Patch7(uintptr_t a_func, uintptr_t a_target, uintptr_t rbx_offset)
@@ -970,12 +976,16 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch7 patch7(reinterpret_cast<uintptr_t>(CellLoadHook), addr + OFFSET(0x7, 0xB), OFFSET_3(0x30, 0x30, 0x38));
+			Patch7 patch7(reinterpret_cast<uintptr_t>(CellLoadHook), addr + REL::Relocate(0x7, 0xB), REL::Relocate(0x30, 0x30, 0x38));
 			patch7.ready();
-			Utility::Memory::SafeWrite(addr + 5, OFFSET(Utility::Assembly::NoOperation2, Utility::Assembly::NoOperation6));
+			if (!AE) {
+				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+			} else {
+				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
+			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch7));
 
-			addr = RELOCATION_ID(18149, 18540).address() + OFFSET_3(0xE1B - 0xCC0, 0x167, 0x15E);
+			addr = RELOCATION_ID(18149, 18540).address() + REL::Relocate(0xE1B - 0xCC0, 0x167, 0x15E);
 			struct Patch3 : Xbyak::CodeGenerator
 			{
 				explicit Patch3(uintptr_t a_target, uintptr_t rbx_offset, Reg a_source)
@@ -992,13 +1002,13 @@ namespace GrassControl
 					dq(a_target + 0x8);
 				}
 			};
-			Patch3 patch3(addr, OFFSET_3(0x3c, 0x3c, 0x44), Reg8(OFFSET(Reg::R15B, Reg::BPL)));
+			Patch3 patch3(addr, REL::Relocate(0x3c, 0x3c, 0x44), Reg8(REL::Relocate(Reg::R15B, Reg::BPL)));
 			patch3.ready();
 
 			Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch3));
 
-			addr = RELOCATION_ID(13148, 13288).address() + OFFSET(0x2630 - 0x2220, 0x4D0);
+			addr = RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2630 - 0x2220, 0x4D0);
 			struct Patch4 : Xbyak::CodeGenerator
 			{
 				Patch4(std::uintptr_t a_func, uintptr_t a_target, Reg a_movedY, uintptr_t a_retn_offset)
@@ -1014,11 +1024,11 @@ namespace GrassControl
 					push(rax);
 					push(rsi);
 					if (AE) {
-						mov(r8d, r12w);  //movedX
+						movsx(r8d, r12w);  //movedX
 					} else {
 						mov(r8d, ptr[rsp + 0x90]);  //movedX
 					}
-					mov(r9d, a_movedY);  //movedY
+					movsx(r9d, a_movedY);  //movedY
 					mov(esi, r8d);
 
 					mov(rax, ptr[rbx + 0x140]);  // ws
@@ -1064,7 +1074,7 @@ namespace GrassControl
 					dq(a_target + a_retn_offset);
 				}
 			};
-			Patch4 patch4(reinterpret_cast<uintptr_t>(UpdateGrassGridQueue), addr, Reg16(OFFSET(Reg16::R13W, Reg16::R15W)), OFFSET(0x9, 0x6));
+			Patch4 patch4(reinterpret_cast<uintptr_t>(UpdateGrassGridQueue), addr, Reg16(REL::Relocate(Reg16::R13W, Reg16::R15W)), REL::Relocate(0x9, 0x6));
 			patch4.ready();
 			if (AE)
 				trampoline.write_branch<6>(addr, trampoline.allocate(patch4));
@@ -1073,7 +1083,7 @@ namespace GrassControl
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch4));
 			}
 
-			addr = RELOCATION_ID(13148, 13288).address() + OFFSET(0x29AF - 0x2220, 0x9A9);
+			addr = RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x29AF - 0x2220, 0x9A9);
 			struct Patch5 : Xbyak::CodeGenerator
 			{
 				Patch5(uintptr_t a_func, uintptr_t a_target)
@@ -1213,7 +1223,7 @@ namespace GrassControl
 				logger::debug(fmt::runtime("FurtherLoadSuccessFirst({}, {}) Name: Wilderness, FormId: {:x}"), x, y, cell->formID);
 			}
 		} else if (cell != nullptr) {
-			auto landPtr = cell->cellLand;
+			auto landPtr = cell->GetRuntimeData().cellLand;
 			if (landPtr != nullptr && (Memory::Internal::read<uint8_t>(&(landPtr->data.flags)) & 8) == 0) {
 				REL::Relocation<void (*)(RE::TESObjectLAND*, int, int)> fnc{ RELOCATION_ID(18331, 18747) };
 
@@ -1271,7 +1281,7 @@ namespace GrassControl
 		if (quickLoad)
 			return true;
 
-		auto land = cell->cellLand;
+		auto land = cell->GetRuntimeData().cellLand;
 		if (land == nullptr)
 			return false;
 
@@ -1394,10 +1404,10 @@ namespace GrassControl
 			c->self_data = tg;
 		}
 	}
-	GrassStates DistantGrass::GetWantState(const cell_info& c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
+	GrassStates DistantGrass::GetWantState(const std::shared_ptr<cell_info> c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
 	{
-		int diffX = std::abs(curX - c.x);
-		int diffY = std::abs(curY - c.y);
+		int diffX = std::abs(curX - c->x);
+		int diffY = std::abs(curY - c->y);
 
 		if (diffX > grassRadius || diffY > grassRadius) {
 			return GrassStates::None;
@@ -1410,7 +1420,7 @@ namespace GrassControl
 		int uHalf = uGrid / 2;
 		if (diffX > uHalf || diffY > uHalf) {
 			// Special case: if we are loading and not generating anyway and already have active file we can take active instead of lod
-			if (canLoadFromFile && c.checkHasFile(wsName, false)) {
+			if (canLoadFromFile && c->checkHasFile(wsName, false)) {
 				return GrassStates::Active;
 			}
 
@@ -1545,7 +1555,7 @@ namespace GrassControl
 
 	void DistantGrass::UpdateGrassGridQueue(const int prevX, const int prevY, const int movedX, const int movedY)
 	{
-		auto wsObj = RE::TES::GetSingleton()->worldSpace;
+		auto wsObj = RE::TES::GetSingleton()->GetRuntimeData2().worldSpace;
 
 		if (wsObj == nullptr)
 			return;
@@ -1626,7 +1636,7 @@ namespace GrassControl
 		int uGrids = Memory::Internal::read<int>(addr_uGrids + 8);
 		int uHalf = uGrids / 2;
 		int bigSide = std::max(grassRadius, uHalf);
-		auto ws = tes->worldSpace;
+		auto ws = tes->GetRuntimeData2().worldSpace;
 		auto grassMgr = RE::BGSGrassManager::GetSingleton();
 		bool canLoadGrass = Memory::Internal::read<uint8_t>(addr_AllowLoadFile + 8) != 0;
 		std::string wsName;
@@ -1641,15 +1651,15 @@ namespace GrassControl
 		if (addType <= 0) {
 			{
 				std::scoped_lock lock(locker);
-				Map->unsafe_ForeachWithState([&](cell_info c) {
+				Map->unsafe_ForeachWithState([&](std::shared_ptr<cell_info> c) {
 					auto want = addType < 0 ? GrassStates::None : GetWantState(c, nowX, nowY, uGrids, grassRadius, false, "");
 					if (want == GrassStates::None) {
-						auto cell = c.cell;
-						c.cell = nullptr;
-						c.self_data = 0;
+						auto cell = c->cell;
+						c->cell = nullptr;
+						c->self_data = 0;
 						ClearCellAddGrassTask(cell);
 
-						logger::debug("RemoveGrassGrid({}, {})", c.x, c.y);
+						logger::debug("RemoveGrassGrid({}, {})", c->x, c->y);
 
 						invokeList.push_back(cell);
 						return false;
@@ -1699,7 +1709,7 @@ namespace GrassControl
 						int d = c->self_data;
 						bool busy = d >> 24 != 0;
 
-						auto want = GetWantState(c.value(), nowX, nowY, uGrids, grassRadius, canLoadGrass, wsName);
+						auto want = GetWantState(c, nowX, nowY, uGrids, grassRadius, canLoadGrass, wsName);
 						if (want > static_cast<GrassStates>(d & 0xFF))  // this check is using > because there's no need to set lod grass if we already have active grass
 						{
 							bool canQuickLoad = want == GrassStates::Active || (canLoadGrass && c->checkHasFile(wsName, true));
@@ -1711,7 +1721,7 @@ namespace GrassControl
 										logger::debug("c.cell({}, {}) warning: already had cell!", c->x, c->y);
 									}
 									c->cell = cellPtr;
-									Map->map.try_emplace(cellPtr, c.value());
+									Map->map.try_emplace(cellPtr, c);
 								}
 
 								// set busy and target
@@ -1745,7 +1755,7 @@ namespace GrassControl
 		logger::debug("UpdateGrassGridNowBegin_LoadOnly({}, {}) type: {}", movedX, movedY, addType);
 
 		int grassRadius = getChosenGrassGridRadius();
-		auto ws = tes->worldSpace;
+		auto ws = tes->GetRuntimeData2().worldSpace;
 		auto grassMgr = RE::BGSGrassManager::GetSingleton();
 		int nowX = tes->unk0B0;
 		int nowY = tes->unk0B4;
