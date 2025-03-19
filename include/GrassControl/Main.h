@@ -3,7 +3,6 @@
 #include "CasualLibrary.hpp"
 #include "GrassControl/Config.h"
 #include "GrassControl/DistantGrass.h"
-#include "GrassControl/GidFileCache.h"
 #include "GrassControl/Logging.h"
 #include "GrassControl/Profiler.h"
 #include "GrassControl/RaycastHelper.h"

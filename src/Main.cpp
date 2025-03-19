@@ -65,19 +65,6 @@ void InitializeLog()
 	logger::info(FMT_STRING("{} v{}"), PluginDeclaration::GetSingleton()->GetName(), PluginDeclaration::GetSingleton()->GetVersion());
 }
 
-/*
-#ifdef _DEBUG
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
-	SKSE::PluginVersionData v;
-	v.PluginName("NGIO-NG"sv);
-	v.PluginVersion(REL::Version{ Version::MAJOR, Version::MINOR, Version::PATCH, 0 });
-	v.UsesAddressLibrary();
-	v.UsesNoStructs();
-	return v;
-}();
-#endif
-*/
-
 SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 {
 	REL::Module::reset();
@@ -97,6 +84,12 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 	}
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
+
+	if(LoadLibrary("Data/SKSE/Plugins/GrassCacheHelperNG.dll"))
+	{
+		GrassControl::GidFileCache::HelperInstalled = true;
+		logger::info("Grass Cache Helper NG detected.");
+	}
 
 	InitializeHooking();
 	InitializeMessaging();

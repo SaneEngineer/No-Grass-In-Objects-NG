@@ -39,6 +39,8 @@ namespace GrassControl
 	{
 	public:
 		static void FixFileFormat(bool only_load);
+
+		static inline bool HelperInstalled = false;
 	};
 
 	class GidFileGenerationTask final
@@ -187,7 +189,9 @@ namespace GrassControl
 			static void Install()
 			{
 				if (Config::UseGrassCache) {
-					stl::write_thunk_call<PathFileNameLoad>(RELOCATION_ID(15206, 15374).address() + REL::Relocate(0xE5, 0xE5));
+					if (!GidFileCache::HelperInstalled) {
+						stl::write_thunk_call<PathFileNameLoad>(RELOCATION_ID(15206, 15374).address() + REL::Relocate(0xE5, 0xE5));
+					}
 
 					stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(RELOCATION_ID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0xD0));
