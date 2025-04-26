@@ -8,14 +8,33 @@ namespace GrassControl
 		return static_cast<float>(a_input * Config::GlobalGrassScale);
 	}
 
-	bool GrassControlPlugin::CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
+	static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
 	{
-		if (land != nullptr) {
-			if (Cache != nullptr && !Cache->CanPlaceGrass(land, x, y, z)) {
+		if (Config::RayCast) {
+			if (GrassControlPlugin::Cache != nullptr && !GrassControlPlugin::Cache->CanPlaceGrass(land, x, y, z)) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	static float GrassCliffHelper(glm::vec3& normal, const float x, const float y, const float z, uintptr_t param)
+	{
+		if (Config::GrassCliffs) {
+			if (GrassControlPlugin::Cache != nullptr) {
+				RE::GrassParam* grassParam;
+				if (REL::Module::get().IsSE()) {
+					auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
+					grassParam = *paramPtr;
+				} else {
+					grassParam = reinterpret_cast<RE::GrassParam*>(param);
+				}
+
+				auto ret = GrassControlPlugin::Cache->CreateGrassCliff(x, y, z, normal, grassParam);
+				return ret;
+			}
+		}
+		return z;
 	}
 
 	std::intptr_t GrassControlPlugin::addr_MaxGrassPerTexture;
@@ -69,7 +88,13 @@ namespace GrassControl
 				cachedTextureList = nullptr;
 			}
 
-			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList);
+			std::string cliffsFormsStr = Config::GrassCliffsForms;
+			auto cachedCliffsList = Util::CachedFormList::TryParse(cliffsFormsStr, "Grass-cliffs-forms", true, false);
+			if (cachedCliffsList != nullptr && cachedCliffsList->getAll().empty()) {
+				cachedCliffsList = nullptr;
+			}
+
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList, cachedCliffsList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 
@@ -134,36 +159,70 @@ namespace GrassControl
 			break;
 		}
 
-		if (Config::RayCast) {
+		if (Config::RayCast || Config::GrassCliffs) {
 			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate((0x723A - 0x6CE0), 0x664, 0x56C);
 			struct Patch : Xbyak::CodeGenerator
 			{
-				Patch(std::uintptr_t b_func, std::uintptr_t a_target,
+				Patch(std::uintptr_t a_func, std::uintptr_t b_func, std::uintptr_t a_target,
 					std::uintptr_t a_rspOffset,
-					Xbyak::Reg a_z,
-					Xbyak::Reg a_rcxSource,
+					std::uintptr_t b_rspOffset,
+					Xbyak::Xmm a_z,
 					std::uintptr_t a_rbpOffset,
-					std::uintptr_t a_targetJumpOffset)
+					Xbyak::Reg64 a_grassParamReg,
+					std::uintptr_t a_targetJumpOffset,
+					std::uintptr_t a_floatArray)
 				{
 					Xbyak::Label funcLabel;
+					Xbyak::Label funcLabel2;
 					Xbyak::Label retnLabel;
+
+					Xbyak::Label isCliff;
+					Xbyak::Label notCliff;
 
 					Xbyak::Label jump;
 					Xbyak::Label notIf;
+
+					movss(xmm1, ptr[rsp + a_rspOffset]);        // x
+					movss(xmm2, ptr[rsp + a_rspOffset + 0x4]);  // y
+					movss(xmm3, a_z);                           // z
+					mov(rcx, a_floatArray);
+
+					mov(rax, a_grassParamReg);
+					sub(rsp, 0x30);
+					mov(ptr[rsp + 0x20], rax);
+					call(ptr[rip + funcLabel2]);
+					add(rsp, 0x30);
+
+					ucomiss(a_z, xmm0);
+					jp(isCliff);
+					je(notCliff);
+
+					L(isCliff);
+					movss(a_z, xmm0);
+
+					//terrain normal -> Cliff normal
+					mov(rcx, a_floatArray);
+					movss(xmm0, ptr[rcx + 0x8]);
+					movss(ptr[rsp + b_rspOffset + 0x8], xmm0);  // z
+					movss(xmm0, ptr[rcx + 0x4]);
+					movss(ptr[rsp + b_rspOffset + 0x4], xmm0);  // y
+					movss(xmm0, ptr[rcx]);
+					movss(ptr[rsp + b_rspOffset], xmm0);  // x
+
+					jmp(notIf);
+					L(notCliff);
 					movss(xmm1, ptr[rsp + a_rspOffset]);        // x
 					movss(xmm2, ptr[rsp + a_rspOffset + 0x4]);  // y
 					movss(xmm3, a_z);                           // z
 
-					mov(rcx, a_rcxSource);
-
 					sub(rsp, 0x30);
-					call(ptr[rip + funcLabel]);  // call our function
+					call(ptr[rip + funcLabel]);
 					add(rsp, 0x30);
 
 					test(al, al);
 					jne(notIf);
 					jmp(ptr[rip + jump]);
-
+				
 					L(notIf);
 					movss(xmm6, ptr[rbp - a_rbpOffset]);
 					jmp(ptr[rip + retnLabel]);
@@ -172,18 +231,23 @@ namespace GrassControl
 					dq(a_target + a_targetJumpOffset);
 
 					L(funcLabel);
+					dq(a_func);
+
+					L(funcLabel2);
 					dq(b_func);
 
 					L(retnLabel);
 					dq(a_target + 0x5);
 				}
 			};
-			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), addr,
+			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), reinterpret_cast<uintptr_t>(GrassCliffHelper), addr,
 				REL::Relocate(0x40, 0x50, 0x50),
+				REL::Relocate(0x30, 0x40, 0x40),
 				Xmm(REL::Relocate(7, 7, 14)),
-				Reg64(REL::Relocate(Reg::RSI, Reg::RDI, Reg::RBX)),
 				REL::Relocate(0x48, 0x68, 0x38),
-				REL::Relocate(0x5 + (0x661 - 0x23F), -0x156, 0x5 + 0x510));
+				Reg64(REL::Relocate(Reg64::RBP, Reg64::RBX, Reg64::R13)),
+				REL::Relocate(0x5 + (0x661 - 0x23F), -0x156, 0x5 + 0x510),
+				reinterpret_cast<uintptr_t>(&normalBuffer));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();

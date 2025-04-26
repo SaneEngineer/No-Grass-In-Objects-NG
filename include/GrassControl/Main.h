@@ -21,6 +21,8 @@ namespace GrassControl
 
 		static int _did_mainMenu;
 
+		inline static auto normalBuffer = glm::vec3{0.0f};
+
 	public:
 		inline static std::unique_ptr<RaycastHelper> Cache;
 
@@ -35,7 +37,6 @@ namespace GrassControl
 
 		static void OnMainMenuOpen();
 
-		static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, float x, float y, float z);
 		static void Update();
 
 		static RE::TESObjectREFR* PlaceAtMe(RE::TESObjectREFR* self, RE::TESForm* a_form, std::uint32_t count, bool forcePersist, bool initiallyDisabled)

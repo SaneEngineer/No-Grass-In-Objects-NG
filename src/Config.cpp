@@ -58,6 +58,9 @@ namespace GrassControl
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-collision-layers", RayCastCollisionLayers);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-ignore-forms", RayCastIgnoreForms);
 				ReadStringSetting(ini, "RayCastConfig", "Ray-cast-texture-forms", RayCastTextureForms);
+				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-texture-width", RayCastTextureWidth);
+				ReadBoolSetting(ini, "RayCastConfig", "Grass-cliffs-enabled", GrassCliffs);
+				ReadStringSetting(ini, "RayCastConfig", "Grass-cliffs-forms", GrassCliffsForms);
 
 				//GrassConfig
 				ReadBoolSetting(ini, "GrassConfig", "Super-dense-grass", SuperDenseGrass);
@@ -112,6 +115,9 @@ namespace GrassControl
 		ini.SetValue("RayCastConfig", "Ray-cast-collision-layers", RayCastCollisionLayers.c_str(), ";Which collision layers to check when raycasting. Not recommended to change unless you know what you're doing. These are collision layer index from CK separated by space.");
 		ini.SetValue("RayCastConfig", "Ray-cast-ignore-forms", RayCastIgnoreForms.c_str(), ";Which objects will raycast ignore. This can be useful if you want grass to still grow from some objects (such as roads).The format is formid : formfile separated by; for example \"1812A:Skyrim.esm;1812D:Skyrim.esm\" would add RoadChunkL01 and RoadChunkL02 forms to ignore list. Base forms go here not object references !");
 		ini.SetValue("RayCastConfig", "Ray-cast-texture-forms", RayCastTextureForms.c_str(), ";Which landcape textures raycast will check for. This can be useful if you want to prevent grass from growing on certain landscape textures (such as roads textures from Northern Roads). The format is formid : formfile separated by; for example \"425FE:Northern Roads.esp;2D5520:Northern Roads.esp\" would add COTN_LRoadStone01 and COTN_LRoadDirt01Trail77 forms to the texture list to check. Lanscape textures go here not texturesets !");
+		ini.SetDoubleValue("RayCastConfig", "Ray-cast-texture-width", RayCastTextureWidth, ";The distance from the grass in each direction that should be checked as well as the point under the grass for the land texture(s) specified in Ray-cast-texture-forms.");
+		ini.SetBoolValue("RayCastConfig", "Grass-cliffs-enabled", GrassCliffs, ";Use ray casting to detect dirt cliffs and place grass on them");
+		ini.SetValue("RayCastConfig", "Grass-cliffs-forms", GrassCliffsForms.c_str(), ";The forms of the dirt cliffs in the game that will be converted to grass cliffs.");
 
 		//GrassConfig
 		ini.SetBoolValue("GrassConfig", "Super-dense-grass", SuperDenseGrass, ";Enable much more grass without having to change mod files.");

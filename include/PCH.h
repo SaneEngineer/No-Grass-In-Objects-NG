@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <numbers>
 #include <ranges>
 
 #include <typeinfo>

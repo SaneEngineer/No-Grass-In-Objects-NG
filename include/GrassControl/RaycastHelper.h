@@ -34,13 +34,12 @@ namespace Raycast
 			RE::NiAVObject* getAVObject();
 		};
 
-	public:
 		RayCollector();
 		~RayCollector() = default;
 
 		virtual void AddRayHit(const RE::hkpCdBody& body, const RE::hkpShapeRayCastCollectorOutput& hitInfo);
 
-		inline void AddFilter(const RE::NiAVObject* obj) noexcept
+		void AddFilter(const RE::NiAVObject* obj) noexcept
 		{
 			objectFilter.push_back(obj);
 		}
@@ -84,17 +83,18 @@ namespace Raycast
 		bool hit = false;
 		// If the ray hits a havok object, this will point to its reference
 		RE::TESObjectREFR* hitObject = nullptr;
-		RE::COL_LAYER CollisionLayer;
-		// The length of the ray from start to hitPos
-		float rayLength = 0.0f;
+
+		// The position the ray hit, in world space
+		glm::vec4 hitPos;
 		// A vector of hits to be iterated in original code
 		std::vector<RayCollector::HitResult> hitArray{};
 
-		// pad to 128
-		uint64_t _pad{};
 	} RayResult;
 	static_assert(sizeof(RayResult) == 128);
+
 #pragma warning(pop)
+
+	RE::NiAVObject* getAVObject(const RE::hkpCdBody* body);
 
 	// Cast a ray from 'start' to 'end', returning the first thing it hits
 	// This variant collides with pretty much any solid geometry
@@ -121,7 +121,7 @@ namespace GrassControl
 			delete Ignore;
 		}
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs);
 
 		const int Version = 0;
 
@@ -135,15 +135,19 @@ namespace GrassControl
 
 		Util::CachedFormList* const Textures = nullptr;
 
-		bool CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const;
+		Util::CachedFormList* const Cliffs = nullptr;
+
+		bool CanPlaceGrass(RE::TESObjectLAND* land, float x, float y, float z) const;
+		float CreateGrassCliff(float x, float y, float z, glm::vec3& Normal, RE::GrassParam* param) const;
 
 	private:
 		/// @brief Iterate the Raycast Hit object and provide the first TESForm*
 		/// @param r The Rayresult to iterate
 		/// @return True if the predicate function returns true
-		RE::TESForm* GetRaycastHitBaseForm(const Raycast::RayResult& r) const;
+		static RE::TESForm* GetRaycastHitBaseForm(const Raycast::RayResult& r);
+		static RE::TESForm* GetRaycastHitBaseForm(const RE::hkpCdBody* body);
 
-		bool IsIgnoredObject(const Raycast::RayResult& r) const;
+		bool IsCliffObject(const Raycast::RayResult& r) const;
 	};
 
 }

@@ -401,19 +401,19 @@ namespace GrassControl
 			bld.append(key);
 		}
 		if (!wsName.empty()) {
-			if (bld.length() != 0) {
+			if (!bld.empty()) {
 				bld += '_';
 			}
 			bld.append(wsName);
 		}
 		if (x != INT_MIN) {
-			if (bld.length() != 0) {
+			if (!bld.empty()) {
 				bld += '_';
 			}
 			bld.append(std::to_string(x));
 		}
 		if (y != INT_MIN) {
-			if (bld.length() != 0) {
+			if (!bld.empty()) {
 				bld += '_';
 			}
 			bld.append(std::to_string(y));
