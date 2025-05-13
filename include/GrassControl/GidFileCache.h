@@ -129,6 +129,21 @@ namespace GrassControl
 	protected:
 		struct Hooks
 		{
+			struct PathFileNameSave
+			{
+				static int thunk(char* a_arg, const char* Buffer, int a_arg3)
+				{
+					auto str = std::string(Buffer);
+					size_t pos = str.find(".gid");
+					if (pos != std::string::npos) {
+						str.replace(pos, std::string(".gid").size(), ".cgid");
+					}
+
+					return func(a_arg, str.c_str(), a_arg3);
+				}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
 			struct PathFileNameLoad
 			{
 				static int thunk(uintptr_t a_arg, const char* Buffer, uintptr_t a_arg3)
@@ -193,6 +208,7 @@ namespace GrassControl
 						stl::write_thunk_call<PathFileNameLoad>(RELOCATION_ID(15206, 15374).address() + REL::Relocate(0xE5, 0xE5));
 					}
 
+					stl::write_thunk_call<PathFileNameSave>(RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x6A7, 0x6A3));
 					stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
 					stl::write_thunk_call<GrassCountIncrement>(RELOCATION_ID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0xD0));
 
