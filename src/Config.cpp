@@ -61,6 +61,8 @@ namespace GrassControl
 				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-texture-width", RayCastTextureWidth);
 				ReadBoolSetting(ini, "RayCastConfig", "Grass-cliffs-enabled", GrassCliffs);
 				ReadStringSetting(ini, "RayCastConfig", "Grass-cliffs-forms", GrassCliffsForms);
+				ReadIntSetting(ini, "RayCastConfig", "Ray-cast-mode", EnsureMaxGrassTypesPerTextureSetting);
+				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-width", RayCastWidth);
 
 				//GrassConfig
 				ReadBoolSetting(ini, "GrassConfig", "Super-dense-grass", SuperDenseGrass);
@@ -118,6 +120,8 @@ namespace GrassControl
 		ini.SetDoubleValue("RayCastConfig", "Ray-cast-texture-width", RayCastTextureWidth, ";The distance from the grass in each direction that should be checked as well as the point under the grass for the land texture(s) specified in Ray-cast-texture-forms.");
 		ini.SetBoolValue("RayCastConfig", "Grass-cliffs-enabled", GrassCliffs, ";Use ray casting to detect dirt cliffs and place grass on them");
 		ini.SetValue("RayCastConfig", "Grass-cliffs-forms", GrassCliffsForms.c_str(), ";The forms of the dirt cliffs in the game that will be converted to grass cliffs.");
+		ini.SetLongValue("RayCastConfig", "Ray-cast-mode", RayCastMode, ";Switch how ray casting will work. Valid values: 0 = original simple ray-cast that check for collision above and below using a line; 1 = new shape based ray-cast method that uses a cylinder shape with a specified width or by default a width based upon the grass bounds. This is functionally very different from the original line method and will perform differently ; 2 = same as 1 with a box with by default the same dimensions as the grass bounds or a square that uses the specified width for width and length.");
+		ini.SetDoubleValue("RayCastConfig", "Ray-cast-width", RayCastWidth, ";The distance from the center or width of the shape used in ray cast modes 1 and 2. If this value is a 0, then a width will be calculated from the grass bounds for each grass type.");
 
 		//GrassConfig
 		ini.SetBoolValue("GrassConfig", "Super-dense-grass", SuperDenseGrass, ";Enable much more grass without having to change mod files.");

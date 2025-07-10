@@ -1,7 +1,10 @@
 // Adapted from https://github.com/mwilsnd/SkyrimSE-SmoothCam/blob/master/SmoothCam/source/raycast.cpp
 #include "GrassControl/RaycastHelper.h"
 
+#include "CasualLibrary.hpp"
+
 Raycast::RayCollector::RayCollector() = default;
+Raycast::CdBodyPairCollector::CdBodyPairCollector() = default;
 
 void Raycast::RayCollector::AddRayHit(const RE::hkpCdBody& body, const RE::hkpShapeRayCastCollectorOutput& hitInfo)
 {
@@ -42,7 +45,49 @@ void Raycast::RayCollector::AddRayHit(const RE::hkpCdBody& body, const RE::hkpSh
 	}
 }
 
+void Raycast::CdBodyPairCollector::addCdBodyPair(const RE::hkpCdBody& bodyA, const RE::hkpCdBody& bodyB)
+{
+	HitResult hit{};
+
+	const RE::hkpCdBody* obj = &bodyA;
+
+	if (obj == phantom->GetCollidable()) {
+		obj = &bodyB;
+	}
+
+	while (obj) {
+		if (!obj->parent)
+			break;
+		obj = obj->parent;
+	}
+
+	hit.body = obj;
+	if (!hit.body)
+		return;
+
+	const auto collisionObj = static_cast<const RE::hkpCollidable*>(hit.body);
+	const auto flags = collisionObj->broadPhaseHandle.collisionFilterInfo;
+
+	const uint64_t m = 1ULL << static_cast<uint64_t>(flags);
+	constexpr uint64_t filter = 0x40122716;  //@TODO
+	if ((m & filter) != 0) {
+		if (!objectFilter.empty()) {
+			for (const auto filteredObj : objectFilter) {
+				if (hit.getAVObject() == filteredObj)
+					return;
+			}
+		}
+
+		hits.push_back(hit);
+	}
+}
+
 const std::vector<Raycast::RayCollector::HitResult>& Raycast::RayCollector::GetHits()
+{
+	return hits;
+}
+
+const std::vector<Raycast::CdBodyPairCollector::HitResult>& Raycast::CdBodyPairCollector::GetHits()
 {
 	return hits;
 }
@@ -54,7 +99,20 @@ void Raycast::RayCollector::Reset()
 	objectFilter.clear();
 }
 
+void Raycast::CdBodyPairCollector::Reset()
+{
+	hits.clear();
+	objectFilter.clear();
+}
+
 RE::NiAVObject* Raycast::RayCollector::HitResult::getAVObject()
+{
+	typedef RE::NiAVObject* (*_GetUserData)(const RE::hkpCdBody*);
+	static auto getAVObject = REL::Relocation<_GetUserData>(RELOCATION_ID(76160, 77988));
+	return body ? getAVObject(body) : nullptr;
+}
+
+RE::NiAVObject* Raycast::CdBodyPairCollector::HitResult::getAVObject()
 {
 	typedef RE::NiAVObject* (*_GetUserData)(const RE::hkpCdBody*);
 	static auto getAVObject = REL::Relocation<_GetUserData>(RELOCATION_ID(76160, 77988));
@@ -149,6 +207,110 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	return result;
 }
 
+Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& end, RE::TESObjectCELL* cell, RE::GrassParam* param)
+{
+	if (!cell)
+		return {};
+
+	constexpr auto hkpScale = 0.0142875f;
+
+	constexpr auto one = 1.0f;
+	const auto from = start * hkpScale;
+	const auto to = end * hkpScale;
+
+	const glm::vec4 dif = end - start;
+
+	auto vecA = RE::hkVector4(from.x, from.y, from.z, one);
+
+	auto bhkWorld = cell->GetbhkWorld();
+	auto hkWorld = bhkWorld->GetWorld1();
+
+	RE::hkTransform transform;
+	transform.translation = RE::hkVector4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	auto vecBottom = RE::hkVector4(0.0f, 0.0f, 0.0f, 1.0f);
+	auto vecTop = RE::hkVector4(0.0f, 0.0f, dif.z * hkpScale, 1.0f);
+
+	float radius;
+	int shapeType;
+	float widthX;
+	float widthY;
+
+	if (param) {
+		auto grassForm = RE::TESForm::LookupByID<RE::TESGrass>(param->grassFormID);
+		if (grassForm) {
+			if (grassForm->boundData.boundMax.x != 0 && grassForm->boundData.boundMin.x != 0) {
+				widthX = std::abs(static_cast<float>(grassForm->boundData.boundMax.x - grassForm->boundData.boundMin.x) / 2);
+				widthY = std::abs(static_cast<float>(grassForm->boundData.boundMax.y - grassForm->boundData.boundMin.y) / 2);
+				radius = std::max(widthX, widthY) / 2;
+			} else {
+				radius = 20.0f;
+			}
+		}
+	}
+
+	if (GrassControl::Config::RayCastWidth > 0.0f) {
+		widthX = GrassControl::Config::RayCastWidth / 2.0f;
+		widthY = GrassControl::Config::RayCastWidth / 2.0f;
+	}
+
+	RE::hkpShape* shape = (RE::hkpShape*)malloc(0x70);
+
+	if (GrassControl::Config::RayCastMode == 1) {
+		shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
+
+		using createCylinderShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, RE::hkVector4&, float, int);
+		REL::Relocation<createCylinderShape_t> createCylinderShape{ RELOCATION_ID(59971, 60720) };
+
+		shape = createCylinderShape(shape, vecBottom, vecTop, radius * hkpScale, shapeType);
+	} else if (GrassControl::Config::RayCastMode == 2) {
+		shapeType = Memory::Internal::read<int>(RELOCATION_ID(525125, 411600).address());
+
+		auto halfExtents = RE::hkVector4(widthX, widthY, dif.z * hkpScale / 2.0f, 0.0f);
+
+		using createBoxShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, float);
+		REL::Relocation<createBoxShape_t> createBoxShape{ RELOCATION_ID(59603, 60287) };
+
+		shape = createBoxShape(shape, halfExtents, shapeType);
+	}
+
+	if (once) {
+		using createSimpleShapePhantom_t = RE::hkpShapePhantom* (*)(RE::hkpShapePhantom*, RE::hkpShape*, const RE::hkTransform&, uint32_t);
+		REL::Relocation<createSimpleShapePhantom_t> createSimpleShapePhantom{ RELOCATION_ID(60675, 61535) };
+		phantom = (RE::hkpShapePhantom*)malloc(0x1C0);
+
+		phantom = createSimpleShapePhantom(phantom, shape, transform, 0);
+
+		bhkWorld->worldLock.LockForWrite();
+		hkWorld->AddPhantom(phantom);
+		bhkWorld->worldLock.UnlockForWrite();
+		once = false;
+	}
+
+	bhkWorld->worldLock.LockForWrite();
+
+	RayResult result;
+
+	auto collector = CdBodyPairCollector();
+	collector.Reset();
+
+	phantom->SetShape(shape);
+
+	using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
+	REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
+	SetPosition(phantom, vecA);
+
+	using GetPenetrations_t = void (*)(RE::hkpShapePhantom*, RE::hkpCdBodyPairCollector*, RE::hkpCollisionInput*);
+	REL::Relocation<GetPenetrations_t> GetPenetrations{ RELOCATION_ID(60682, 61543) };
+
+	GetPenetrations(phantom, reinterpret_cast<RE::hkpCdBodyPairCollector*>(&collector), nullptr);
+	bhkWorld->worldLock.UnlockForWrite();
+
+	result.cdBodyHitArray = collector.GetHits();
+
+	return result;
+}
+
 namespace GrassControl
 {
 	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs) :
@@ -165,10 +327,9 @@ namespace GrassControl
 		this->RaycastMask = mask;
 	}
 
-	bool RaycastHelper::CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z) const
+	bool RaycastHelper::CanPlaceGrass(RE::TESObjectLAND* land, const float x, const float y, const float z, RE::GrassParam* param) const
 	{
-		RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton();
-		auto cell = player->GetParentCell();
+		auto cell = land->GetSaveParentCell();
 
 		if (cell == nullptr) {
 			return true;
@@ -208,33 +369,68 @@ namespace GrassControl
 
 		auto begin = glm::vec4(x, y, z - this->RayDepth, 0.0f);
 		auto end = glm::vec4(x, y, z + this->RayHeight, 0.0f);
-		auto rs = Raycast::hkpCastRay(begin, end);
 
-		for (auto& [normal, hitFraction, body] : rs.hitArray) {
-			if (hitFraction >= 1.0f || body == nullptr) {
-				continue;
+		Raycast::RayResult rs;
+
+		if (Config::RayCastMode >= 1) {
+			rs = Raycast::hkpPhantomCast(begin, end, cell, param);
+
+			for (auto& [body] : rs.cdBodyHitArray) {
+				if (body == nullptr) {
+					continue;
+				}
+
+				const auto collisionObj = static_cast<const RE::hkpCollidable*>(body);
+				const auto flags = collisionObj->GetCollisionLayer();
+				unsigned long long mask = static_cast<unsigned long long>(1) << static_cast<int>(flags);
+				if (!(this->RaycastMask & mask)) {
+					continue;
+				}
+
+				if (this->Ignore != nullptr && this->Ignore->Contains(GetRaycastHitBaseForm(body))) {
+					if (auto rsTESForm = GetRaycastHitBaseForm(body))
+						logger::debug("Ignored 0x{:x} in {}", rsTESForm->formID, cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName());
+					continue;
+				}
+
+				auto sTemplate = fmt::runtime("{} {}(0x{:x})");
+				auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
+				auto rsTESForm = GetRaycastHitBaseForm(body);
+				auto hitObjectName = rsTESForm ? fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
+				logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+
+				return false;
 			}
+		} else {
+			for (auto& [normal, hitFraction, body] : rs.hitArray) {
+				if (body == nullptr) {
+					continue;
+				}
 
-			const auto collisionObj = static_cast<const RE::hkpCollidable*>(body);
-			const auto flags = collisionObj->GetCollisionLayer();
-			unsigned long long mask = static_cast<unsigned long long>(1) << static_cast<int>(flags);
-			if (!(this->RaycastMask & mask)) {
-				continue;
+				const auto collisionObj = static_cast<const RE::hkpCollidable*>(body);
+				const auto flags = collisionObj->GetCollisionLayer();
+				unsigned long long mask = static_cast<unsigned long long>(1) << static_cast<int>(flags);
+				if (!(this->RaycastMask & mask)) {
+					continue;
+				}
+
+				if (this->Ignore != nullptr && this->Ignore->Contains(GetRaycastHitBaseForm(body))) {
+					if (auto rsTESForm = GetRaycastHitBaseForm(body))
+						logger::debug("Ignored 0x{:x} in {}", rsTESForm->formID, cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName());
+					continue;
+				}
+
+				auto sTemplate = fmt::runtime("{} {}(0x{:x})");
+				auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
+				auto rsTESForm = GetRaycastHitBaseForm(body);
+				auto hitObjectName = rsTESForm ? fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
+				logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+
+				return false;
 			}
-
-			if (this->Ignore != nullptr && this->Ignore->Contains(GetRaycastHitBaseForm(body))) {
-				if (auto rsTESForm = GetRaycastHitBaseForm(body))
-					logger::debug("Ignored 0x{:x} in {}", rsTESForm->formID, cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName());
-				continue;
-			}
-
-			auto sTemplate = fmt::runtime("{} {}(0x{:x})");
-			auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
-			auto rsTESForm = GetRaycastHitBaseForm(body);
-			auto hitObjectName = rsTESForm ? fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
-			logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
-			return false;
 		}
+
+
 		return true;
 	}
 

@@ -8,10 +8,18 @@ namespace GrassControl
 		return static_cast<float>(a_input * Config::GlobalGrassScale);
 	}
 
-	static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z)
+	static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z, uintptr_t param)
 	{
 		if (Config::RayCast) {
-			if (GrassControlPlugin::Cache != nullptr && !GrassControlPlugin::Cache->CanPlaceGrass(land, x, y, z)) {
+			RE::GrassParam* grassParam;
+			if (REL::Module::get().IsSE()) {
+				auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
+				grassParam = *paramPtr;
+			} else {
+				grassParam = reinterpret_cast<RE::GrassParam*>(param);
+			}
+
+			if (GrassControlPlugin::Cache != nullptr && !GrassControlPlugin::Cache->CanPlaceGrass(land, x, y, z, grassParam)) {
 				return false;
 			}
 		}
@@ -166,6 +174,7 @@ namespace GrassControl
 				Patch(std::uintptr_t a_func, std::uintptr_t b_func, std::uintptr_t a_target,
 					std::uintptr_t a_rspOffset,
 					std::uintptr_t b_rspOffset,
+					Xbyak::Reg a_rcxSource,
 					Xbyak::Xmm a_z,
 					std::uintptr_t a_rbpOffset,
 					Xbyak::Reg64 a_grassParamReg,
@@ -214,15 +223,18 @@ namespace GrassControl
 					movss(xmm1, ptr[rsp + a_rspOffset]);        // x
 					movss(xmm2, ptr[rsp + a_rspOffset + 0x4]);  // y
 					movss(xmm3, a_z);                           // z
+					mov(rcx, a_rcxSource);
 
+					mov(rax, a_grassParamReg);
 					sub(rsp, 0x30);
+					mov(ptr[rsp + 0x20], rax);
 					call(ptr[rip + funcLabel]);
 					add(rsp, 0x30);
 
 					test(al, al);
 					jne(notIf);
 					jmp(ptr[rip + jump]);
-				
+
 					L(notIf);
 					movss(xmm6, ptr[rbp - a_rbpOffset]);
 					jmp(ptr[rip + retnLabel]);
@@ -243,6 +255,7 @@ namespace GrassControl
 			Patch patch(reinterpret_cast<uintptr_t>(CanPlaceGrassWrapper), reinterpret_cast<uintptr_t>(GrassCliffHelper), addr,
 				REL::Relocate(0x40, 0x50, 0x50),
 				REL::Relocate(0x30, 0x40, 0x40),
+				Reg64(REL::Relocate(Reg::RSI, Reg::RDI, Reg::RBX)),
 				Xmm(REL::Relocate(7, 7, 14)),
 				REL::Relocate(0x48, 0x68, 0x38),
 				Reg64(REL::Relocate(Reg64::RBP, Reg64::RBX, Reg64::R13)),

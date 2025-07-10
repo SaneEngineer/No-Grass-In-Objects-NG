@@ -22,6 +22,38 @@ namespace Raycast
 		uint32_t unk;
 	};
 
+	class CdBodyPairCollector
+	{
+	public:
+		struct HitResult
+		{
+			const RE::hkpCdBody* body;
+
+			RE::NiAVObject* getAVObject();
+		};
+
+		CdBodyPairCollector();
+		virtual ~CdBodyPairCollector() = default;
+
+		virtual void addCdBodyPair(const RE::hkpCdBody& bodyA, const RE::hkpCdBody& bodyB);
+
+		void AddFilter(const RE::NiAVObject* obj) noexcept
+		{
+			objectFilter.push_back(obj);
+		}
+
+		const std::vector<HitResult>& GetHits();
+
+		virtual void Reset();
+
+	private:
+		bool earlyOutHitFraction = false;
+		char pad09[7];
+
+		std::vector<HitResult> hits{};
+		std::vector<const RE::NiAVObject*> objectFilter{};
+	};
+
 	class RayCollector
 	{
 	public:
@@ -60,25 +92,8 @@ namespace Raycast
 #pragma warning(push)
 #pragma warning(disable: 26495)
 
-	typedef __declspec(align(16)) struct bhkRayResult
+	struct RayResult
 	{
-		union
-		{
-			uint32_t data[16];
-			struct
-			{
-				// Might be surface normal
-				glm::vec4 rayUnkPos;
-				// The normal vector of the ray
-				glm::vec4 rayNormal;
-
-				rayHitShapeInfo colA;
-				rayHitShapeInfo colB;
-			} s;
-		} u;
-
-		// Custom utility data, not part of the game
-
 		// True if the trace hit something before reaching it's end position
 		bool hit = false;
 		// If the ray hits a havok object, this will point to its reference
@@ -88,9 +103,8 @@ namespace Raycast
 		glm::vec4 hitPos;
 		// A vector of hits to be iterated in original code
 		std::vector<RayCollector::HitResult> hitArray{};
-
-	} RayResult;
-	static_assert(sizeof(RayResult) == 128);
+		std::vector<CdBodyPairCollector::HitResult> cdBodyHitArray{};
+	};
 
 #pragma warning(pop)
 
@@ -107,6 +121,12 @@ namespace Raycast
 	//		A structure holding the results of the ray cast.
 	//		If the ray hit something, result.hit will be true.
 	RayResult hkpCastRay(const glm::vec4& start, const glm::vec4& end) noexcept;
+
+	Raycast::RayResult hkpPhantomCast(glm::vec4& start, const glm::vec4& end, RE::TESObjectCELL* cell,  RE::GrassParam* param);
+
+	inline RE::hkpShapePhantom* phantom;
+
+	inline bool once = true;
 
 }
 
@@ -137,7 +157,7 @@ namespace GrassControl
 
 		Util::CachedFormList* const Cliffs = nullptr;
 
-		bool CanPlaceGrass(RE::TESObjectLAND* land, float x, float y, float z) const;
+		bool CanPlaceGrass(RE::TESObjectLAND* land, float x, float y, float z, RE::GrassParam* param) const;
 		float CreateGrassCliff(float x, float y, float z, glm::vec3& Normal, RE::GrassParam* param) const;
 
 	private:
