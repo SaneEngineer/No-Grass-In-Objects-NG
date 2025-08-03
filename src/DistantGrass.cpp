@@ -1644,8 +1644,8 @@ namespace GrassControl
 			wsName = ws->editorID.c_str();
 		}
 
-		int nowX = tes->unk0B0;
-		int nowY = tes->unk0B4;
+		int nowX = tes->currentGridX;
+		int nowY = tes->currentGridY;
 
 		auto invokeList = std::vector<RE::TESObjectCELL*>();
 		if (addType <= 0) {
@@ -1757,8 +1757,8 @@ namespace GrassControl
 		int grassRadius = getChosenGrassGridRadius();
 		auto ws = tes->GetRuntimeData2().worldSpace;
 		auto grassMgr = RE::BGSGrassManager::GetSingleton();
-		int nowX = tes->unk0B0;
-		int nowY = tes->unk0B4;
+		int nowX = tes->currentGridX;
+		int nowY = tes->currentGridY;
 
 		if (addType <= 0) {
 			LO2Map->UpdatePositionWithRemove(ws, addType, nowX, nowY, grassRadius);

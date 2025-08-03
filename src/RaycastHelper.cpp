@@ -30,7 +30,7 @@ void Raycast::RayCollector::AddRayHit(const RE::hkpCdBody& body, const RE::hkpSh
 	const auto collisionObj = static_cast<const RE::hkpCollidable*>(hit.body);
 	const auto flags = collisionObj->broadPhaseHandle.collisionFilterInfo;
 
-	const uint64_t m = 1ULL << static_cast<uint64_t>(flags);
+	const uint64_t m = 1ULL << flags.filter;
 	constexpr uint64_t filter = 0x40122716;  //@TODO
 	if ((m & filter) != 0) {
 		if (!objectFilter.empty()) {
@@ -68,7 +68,7 @@ void Raycast::CdBodyPairCollector::addCdBodyPair(const RE::hkpCdBody& bodyA, con
 	const auto collisionObj = static_cast<const RE::hkpCollidable*>(hit.body);
 	const auto flags = collisionObj->broadPhaseHandle.collisionFilterInfo;
 
-	const uint64_t m = 1ULL << static_cast<uint64_t>(flags);
+	const uint64_t m = 1ULL << flags.filter;
 	constexpr uint64_t filter = 0x40122716;  //@TODO
 	if ((m & filter) != 0) {
 		if (!objectFilter.empty()) {
