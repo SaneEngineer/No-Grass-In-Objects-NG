@@ -246,6 +246,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			} else {
 				radius = 20.0f;
 			}
+
+			radius *= GrassControl::Config::RayCastWidthMult;
 		}
 	}
 
@@ -254,7 +256,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		widthY = GrassControl::Config::RayCastWidth / 2.0f;
 	}
 
-	RE::hkpShape* shape = (RE::hkpShape*)malloc(0x70);
+	RE::hkpShape* shape = RE::malloc<RE::hkpShape>(0x70);
 
 	if (GrassControl::Config::RayCastMode == 1) {
 		shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
@@ -277,7 +279,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	if (once) {
 		using createSimpleShapePhantom_t = RE::hkpShapePhantom* (*)(RE::hkpShapePhantom*, RE::hkpShape*, const RE::hkTransform&, uint32_t);
 		REL::Relocation<createSimpleShapePhantom_t> createSimpleShapePhantom{ RELOCATION_ID(60675, 61535) };
-		phantom = (RE::hkpShapePhantom*)malloc(0x1C0);
+		phantom = RE::malloc<RE::hkpShapePhantom>(0x1C0);
 
 		phantom = createSimpleShapePhantom(phantom, shape, transform, 0);
 
@@ -295,6 +297,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	collector.Reset();
 
 	phantom->SetShape(shape);
+	RE::free(oldShape);
 
 	using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
 	REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
@@ -307,6 +310,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	bhkWorld->worldLock.UnlockForWrite();
 
 	result.cdBodyHitArray = collector.GetHits();
+
+	oldShape = shape;
 
 	return result;
 }

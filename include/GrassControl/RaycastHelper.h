@@ -128,6 +128,8 @@ namespace Raycast
 
 	inline bool once = true;
 
+	inline RE::hkpShape* oldShape = nullptr;
+
 }
 
 namespace GrassControl
