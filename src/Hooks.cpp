@@ -50,9 +50,6 @@ namespace GrassControl
 
 	void GrassControlPlugin::Update()
 	{
-		if (!Config::UseGrassCache)
-			return;
-
 		if (_did_mainMenu == 0)
 			return;
 
