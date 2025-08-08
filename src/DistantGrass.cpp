@@ -3,7 +3,7 @@ using namespace Xbyak;
 
 namespace GrassControl
 {
-	bool AE = REL::Module::get().IsAE();
+	bool AE = REL::Module::IsAE();
 
 	uintptr_t DistantGrass::addr_uGrids = RELOCATION_ID(501244, 359675).address();
 	uintptr_t DistantGrass::addr_AllowLoadFile = RELOCATION_ID(501125, 359439).address();
@@ -76,7 +76,7 @@ namespace GrassControl
 					if (!action(snd)) {
 						this->map.erase(fst);
 					}
-				} 
+				}
 			}
 		} catch (...) {
 			logger::error("Exception occurred while trying to erase cell from loaded reference map. Attempting to continue.");
@@ -384,12 +384,12 @@ namespace GrassControl
 		if (addr = (RELOCATION_ID(13148, 13288).address() + REL::Relocate(0xA06 - 0x220, 0xA1D)); REL::make_pattern<"8B 3D">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 6, Before = [&] (std::any ctx)
 
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, uintptr_t a_target, Reg a_Y, Reg a_X)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					push(rdx);
 					push(rcx);
@@ -426,12 +426,12 @@ namespace GrassControl
 		if (addr = RELOCATION_ID(13190, 13335).address(); REL::make_pattern<"48 89 74 24 10">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
 
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, uintptr_t a_target)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					push(rcx);
 					mov(r9d, 1);
@@ -465,12 +465,12 @@ namespace GrassControl
 
 		if (addr = RELOCATION_ID(13191, 13336).address(); REL::make_pattern<"48 89 74 24 10">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, uintptr_t a_target)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					push(rcx);
 					mov(r9d, static_cast<uint32_t>(-1));
@@ -506,14 +506,14 @@ namespace GrassControl
 		if (!load_only) {
 			if (addr = (RELOCATION_ID(18446, 18877).address() + (0xC4 - 0x50)); REL::make_pattern<"48 85 C0">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = (0xE9 - 0xC9), Before = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(uintptr_t a_func, uintptr_t a_target)
 					{
-						Xbyak::Label funcLabel;
-						Xbyak::Label retnLabel;
-						Xbyak::Label NotIf;
-						Xbyak::Label addr_ClearGrassHandles;
+						Label funcLabel;
+						Label retnLabel;
+						Label NotIf;
+						Label addr_ClearGrassHandles;
 
 						mov(rcx, rdi);
 
@@ -574,15 +574,15 @@ namespace GrassControl
 		if (!load_only) {
 			if (addr = RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x8F - 0x10, 0x7D); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, After = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(std::uintptr_t a_func, uintptr_t a_target)
 					{
-						Xbyak::Label funcLabel;
-						Xbyak::Label funcLabel2;
-						Xbyak::Label retnLabel;
+						Label funcLabel;
+						Label funcLabel2;
+						Label retnLabel;
 
-						Xbyak::Label NotIf;
+						Label NotIf;
 
 						sub(rsp, 0x20);
 						call(ptr[rip + funcLabel2]);  // call our function
@@ -622,11 +622,11 @@ namespace GrassControl
 		if (!AE) {
 			if (addr = RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D1C); REL::make_pattern<"E8">().match(RELOCATION_ID(15204, 15372).address() + (0x5005 - 0x4D10))) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(uintptr_t a_target)
 					{
-						Xbyak::Label retnLabel;
+						Label retnLabel;
 
 						mov(r8d, ptr[rsp + 0x40]);
 						mov(r9d, ptr[rsp + 0x3C]);
@@ -648,11 +648,11 @@ namespace GrassControl
 			}
 		}
 		addr = RELOCATION_ID(15205, 15373).address() + REL::Relocate(0x617, 0x583);
-		struct Patch : Xbyak::CodeGenerator
+		struct Patch : CodeGenerator
 		{
 			Patch(uintptr_t a_target)
 			{
-				Xbyak::Label retnLabel;
+				Label retnLabel;
 
 				mov(r8d, ptr[rsp + 0x38]);
 				mov(r9d, ptr[rsp + 0x3C]);
@@ -674,11 +674,11 @@ namespace GrassControl
 		if (!AE) {
 			if (addr = RELOCATION_ID(15206, 15374).address() + (0x645C - 0x620D); REL::make_pattern<"E8">().match(RELOCATION_ID(15206, 15374).address() + (0x645C - 0x6200))) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 5, ReplaceLength = 5, Before = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(uintptr_t a_target)
 					{
-						Xbyak::Label retnLabel;
+						Label retnLabel;
 
 						mov(r8d, ptr[rsp + 0x34]);
 						mov(r9d, ptr[rsp + 0x30]);
@@ -701,11 +701,11 @@ namespace GrassControl
 		addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x78B7 - 0x7830, 0x7E);
 		//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 0xC2 - 0xB7, Before = [&] (std::any ctx)
 
-		struct Patch2 : Xbyak::CodeGenerator
+		struct Patch2 : CodeGenerator
 		{
 			explicit Patch2(uintptr_t a_target, Reg a_X, uintptr_t rsp_offset, uintptr_t rsp_stackOffset)
 			{
-				Xbyak::Label retnLabel;
+				Label retnLabel;
 
 				mov(ptr[rsp + rsp_offset + 4], a_X.cvt16());
 				mov(ptr[rsp + rsp_offset + 6], bx);
@@ -755,11 +755,11 @@ namespace GrassControl
 				int ugrids = Memory::Internal::read<int>(addr_uGrids + 8);
 				int ggrids = getChosenGrassGridRadius() * 2 + 1;
 				int Max = std::max(ugrids, ggrids);
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					explicit Patch(uintptr_t a_target, int max)
 					{
-						Xbyak::Label retnLabel;
+						Label retnLabel;
 
 						mov(rax, max);
 
@@ -794,11 +794,11 @@ namespace GrassControl
 		if (!load_only) {
 			if (addr = (RELOCATION_ID(15204, 15372).address() + (0xED2 - 0xD10)); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					explicit Patch(uintptr_t a_target)
 					{
-						Xbyak::Label retnLabel;
+						Label retnLabel;
 
 						mov(rax, 1);
 						jmp(ptr[rip + retnLabel]);
@@ -820,13 +820,13 @@ namespace GrassControl
 		if (!load_only) {
 			if (addr = (RELOCATION_ID(18655, 19130).address() + REL::Relocate(0xC888 - 0xC7C0, 0xCA)); REL::make_pattern<"E8">().match(addr)) {
 				//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&] (std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(std::uintptr_t a_func, uintptr_t b_func, uintptr_t a_target)
 					{
-						Xbyak::Label funcLabel;
-						Xbyak::Label funcLabel2;
-						Xbyak::Label retnLabel;
+						Label funcLabel;
+						Label funcLabel2;
+						Label retnLabel;
 
 						mov(r15, rax);
 						mov(rcx, rdi);
@@ -868,19 +868,19 @@ namespace GrassControl
 		// Create custom way to load cell.
 		if (!load_only) {
 			addr = RELOCATION_ID(18137, 18527).address() + REL::Relocate(0x17, 0x25);
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, std::uintptr_t b_func, uintptr_t a_rbxWorldSpaceOffset, uintptr_t a_targetReturn, uintptr_t a_targetSkip)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label funcLabel2;
-					Xbyak::Label retnLabel;
-					Xbyak::Label skip;
-					Xbyak::Label Call;
+					Label funcLabel;
+					Label funcLabel2;
+					Label retnLabel;
+					Label skip;
+					Label Call;
 
-					Xbyak::Label j_else;
-					Xbyak::Label notIf;
-					Xbyak::Label include;
+					Label j_else;
+					Label notIf;
+					Label include;
 
 					mov(al, ptr[rbx + a_rbxWorldSpaceOffset + 0x1E]);  //if ourMethod == 1
 					cmp(al, 1);
@@ -945,12 +945,12 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch6));
 
 			addr = RELOCATION_ID(18150, 18541).address() + REL::Relocate(0xB094 - 0xAF20, 0x1CA, 0x177);
-			struct Patch7 : Xbyak::CodeGenerator
+			struct Patch7 : CodeGenerator
 			{
 				Patch7(uintptr_t a_func, uintptr_t a_target, uintptr_t rbx_offset)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					if (AE)
 						movzx(eax, ptr[rsp + 0xA0]);
@@ -986,11 +986,11 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch7));
 
 			addr = RELOCATION_ID(18149, 18540).address() + REL::Relocate(0xE1B - 0xCC0, 0x167, 0x15E);
-			struct Patch3 : Xbyak::CodeGenerator
+			struct Patch3 : CodeGenerator
 			{
 				explicit Patch3(uintptr_t a_target, uintptr_t rbx_offset, Reg a_source)
 				{
-					Xbyak::Label retnLabel;
+					Label retnLabel;
 					mov(byte[rbx + rbx_offset + 0x2], 0);
 
 					mov(byte[rbx + rbx_offset], 1);
@@ -1009,15 +1009,15 @@ namespace GrassControl
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch3));
 
 			addr = RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2630 - 0x2220, 0x4D0);
-			struct Patch4 : Xbyak::CodeGenerator
+			struct Patch4 : CodeGenerator
 			{
 				Patch4(std::uintptr_t a_func, uintptr_t a_target, Reg a_movedY, uintptr_t a_retn_offset)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
-					Xbyak::Label notIf;
-					Xbyak::Label jump;
-					Xbyak::Label jumpAd;
+					Label funcLabel;
+					Label retnLabel;
+					Label notIf;
+					Label jump;
+					Label jumpAd;
 
 					push(r9);
 					push(rdx);
@@ -1084,13 +1084,13 @@ namespace GrassControl
 			}
 
 			addr = RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x29AF - 0x2220, 0x9A9);
-			struct Patch5 : Xbyak::CodeGenerator
+			struct Patch5 : CodeGenerator
 			{
 				Patch5(uintptr_t a_func, uintptr_t a_target)
 				{
-					Xbyak::Label TES_Sub;
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label TES_Sub;
+					Label funcLabel;
+					Label retnLabel;
 
 					call(ptr[rip + TES_Sub]);
 

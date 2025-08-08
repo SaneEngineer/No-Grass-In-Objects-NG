@@ -1,12 +1,9 @@
 #include "GrassControl/GidFileCache.h"
 #pragma comment(lib, "CasualLibrary.lib")
 
+using namespace Xbyak;
 namespace GrassControl
 {
-
-	uintptr_t GidFileGenerationTask::addr_GrassMgr = RELOCATION_ID(514292, 400452).address();
-	uintptr_t GidFileGenerationTask::addr_uGrids = RELOCATION_ID(501244, 359675).address();
-
 	void FixSaving(uintptr_t r8, uintptr_t ptrbuf, uintptr_t ptrThing)
 	{
 		REL::Relocation<void (*)(uintptr_t, uintptr_t, uint32_t)> func{ RELOCATION_ID(74621, 76352) };
@@ -30,12 +27,12 @@ namespace GrassControl
 
 		// Fix saving the GID files (because bethesda broke it in SE).
 		if (auto addr = RELOCATION_ID(74601, 76329).address() + REL::Relocate(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t b_target)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					mov(rax, rcx);
 					lea(rdx, ptr[rbp - 0x30]);
@@ -90,11 +87,11 @@ namespace GrassControl
 		// Disable grass console.
 		if (auto addr = (RELOCATION_ID(15204, 15372).address() + 0x896); REL::make_pattern<"48 8D 05">().match(addr)) {
 			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(const std::uintptr_t a_target)
 				{
-					Xbyak::Label retnLabel;
+					Label retnLabel;
 
 					mov(r15, 0);
 					jmp(ptr[rip + retnLabel]);
@@ -178,12 +175,12 @@ namespace GrassControl
 		}
 
 		addr = RELOCATION_ID(13190, 13335).address() + REL::Relocate(0x106, 0x106);
-		struct Patch : Xbyak::CodeGenerator
+		struct Patch : CodeGenerator
 		{
 			Patch(uintptr_t Exchange, const uintptr_t a_target)
 			{
-				Xbyak::Label retnLabel;
-				Xbyak::Label exchange;
+				Label retnLabel;
+				Label exchange;
 
 				mov(rdi, ptr[rsp + 0x50]);
 
@@ -207,12 +204,12 @@ namespace GrassControl
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
 		if (addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);  // call our function

@@ -48,8 +48,8 @@ namespace GrassControl
 	public:
 		GidFileGenerationTask();
 
-		static uintptr_t addr_GrassMgr;
-		static uintptr_t addr_uGrids;
+		static inline uintptr_t addr_GrassMgr = RELOCATION_ID(514292, 400452).address();
+		static inline uintptr_t addr_uGrids = RELOCATION_ID(501244, 359675).address();
 
 		static int getChosenGrassGridRadius();
 

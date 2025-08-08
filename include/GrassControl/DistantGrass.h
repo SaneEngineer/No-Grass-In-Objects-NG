@@ -232,7 +232,8 @@ namespace GrassControl
 			{
 				if (Config::ExtendGrassDistance) {
 					stl::write_thunk_jump<WriteProgress>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0xF));
-					if (REL::Module::get().IsAE()) {
+
+					if (REL::Module::IsAE()) {
 						stl::write_thunk_call<CellSelection>(RELOCATION_ID(15206, 15374).address() + REL::Relocate(0x645C - 0x6200, 0x645C - 0x6200));
 						stl::write_thunk_call<CellSelection>(RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x2F5, 0x2F5));
 					}

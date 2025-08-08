@@ -12,7 +12,7 @@ namespace GrassControl
 	{
 		if (Config::RayCast) {
 			RE::GrassParam* grassParam;
-			if (REL::Module::get().IsSE()) {
+			if (REL::Module::IsSE()) {
 				auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
 				grassParam = *paramPtr;
 			} else {
@@ -31,7 +31,7 @@ namespace GrassControl
 		if (Config::GrassCliffs) {
 			if (GrassControlPlugin::Cache != nullptr) {
 				RE::GrassParam* grassParam;
-				if (REL::Module::get().IsSE()) {
+				if (REL::Module::IsSE()) {
 					auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
 					grassParam = *paramPtr;
 				} else {
@@ -114,13 +114,13 @@ namespace GrassControl
 	{
 		std::stringstream s;
 		auto list = { std::to_string(static_cast<int>(RE::COL_LAYER::kStatic)), std::to_string(static_cast<int>(RE::COL_LAYER::kAnimStatic)), std::to_string(static_cast<int>(RE::COL_LAYER::kTerrain)), std::to_string(static_cast<int>(RE::COL_LAYER::kDebrisLarge)), std::to_string(static_cast<int>(RE::COL_LAYER::kStairHelper)) };
-		std::ranges::copy(list.begin(), list.end(), std::ostream_iterator<std::string, char>(s, " "));
+		std::ranges::copy(list.begin(), list.end(), std::ostream_iterator<std::string>(s, " "));
 
 		Config::RayCastCollisionLayers = s.str();
 
 		auto fi = std::filesystem::path(Util::getProgressFilePath());
 		if (Config::UseGrassCache && exists(fi)) {
-			if (REL::Module::get().IsVR()) {
+			if (REL::Module::IsVR()) {
 				auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
 				if (!setting) {
 					setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting("bLoadVRPlayroom:VR");
@@ -166,27 +166,27 @@ namespace GrassControl
 
 		if (Config::RayCast || Config::GrassCliffs) {
 			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate((0x723A - 0x6CE0), 0x664, 0x56C);
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(std::uintptr_t a_func, std::uintptr_t b_func, std::uintptr_t a_target,
 					std::uintptr_t a_rspOffset,
 					std::uintptr_t b_rspOffset,
-					Xbyak::Reg a_rcxSource,
-					Xbyak::Xmm a_z,
+					Reg a_rcxSource,
+					Xmm a_z,
 					std::uintptr_t a_rbpOffset,
-					Xbyak::Reg64 a_grassParamReg,
+					Reg64 a_grassParamReg,
 					std::uintptr_t a_targetJumpOffset,
 					std::uintptr_t a_floatArray)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label funcLabel2;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label funcLabel2;
+					Label retnLabel;
 
-					Xbyak::Label isCliff;
-					Xbyak::Label notCliff;
+					Label isCliff;
+					Label notCliff;
 
-					Xbyak::Label jump;
-					Xbyak::Label notIf;
+					Label jump;
+					Label notIf;
 
 					movss(xmm1, ptr[rsp + a_rspOffset]);        // x
 					movss(xmm2, ptr[rsp + a_rspOffset + 0x4]);  // y
@@ -280,13 +280,13 @@ namespace GrassControl
 			}
 			if (auto addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
 				//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(uintptr_t a_target)
 					{
-						Xbyak::Label notIf;
-						Xbyak::Label retnLabel;
-						Xbyak::Label jump;
+						Label notIf;
+						Label retnLabel;
+						Label jump;
 
 						cmp(ptr[rax], rbx);
 						jne(notIf);
@@ -339,13 +339,13 @@ namespace GrassControl
 			{
 				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
 
-				struct Patch : Xbyak::CodeGenerator
+				struct Patch : CodeGenerator
 				{
 					Patch(uint32_t max, std::uintptr_t a_target)
 					{
-						Xbyak::Label retnLabel;
+						Label retnLabel;
 
-						if (REL::Module::get().IsAE()) {
+						if (REL::Module::IsAE()) {
 							mov(edi, max);
 						} else {
 							mov(r12d, max);
@@ -403,15 +403,15 @@ namespace GrassControl
 
 		if (Config::GlobalGrassScale != 1.0 && Config::GlobalGrassScale > 0.0001) {
 			auto addr = RELOCATION_ID(15212, 15381).address() + REL::Relocate(0x93a, 0xab4, 0xa0c);
-			struct Patch : Xbyak::CodeGenerator
+			struct Patch : CodeGenerator
 			{
 				Patch(uintptr_t a_target, uintptr_t a_func,
-					Xbyak::Xmm a_sourceReg_4656,  // 4.656613e-10
-					Xbyak::Xmm a_sourceReg_1,     // 1.0
-					Xbyak::Reg a_baseReg)
+					Xmm a_sourceReg_4656,  // 4.656613e-10
+					Xmm a_sourceReg_1,     // 1.0
+					Reg a_baseReg)
 				{
-					Xbyak::Label funcLabel;
-					Xbyak::Label retnLabel;
+					Label funcLabel;
+					Label retnLabel;
 
 					mulss(xmm0, a_sourceReg_4656);       // finalScale *= 4.656613e-10; // original code
 					subss(xmm0, a_sourceReg_1);          // xmm0 -= 1; original code
@@ -433,7 +433,7 @@ namespace GrassControl
 					dq(a_target);
 				}
 			};
-			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xbyak::Xmm(REL::Relocate(14, 14, 12)), Xbyak::Xmm(REL::Relocate(11, 10, 11)), Xbyak::Reg64(REL::Relocate(Reg::RSI, Reg::RBX, Reg::R13)));
+			Patch patch(addr + REL::Relocate(0xf, 0xf, 0x10), reinterpret_cast<uintptr_t>(SetScale), Xmm(REL::Relocate(14, 14, 12)), Xmm(REL::Relocate(11, 10, 11)), Reg64(REL::Relocate(Reg::RSI, Reg::RBX, Reg::R13)));
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
