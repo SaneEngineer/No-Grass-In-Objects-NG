@@ -7,6 +7,8 @@ namespace Util
 
 	std::string getProgressFilePath();
 
+	void nopBlock(uintptr_t addr, int size);
+
 	std::optional<bool> GetGameSettingBool(const std::string a_name);
 
 	std::optional<float> GetGameSettingFloat(const std::string a_name);

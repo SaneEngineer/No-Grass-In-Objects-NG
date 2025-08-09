@@ -106,7 +106,7 @@ namespace GrassControl
 
 		static void Call_AddGrassNow(RE::BGSGrassManager* GrassMgr, RE::TESObjectCELL* cell, uintptr_t customArg);
 
-		static GrassStates GetWantState(const std::shared_ptr<cell_info> c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
+		static GrassStates GetWantState(const std::shared_ptr<cell_info>& c, int curX, int curY, int uGrid, int grassRadius, bool canLoadFromFile, const std::string& wsName);
 
 		static void Handle_RemoveGrassFromCell_Call(RE::TESObjectCELL* cell);
 

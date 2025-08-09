@@ -38,6 +38,15 @@ namespace Util
 		return _ovFilePath;
 	}
 
+	void Util::nopBlock(uintptr_t addr, int size)
+	{
+		DWORD flOldProtect = 0;
+		BOOL change_protection = VirtualProtect(reinterpret_cast<LPVOID>(addr), 0x13, PAGE_EXECUTE_READWRITE, &flOldProtect);
+		if (change_protection) {
+			memset(reinterpret_cast<void*>(addr + 5), 0x90, size);
+		}
+	}
+
 	CachedFormList::CachedFormList() = default;
 
 	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)

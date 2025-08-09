@@ -3,7 +3,7 @@ using namespace Xbyak;
 
 namespace GrassControl
 {
-	bool AE = REL::Module::IsAE();
+	static bool AE = REL::Module::IsAE();
 
 	uintptr_t DistantGrass::addr_uGrids = RELOCATION_ID(501244, 359675).address();
 	uintptr_t DistantGrass::addr_AllowLoadFile = RELOCATION_ID(501125, 359439).address();
@@ -329,7 +329,7 @@ namespace GrassControl
 		logger::debug("DataHandler::UnloadCell({}, {}) did: {}", cellObj->GetCoordinates()->cellX, cellObj->GetCoordinates()->cellY, did);
 	}
 
-	void ThrowOurMethodException(const uint8_t ourMethod)
+	static void ThrowOurMethodException(const uint8_t ourMethod)
 	{
 		stl::report_and_fail("GrassControl.dll: unexpected ourMethod: " + std::to_string(ourMethod));
 	}
@@ -547,11 +547,7 @@ namespace GrassControl
 				patch.ready();
 
 				auto& trampoline = SKSE::GetTrampoline();
-				DWORD flOldProtect = 0;
-				BOOL change_protection = VirtualProtect((LPVOID)addr, 0x13, PAGE_EXECUTE_READWRITE, &flOldProtect);
-				if (change_protection) {
-					memset((void*)(addr + 5), 0x90, (0xE9 - 0xC9));
-				}
+				Util::nopBlock(addr, 0xE9 - 0xC9);
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			} else {
 				stl::report_and_fail("Failed to load New Grass");
@@ -739,12 +735,7 @@ namespace GrassControl
 		Patch2 patch2(addr, Reg32(REL::Relocate(Reg::R15, Reg::R14)), REL::Relocate(0x48, 0x50), REL::Relocate(0x258, 0x288));
 		patch2.ready();
 
-		DWORD flOldProtect = 0;
-		BOOL change_protection = VirtualProtect((LPVOID)addr, 0xB, PAGE_EXECUTE_READWRITE, &flOldProtect);
-		// Pass address of the DWORD variable ^
-		if (change_protection) {
-			memset((void*)(addr), 0x90, 0xB);
-		}
+		Util::nopBlock(addr, 0xB);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
 		// Exterior cell buffer must be extended if grass radius is outside of ugrids.
@@ -1404,7 +1395,7 @@ namespace GrassControl
 			c->self_data = tg;
 		}
 	}
-	GrassStates DistantGrass::GetWantState(const std::shared_ptr<cell_info> c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
+	GrassStates DistantGrass::GetWantState(const std::shared_ptr<cell_info>& c, const int curX, const int curY, const int uGrid, const int grassRadius, const bool canLoadFromFile, const std::string& wsName)
 	{
 		int diffX = std::abs(curX - c->x);
 		int diffY = std::abs(curY - c->y);
