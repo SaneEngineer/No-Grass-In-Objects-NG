@@ -684,7 +684,7 @@ namespace GrassControl
 		// Exterior cell buffer must be extended if grass radius is outside of ugrids.
 		// Reason: cell may get deleted while it still has grass and we can not keep grass there then.
 		if (!load_only) {
-			addr = RELOCATION_ID(13233, 13384).address() + (0xB2 - 0x60));
+			addr = RELOCATION_ID(13233, 13384).address() + (0xB2 - 0x60);
 			int ugrids = Memory::Internal::read<int>(addr_uGrids + 8);
 			int ggrids = getChosenGrassGridRadius() * 2 + 1;
 			int Max = std::max(ugrids, ggrids);

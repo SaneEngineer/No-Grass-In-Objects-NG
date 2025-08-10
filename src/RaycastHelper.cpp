@@ -300,8 +300,19 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	auto collector = CdBodyPairCollector();
 	collector.Reset();
 
-	phantom->SetShape(shape);
+	using SetShape_t = RE::hkWorldOperation::Result (*)(RE::hkpShapePhantom*, RE::hkpShape*);
+	REL::Relocation<SetShape_t> SetShape{ RELOCATION_ID(60792, 61654) };
+
+	auto hkResult = SetShape(phantom, shape);
+	if (hkResult == RE::hkWorldOperation::Result::kPostponed)
+		return result;
+
 	RE::free(oldShape);
+	oldShape = shape;
+
+	if (!phantom->GetShape()) {
+		return result;
+	}
 
 	try {
 		using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
@@ -319,8 +330,6 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	bhkWorld->worldLock.UnlockForWrite();
 
 	result.cdBodyHitArray = collector.GetHits();
-
-	oldShape = shape;
 
 	return result;
 }
