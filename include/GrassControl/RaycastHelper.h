@@ -124,9 +124,7 @@ namespace Raycast
 
 	Raycast::RayResult hkpPhantomCast(glm::vec4& start, const glm::vec4& end, RE::TESObjectCELL* cell,  RE::GrassParam* param);
 
-	inline RE::hkpShapePhantom* phantom;
-
-	inline bool once = true;
+	inline RE::hkpShapePhantom* phantom = nullptr;
 
 	inline RE::hkpShape* oldShape = nullptr;
 

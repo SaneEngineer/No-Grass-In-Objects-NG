@@ -547,7 +547,7 @@ namespace GrassControl
 				patch.ready();
 
 				auto& trampoline = SKSE::GetTrampoline();
-				Util::nopBlock(addr, 0xE9 - 0xC9);
+				Util::nopBlock(addr, 0xE9 - 0xC9, 5);
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 			} else {
 				stl::report_and_fail("Failed to load New Grass");
@@ -735,7 +735,7 @@ namespace GrassControl
 		Patch2 patch2(addr, Reg32(REL::Relocate(Reg::R15, Reg::R14)), REL::Relocate(0x48, 0x50), REL::Relocate(0x258, 0x288));
 		patch2.ready();
 
-		Util::nopBlock(addr, 0xB);
+		Util::nopBlock(addr, 0xB, 0);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
 
 		// Exterior cell buffer must be extended if grass radius is outside of ugrids.

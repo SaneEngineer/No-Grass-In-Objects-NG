@@ -173,6 +173,7 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 			physicsWorld->PickObject(pickData);
 		}
 	} catch (...) {
+		logger::error("Exception occured while attempting raycasting. Unless repeated this unlikely to be a major issue.");
 	}
 
 	for (auto& hit : collector.GetHits()) {
@@ -216,14 +217,18 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 	constexpr auto one = 1.0f;
 	const auto from = start * hkpScale;
-	const auto to = end * hkpScale;
 
 	const glm::vec4 dif = end - start;
 
 	auto vecA = RE::hkVector4(from.x, from.y, from.z, one);
 
 	auto bhkWorld = cell->GetbhkWorld();
+	if (!bhkWorld)
+		return {};
+
 	auto hkWorld = bhkWorld->GetWorld1();
+	if (!hkWorld)
+		return {};
 
 	RE::hkTransform transform;
 	transform.translation = RE::hkVector4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -276,7 +281,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		shape = createBoxShape(shape, halfExtents, shapeType);
 	}
 
-	if (once) {
+	if (!phantom) {
 		using createSimpleShapePhantom_t = RE::hkpShapePhantom* (*)(RE::hkpShapePhantom*, RE::hkpShape*, const RE::hkTransform&, uint32_t);
 		REL::Relocation<createSimpleShapePhantom_t> createSimpleShapePhantom{ RELOCATION_ID(60675, 61535) };
 		phantom = RE::malloc<RE::hkpShapePhantom>(0x1C0);
@@ -286,7 +291,6 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		bhkWorld->worldLock.LockForWrite();
 		hkWorld->AddPhantom(phantom);
 		bhkWorld->worldLock.UnlockForWrite();
-		once = false;
 	}
 
 	bhkWorld->worldLock.LockForWrite();
@@ -299,14 +303,19 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	phantom->SetShape(shape);
 	RE::free(oldShape);
 
-	using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
-	REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
-	SetPosition(phantom, vecA);
+	try {
+		using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
+		REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
+		SetPosition(phantom, vecA);
 
-	using GetPenetrations_t = void (*)(RE::hkpShapePhantom*, RE::hkpCdBodyPairCollector*, RE::hkpCollisionInput*);
-	REL::Relocation<GetPenetrations_t> GetPenetrations{ RELOCATION_ID(60682, 61543) };
+		using GetPenetrations_t = void (*)(RE::hkpShapePhantom*, RE::hkpCdBodyPairCollector*, RE::hkpCollisionInput*);
+		REL::Relocation<GetPenetrations_t> GetPenetrations{ RELOCATION_ID(60682, 61543) };
 
-	GetPenetrations(phantom, reinterpret_cast<RE::hkpCdBodyPairCollector*>(&collector), nullptr);
+		GetPenetrations(phantom, reinterpret_cast<RE::hkpCdBodyPairCollector*>(&collector), nullptr);
+	} catch (...) {
+		logger::error("Exception occured while attempting raycasting. Unless repeated this unlikely to be a major issue.");
+	}
+
 	bhkWorld->worldLock.UnlockForWrite();
 
 	result.cdBodyHitArray = collector.GetHits();
@@ -434,7 +443,6 @@ namespace GrassControl
 				return false;
 			}
 		}
-
 
 		return true;
 	}

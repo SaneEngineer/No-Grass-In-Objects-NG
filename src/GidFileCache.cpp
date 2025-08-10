@@ -56,7 +56,7 @@ namespace GrassControl
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
-			Util::nopBlock(addr, 0x13);
+			Util::nopBlock(addr, 0x13, 0);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		} else {
 			stl::report_and_fail("Failed to find Gid Saving Function");

@@ -267,7 +267,7 @@ namespace GrassControl
 		if (Config::SuperDenseGrass) {
 			// Make amount big.
 			auto addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xAE5 - 0x890, 0x258);
-			int mode = std::max(0, std::min(12, static_cast<int>(Config::SuperDenseMode)));
+			int mode = std::max(0, std::min(12, Config::SuperDenseMode));
 			if (mode != 7) {
 				Memory::Internal::write<uint8_t>(addr + 2, static_cast<unsigned char>(mode), true);
 			}
@@ -337,7 +337,7 @@ namespace GrassControl
 			if (auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
 			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
 			{
-				uint32_t max = std::max(static_cast<int>(Config::EnsureMaxGrassTypesPerTextureSetting), Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
+				uint32_t max = std::max(Config::EnsureMaxGrassTypesPerTextureSetting, Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
 
 				struct Patch : CodeGenerator
 				{
