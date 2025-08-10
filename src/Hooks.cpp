@@ -275,51 +275,47 @@ namespace GrassControl
 
 		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
-			if (auto addr = RELOCATION_ID(15220, 15385).address() + REL::Relocate(0x433 - 0x3C0, 0x68); REL::make_pattern<"0F 84">().match(addr)) {
-				Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
-			}
-			if (auto addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129); REL::make_pattern<"48 39 18 74 0A">().match(addr)) {
-				//Util::Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 5, Before = [&](std::any ctx)
-				struct Patch : CodeGenerator
+			auto addr = RELOCATION_ID(15220, 15385).address() + REL::Relocate(0x433 - 0x3C0, 0x68);
+			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
+
+			addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129);
+			struct Patch : CodeGenerator
+			{
+				Patch(uintptr_t a_target)
 				{
-					Patch(uintptr_t a_target)
-					{
-						Label notIf;
-						Label retnLabel;
-						Label jump;
+					Label notIf;
+					Label retnLabel;
+					Label jump;
 
-						cmp(ptr[rax], rbx);
-						jne(notIf);
-						mov(rdx, ptr[rax + 8]);
-						cmp(rdx, 0);
-						je(notIf);
-						mov(rdx, ptr[rdx]);
-						cmp(rdx, 0);
-						je(notIf);
-						mov(ecx, ptr[rdx + 0x190]);
-						imul(ecx, ptr[rdx + 0x194]);
-						shl(ecx, 1);
-						cmp(ecx, 0x20000);
-						jge(notIf);
-						jmp(ptr[rip + jump]);
-						L(notIf);
-						jmp(ptr[rip + retnLabel]);
+					cmp(ptr[rax], rbx);
+					jne(notIf);
+					mov(rdx, ptr[rax + 8]);
+					cmp(rdx, 0);
+					je(notIf);
+					mov(rdx, ptr[rdx]);
+					cmp(rdx, 0);
+					je(notIf);
+					mov(ecx, ptr[rdx + 0x190]);
+					imul(ecx, ptr[rdx + 0x194]);
+					shl(ecx, 1);
+					cmp(ecx, 0x20000);
+					jge(notIf);
+					jmp(ptr[rip + jump]);
+					L(notIf);
+					jmp(ptr[rip + retnLabel]);
 
-						L(retnLabel);
-						dq(a_target + 0x5);
+					L(retnLabel);
+					dq(a_target + 0x5);
 
-						L(jump);
-						dq(a_target + 0xF);
-					}
-				};
-				Patch patch(addr);
-				patch.ready();
+					L(jump);
+					dq(a_target + 0xF);
+				}
+			};
+			Patch patch(addr);
+			patch.ready();
 
-				auto& trampoline = SKSE::GetTrampoline();
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			} else {
-				stl::report_and_fail("Failed to create more grass shapes");
-			}
+			auto& trampoline = SKSE::GetTrampoline();
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		}
 
 		if (Config::UseGrassCache) {
@@ -334,35 +330,33 @@ namespace GrassControl
 		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
 			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-			if (auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68); REL::make_pattern<"44 8B 25">().match(addr))
-			//Memory::WriteHook(new HookParameters(){ Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&](std::any ctx)
+			auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68);
+
+			uint32_t max = std::max(Config::EnsureMaxGrassTypesPerTextureSetting, Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
+
+			struct Patch : CodeGenerator
 			{
-				uint32_t max = std::max(Config::EnsureMaxGrassTypesPerTextureSetting, Memory::Internal::read<int>(addr_MaxGrassPerTexture + 8));
-
-				struct Patch : CodeGenerator
+				Patch(uint32_t max, std::uintptr_t a_target)
 				{
-					Patch(uint32_t max, std::uintptr_t a_target)
-					{
-						Label retnLabel;
+					Label retnLabel;
 
-						if (REL::Module::IsAE()) {
-							mov(edi, max);
-						} else {
-							mov(r12d, max);
-						}
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x7);
+					if (REL::Module::IsAE()) {
+						mov(edi, max);
+					} else {
+						mov(r12d, max);
 					}
-				};
-				Patch patch(max, addr);
-				patch.ready();
+					jmp(ptr[rip + retnLabel]);
 
-				auto& trampoline = SKSE::GetTrampoline();
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-				trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			}
+					L(retnLabel);
+					dq(a_target + 0x7);
+				}
+			};
+			Patch patch(max, addr);
+			patch.ready();
+
+			auto& trampoline = SKSE::GetTrampoline();
+			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		}
 
 		if (Config::OverwriteGrassDistance >= 0.0) {

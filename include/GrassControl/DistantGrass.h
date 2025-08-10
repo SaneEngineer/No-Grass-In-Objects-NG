@@ -30,10 +30,10 @@ namespace GrassControl
 
 		static void ReplaceGrassGrid(bool _loadOnly);
 
-		static bool _canUpdateGridNormal;
+		static inline bool _canUpdateGridNormal = false;
 
 	private:
-		static bool load_only;
+		static inline bool load_only = false;
 
 		static float getChosenGrassFadeRange();
 
@@ -43,11 +43,11 @@ namespace GrassControl
 		static bool DidApply;
 		static void CellLoadNow_Our(uintptr_t ws, int x, int y);
 
-		static uintptr_t addr_uGrids;
-		static uintptr_t addr_AllowLoadFile;
-		static uintptr_t addr_DataHandler;
-		static uintptr_t addr_uLargeRef;
-		static uintptr_t addr_QueueLoadCellUnkGlobal;
+		static inline uintptr_t addr_uGrids = RELOCATION_ID(501244, 359675).address();
+		static inline uintptr_t addr_AllowLoadFile = RELOCATION_ID(501125, 359439).address();
+		static inline uintptr_t addr_DataHandler = RELOCATION_ID(514141, 400269).address();
+		static inline uintptr_t addr_uLargeRef = RELOCATION_ID(501554, 360374).address();
+		static inline uintptr_t addr_QueueLoadCellUnkGlobal = RELOCATION_ID(514741, 400899).address();
 
 	public:
 		static void InstallHooks()
@@ -71,7 +71,7 @@ namespace GrassControl
 			int self_data = 0;
 			volatile long long furtherLoad = 0;
 
-			[[nodiscard]] bool checkHasFile(const std::string& wsName, bool lod) const;
+			[[nodiscard]] bool checkHasFile(const std::string& wsName) const;
 		};
 
 		class CellInfoContainer

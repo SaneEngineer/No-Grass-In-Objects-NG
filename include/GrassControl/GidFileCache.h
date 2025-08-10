@@ -65,22 +65,22 @@ namespace GrassControl
 
 		static void ExchangeHook();
 
-		static int DoneWS;
-		static int TotalWS;
+		static inline int DoneWS = 0;
+		static inline int TotalWS = 0;
 
 	private:
-		static std::ofstream FileStream;
+		static inline std::ofstream FileStream;
 
 	public:
-		static volatile int64_t queued_grass_counter;
+		static inline volatile int64_t queued_grass_counter = 0;
 
-		static volatile int64_t queued_grass_mode;
+		static inline volatile int64_t queued_grass_mode = 0;
 
-		static int cur_state;
+		static inline int cur_state = 0;
 
 		static inline bool IsApplying = false;
 
-		static std::unique_ptr<GidFileGenerationTask> cur_instance;
+		static inline std::unique_ptr<GidFileGenerationTask> cur_instance = nullptr;
 
 	private:
 		bool IsResuming;
@@ -88,11 +88,11 @@ namespace GrassControl
 		std::unordered_set<std::string, case_insensitive_unordered_set::hash> ProgressDone;
 
 	public:
-		static const std::string KeyWS;
+		static inline const std::string KeyWS = "ws";
 
-		static const std::string KeyCell;
+		static inline const std::string KeyCell = "cell";
 
-		static volatile int64_t _lastDidSomething;
+		static inline volatile int64_t _lastDidSomething = -1;
 
 		static void InstallHooks()
 		{

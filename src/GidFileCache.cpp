@@ -22,45 +22,43 @@ namespace GrassControl
 					create_directories(dir);
 				}
 			} catch (...) {
+				stl::report_and_fail("Error occured while trying to create or access data/grass folder");
 			}
 		}
 
 		// Fix saving the GID files (because bethesda broke it in SE).
-		if (auto addr = RELOCATION_ID(74601, 76329).address() + REL::Relocate(0xB90 - 0xAE0, 0xB0); REL::make_pattern<"49 8D 48 08">().match(addr)) {
-			struct Patch : CodeGenerator
+		auto addr = RELOCATION_ID(74601, 76329).address() + REL::Relocate(0xB90 - 0xAE0, 0xB0);
+		struct Patch : CodeGenerator
+		{
+			Patch(uintptr_t a_target, uintptr_t b_target)
 			{
-				Patch(uintptr_t a_target, uintptr_t b_target)
-				{
-					Label funcLabel;
-					Label retnLabel;
+				Label funcLabel;
+				Label retnLabel;
 
-					mov(rax, rcx);
-					lea(rdx, ptr[rbp - 0x30]);
-					lea(rcx, ptr[r8 + 0x8]);
-					mov(r8, ptr[rax + 0x40]);  // ptrThing
+				mov(rax, rcx);
+				lea(rdx, ptr[rbp - 0x30]);
+				lea(rcx, ptr[r8 + 0x8]);
+				mov(r8, ptr[rax + 0x40]);  // ptrThing
 
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);
-					add(rsp, 0x20);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
 
-					jmp(ptr[rip + retnLabel]);
+				jmp(ptr[rip + retnLabel]);
 
-					L(funcLabel);
-					dq(b_target);
+				L(funcLabel);
+				dq(b_target);
 
-					L(retnLabel);
-					dq(a_target + 0x13);
-				}
-			};
-			Patch patch(addr, reinterpret_cast<uintptr_t>(FixSaving));
-			patch.ready();
+				L(retnLabel);
+				dq(a_target + 0x13);
+			}
+		};
+		Patch patch(addr, reinterpret_cast<uintptr_t>(FixSaving));
+		patch.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
-			Util::nopBlock(addr, 0x13, 0);
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-		} else {
-			stl::report_and_fail("Failed to find Gid Saving Function");
-		}
+		auto& trampoline = SKSE::GetTrampoline();
+		Util::nopBlock(addr, 0x13, 0);
+		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
 		// Set the ini stuff.
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bAllowLoadGrass:Grass");
@@ -80,30 +78,25 @@ namespace GrassControl
 		}
 
 		// Disable grass console.
-		if (auto addr = (RELOCATION_ID(15204, 15372).address() + 0x896); REL::make_pattern<"48 8D 05">().match(addr)) {
-			//Memory::WriteHook(new HookParameters() { Address = addr, IncludeLength = 0, ReplaceLength = 7, Before = [&] (std::any ctx)
-			struct Patch : CodeGenerator
+		addr = RELOCATION_ID(15204, 15372).address() + 0x896;
+		struct Patch2 : CodeGenerator
+		{
+			Patch2(const std::uintptr_t a_target)
 			{
-				Patch(const std::uintptr_t a_target)
-				{
-					Label retnLabel;
+				Label retnLabel;
 
-					mov(r15, 0);
-					jmp(ptr[rip + retnLabel]);
+				mov(r15, 0);
+				jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x7 + (0x5882 - 0x55AD));
-				}
-			};
-			Patch patch(addr);
-			patch.ready();
+				L(retnLabel);
+				dq(a_target + 0x7 + (0x5882 - 0x55AD));
+			}
+		};
+		Patch2 patch2(addr);
+		patch2.ready();
 
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
-		} else {
-			stl::report_and_fail("Failed to Disable Grass Console");
-		}
+		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
+		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
 	}
 
 	GidFileGenerationTask::GidFileGenerationTask() :
@@ -198,33 +191,30 @@ namespace GrassControl
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 
-		if (addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xA0E - 0x890, 0x17D); REL::make_pattern<"8B 05">().match(addr)) {
-			struct Patch : CodeGenerator
+		addr = RELOCATION_ID(15202, 15370).address() + REL::Relocate(0xA0E - 0x890, 0x17D);
+		struct Patch2 : CodeGenerator
+		{
+			explicit Patch2(const uintptr_t a_func, const uintptr_t a_target)
 			{
-				explicit Patch(const uintptr_t a_func, const uintptr_t a_target)
-				{
-					Label funcLabel;
-					Label retnLabel;
+				Label funcLabel;
+				Label retnLabel;
 
-					sub(rsp, 0x20);
-					call(ptr[rip + funcLabel]);  // call our function
-					add(rsp, 0x20);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);  
+				add(rsp, 0x20);
 
-					jmp(ptr[rip + retnLabel]);
+				jmp(ptr[rip + retnLabel]);
 
-					L(retnLabel);
-					dq(a_target + 0x6);
+				L(retnLabel);
+				dq(a_target + 0x6);
 
-					L(funcLabel);
-					dq(a_func);
-				}
-			};
-			Patch patch2(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
-			patch2.ready();
-			trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
-		} else {
-			stl::report_and_fail("Failed to Generate Gid Files");
-		}
+				L(funcLabel);
+				dq(a_func);
+			}
+		};
+		Patch2 patch2(reinterpret_cast<uintptr_t>(getChosenGrassGridRadius), addr);
+		patch2.ready();
+		trampoline.write_branch<6>(addr, trampoline.allocate(patch2));
 
 		auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("bGenerateGrassDataFiles:Grass");
 		setting->data.b = true;
@@ -257,19 +247,7 @@ namespace GrassControl
 				stl::report_and_fail("Grass generation finished successfully!");
 			}
 		}
-	};
-
-	int GidFileGenerationTask::DoneWS = 0;
-	int GidFileGenerationTask::TotalWS = 0;
-	std::ofstream GidFileGenerationTask::FileStream;
-	volatile int64_t GidFileGenerationTask::queued_grass_counter = 0;
-	volatile int64_t GidFileGenerationTask::queued_grass_mode = 0;
-	int GidFileGenerationTask::cur_state = 0;
-	std::unique_ptr<GidFileGenerationTask> GidFileGenerationTask::cur_instance = nullptr;
-
-	const std::string GidFileGenerationTask::KeyWS = "ws";
-	const std::string GidFileGenerationTask::KeyCell = "cell";
-	volatile int64_t GidFileGenerationTask::_lastDidSomething = -1;
+	}
 
 	void GidFileGenerationTask::Init()
 	{
@@ -713,7 +691,7 @@ namespace GrassControl
 
 		const std::string msg = "Generating grass for " + this->Parent->Name + "(" + std::to_string(this->X) + ", " + std::to_string(this->Y) + ") " + std::to_string(pct) + " pct, world " + std::to_string(GidFileGenerationTask::DoneWS + 1) + " out of " + std::to_string(GidFileGenerationTask::TotalWS);
 		RE::ConsoleLog::GetSingleton()->Print(msg.c_str());
-		logger::info(fmt::runtime(msg.c_str()));
+		logger::info(fmt::runtime(msg));
 		{
 			auto alloc = new char[0x20];
 			memset(alloc, 0, 0x20);
