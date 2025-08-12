@@ -261,24 +261,28 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		widthY = GrassControl::Config::RayCastWidth / 2.0f;
 	}
 
-	RE::hkpShape* shape = RE::malloc<RE::hkpShape>(0x70);
+	RE::hkpShape* shape = nullptr;
 
-	if (GrassControl::Config::RayCastMode == 1) {
-		shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
+	if (!hkWorld->criticalOperationsLockCount) {
+		shape = RE::malloc<RE::hkpShape>(0x70);
 
-		using createCylinderShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, RE::hkVector4&, float, int);
-		REL::Relocation<createCylinderShape_t> createCylinderShape{ RELOCATION_ID(59971, 60720) };
+		if (GrassControl::Config::RayCastMode == 1) {
+			shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
 
-		shape = createCylinderShape(shape, vecBottom, vecTop, radius * hkpScale, shapeType);
-	} else if (GrassControl::Config::RayCastMode == 2) {
-		shapeType = Memory::Internal::read<int>(RELOCATION_ID(525125, 411600).address());
+			using createCylinderShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, RE::hkVector4&, float, int);
+			REL::Relocation<createCylinderShape_t> createCylinderShape{ RELOCATION_ID(59971, 60720) };
 
-		auto halfExtents = RE::hkVector4(widthX, widthY, dif.z * hkpScale / 2.0f, 0.0f);
+			shape = createCylinderShape(shape, vecBottom, vecTop, radius * hkpScale, shapeType);
+		} else if (GrassControl::Config::RayCastMode == 2) {
+			shapeType = Memory::Internal::read<int>(RELOCATION_ID(525125, 411600).address());
 
-		using createBoxShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, float);
-		REL::Relocation<createBoxShape_t> createBoxShape{ RELOCATION_ID(59603, 60287) };
+			auto halfExtents = RE::hkVector4(widthX, widthY, dif.z * hkpScale / 2.0f, 0.0f);
 
-		shape = createBoxShape(shape, halfExtents, shapeType);
+			using createBoxShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, float);
+			REL::Relocation<createBoxShape_t> createBoxShape{ RELOCATION_ID(59603, 60287) };
+
+			shape = createBoxShape(shape, halfExtents, shapeType);
+		}
 	}
 
 	if (!phantom) {
@@ -303,14 +307,16 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	using SetShape_t = RE::hkWorldOperation::Result (*)(RE::hkpShapePhantom*, RE::hkpShape*);
 	REL::Relocation<SetShape_t> SetShape{ RELOCATION_ID(60792, 61654) };
 
-	auto hkResult = SetShape(phantom, shape);
-	if (hkResult == RE::hkWorldOperation::Result::kPostponed)
-		return result;
-
-	RE::free(oldShape);
-	oldShape = shape;
+	if (shape) {
+		auto hkResult = SetShape(phantom, shape);
+		if (hkResult == RE::hkWorldOperation::Result::kDone) {
+			RE::free(oldShape);
+			oldShape = shape;
+		}
+	}
 
 	if (!phantom->GetShape()) {
+		bhkWorld->worldLock.UnlockForWrite();
 		return result;
 	}
 
