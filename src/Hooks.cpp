@@ -85,18 +85,24 @@ namespace GrassControl
 			auto cachedList = Util::CachedFormList::TryParse(formsStr, "Ray-cast-ignore-forms", true, false);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
 				cachedList = nullptr;
+			} else if (cachedList != nullptr) {
+				cachedList->printList("Ray-cast-ignore-forms");
 			}
 
 			std::string textureFormsStr = Config::RayCastTextureForms;
 			auto cachedTextureList = Util::CachedFormList::TryParse(textureFormsStr, "Ray-cast-texture-forms", true, false);
 			if (cachedTextureList != nullptr && cachedTextureList->getAll().empty()) {
 				cachedTextureList = nullptr;
+			} else if (cachedTextureList != nullptr) {
+				cachedTextureList->printList("Ray-cast-texture-forms");
 			}
 
 			std::string cliffsFormsStr = Config::GrassCliffsForms;
 			auto cachedCliffsList = Util::CachedFormList::TryParse(cliffsFormsStr, "Grass-cliffs-forms", true, false);
 			if (cachedCliffsList != nullptr && cachedCliffsList->getAll().empty()) {
 				cachedCliffsList = nullptr;
+			} else if (cachedCliffsList != nullptr) {
+				cachedCliffsList->printList("Grass-cliffs-forms");
 			}
 
 			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList, cachedCliffsList);

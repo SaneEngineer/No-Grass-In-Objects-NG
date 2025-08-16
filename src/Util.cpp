@@ -111,29 +111,95 @@ namespace Util
 			}
 
 			id &= 0x00FFFFFF;
-			if (auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName); file) {
-				if (!RE::TESDataHandler::GetSingleton()->LookupFormID(id, fileName)) {
+			auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName);
+			if (!file)
+				file = RE::TESDataHandler::GetSingleton()->LookupLoadedLightModByName(fileName);
+			if (file) {
+				for (int i = 0; i < file->masterCount; i++) {
+					auto masterFile = file->masterPtrs[i];
+
+					std::string_view masterName = fileName;
+					if (masterFile)
+						masterName = masterFile->GetFilename();
+
+					if (RE::TESDataHandler::GetSingleton()->LookupForm(id, masterName)) {
+						fileName = masterName;
+						break;
+					}
+				}
+
+				if (!RE::TESDataHandler::GetSingleton()->LookupForm(id, fileName)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
-						logger::warn(fmt::runtime("Failed to find form for " + settingNameForLog + "! Form ID was 0x{:x} and file was " + fileName + "."), id);
+						logger::warn(fmt::runtime("Failed to find form for " + settingNameForLog + "! Form ID was 0x{:08x} and file was " + fileName + "."), id);
 					}
 					continue;
 				}
+			} else {
+				if (!dontWriteAnythingToLog) {
+					logger::warn(fmt::runtime("Failed to find file for " + settingNameForLog + "! File name was `" + fileName + "` and form ID was 0x{:08x}."), id);
+				}
+				continue;
 			}
+
 			auto form = RE::TESDataHandler::GetSingleton()->LookupForm(id, fileName);
 			auto formID = RE::TESDataHandler::GetSingleton()->LookupFormID(id, fileName);
 			if (!form || !formID) {
 				if (!dontWriteAnythingToLog) {
-					logger::warn(fmt::runtime("Invalid form detected while adding form to " + settingNameForLog + "! Possible invalid form ID: `0x{:x}`."), formID);
+					logger::warn(fmt::runtime("Invalid form detected while adding form to " + settingNameForLog + "! Possible invalid form ID: `0x{:08x}`."), formID);
 				}
 				continue;
 			}
+
+			bool skip = false;
+
+			for (auto oldForm : ls->Forms) {
+				if (oldForm == nullptr)
+					continue;
+
+				auto existingFormID = oldForm->formID & 0x00FFFFFF;
+				if (existingFormID == id) {
+					if ((formID & 0xFF000000) > (oldForm->formID & 0xFF000000)) {
+						if (!dontWriteAnythingToLog) {
+							logger::info(fmt::runtime("Replacing form 0x{:08x} in " + settingNameForLog + " with new form 0x{:08x}."), oldForm->formID, formID);
+						}
+						ls->Forms.erase(std::ranges::find(ls->Forms, oldForm));
+					} else if ((formID & 0xFF000000) <= (oldForm->formID & 0xFF000000)) {
+						if (!dontWriteAnythingToLog) {
+							logger::warn(fmt::runtime("Form 0x{:08x} already exists in " + settingNameForLog + "! Skipping identical or earlier loaded form."), formID);
+						}
+						skip = true;
+						continue;
+					}
+				}
+			}
+
+			if (skip)
+				continue;
+
 			if (ls->Ids.insert(formID).second) {
-				logger::info(fmt::runtime("Form 0x{:x} was successfully added to " + settingNameForLog), formID);
 				ls->Forms.push_back(form);
 			}
 		}
-
 		return ls;
+	}
+
+	void CachedFormList::printList(std::string settingNameForLog) const
+	{
+		std::string formIDs;
+
+		for (const auto& form : Forms) {
+			if (form == nullptr)
+				continue;
+
+			auto formID = form->formID;
+
+			if (form != Forms.back()) {
+				formIDs += fmt::format("0x{:08x}, ", formID);
+			} else {
+				formIDs += fmt::format("and 0x{:08x}", formID);
+			}
+		}
+		logger::info(fmt::runtime("Forms {} were successfully added to {}"), formIDs, settingNameForLog);
 	}
 
 	bool CachedFormList::Contains(RE::TESForm* form)

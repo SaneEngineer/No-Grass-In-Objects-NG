@@ -36,6 +36,8 @@ namespace Util
 	public:
 		static CachedFormList* TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
 
+		void printList(std::string settingNameForLog) const;
+
 		bool Contains(RE::TESForm* form);
 
 		bool Contains(unsigned int formId);
