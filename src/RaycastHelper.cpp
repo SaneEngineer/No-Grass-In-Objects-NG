@@ -173,7 +173,14 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 			physicsWorld->PickObject(pickData);
 		}
 	} catch (...) {
-		logger::error("Exception occured while attempting raycasting. Unless repeated this unlikely to be a major issue.");
+		if (RaycastErrorCount < 10) {
+			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
+			RaycastErrorCount++;
+		} else if (!shownError) {
+			RE::DebugMessageBox("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			logger::error("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			shownError = true;
+		}
 	}
 
 	for (auto& hit : collector.GetHits()) {
@@ -236,10 +243,10 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	auto vecBottom = RE::hkVector4(0.0f, 0.0f, 0.0f, 1.0f);
 	auto vecTop = RE::hkVector4(0.0f, 0.0f, dif.z * hkpScale, 1.0f);
 
-	float radius;
-	int shapeType;
-	float widthX;
-	float widthY;
+	float radius = 20.0f;
+	int shapeType = 0;
+	float widthX = 20.0f;
+	float widthY = 20.0f;
 
 	if (param) {
 		auto grassForm = RE::TESForm::LookupByID<RE::TESGrass>(param->grassFormID);
@@ -248,9 +255,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 				widthX = std::abs(static_cast<float>(grassForm->boundData.boundMax.x - grassForm->boundData.boundMin.x) / 2);
 				widthY = std::abs(static_cast<float>(grassForm->boundData.boundMax.y - grassForm->boundData.boundMin.y) / 2);
 				radius = std::max(widthX, widthY) / 2;
-			} else {
-				radius = 20.0f;
-			}
+			} 
 
 			radius *= GrassControl::Config::RayCastWidthMult;
 		}
@@ -330,7 +335,14 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 		GetPenetrations(phantom, reinterpret_cast<RE::hkpCdBodyPairCollector*>(&collector), nullptr);
 	} catch (...) {
-		logger::error("Exception occured while attempting raycasting. Unless repeated this unlikely to be a major issue.");
+		if (RaycastErrorCount < 10) {
+			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
+			RaycastErrorCount++;
+		} else if (!shownError) {
+			RE::DebugMessageBox("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			logger::error("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			shownError = true;
+		}
 	}
 
 	bhkWorld->worldLock.UnlockForWrite();

@@ -134,7 +134,7 @@ namespace GrassControl
 			uint64_t last = InterlockedCompareExchange64(&_lastDidSomething, 0, 0);
 			uint64_t now = GetTickCount64();
 
-			if (now - last < 60000) {
+			if (now - last < 90000) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
@@ -309,7 +309,6 @@ namespace GrassControl
 	void GidFileGenerationTask::Free()
 	{
 		if (FileStream) {
-			FileStream.flush();
 			FileStream.close();
 		}
 	}
@@ -364,7 +363,7 @@ namespace GrassControl
 				return;
 
 			if (FileStream.is_open()) {
-				FileStream << text << "\n";
+				FileStream << text << std::endl;
 			}
 		}
 	}
@@ -414,7 +413,6 @@ namespace GrassControl
 	void GidFileGenerationTask::End()
 	{
 		if (FileStream) {
-			FileStream.flush();
 			FileStream.close();
 		}
 
