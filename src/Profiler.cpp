@@ -2,24 +2,8 @@
 
 namespace GrassControl
 {
-	struct KahanAccumulation
-	{
-		double sum;
-		double correction;
-	};
-
-	KahanAccumulation KahanSum(KahanAccumulation accumulation, double value)
-	{
-		KahanAccumulation result;
-		double y = value - accumulation.correction;
-		double t = accumulation.sum + y;
-		result.correction = (t - accumulation.sum) - y;
-		result.sum = t;
-		return result;
-	}
-
 	Profiler::Profiler() :
-		Timer(new stopwatch::Stopwatch()), Divide(0)
+		Timer(new stopwatch::Stopwatch()), Divide(1)
 	{
 		this->Timer->start();
 	}
@@ -27,13 +11,13 @@ namespace GrassControl
 	void Profiler::Begin()
 	{
 		int who = GetCurrentThreadId();
-		long long when = this->Timer->elapsed<stopwatch::ct>();
+		long long when = this->Timer->elapsed<stopwatch::ms>();
 
 		{
-			std::lock_guard lock(this->Locker);
+			std::scoped_lock lock(this->Locker);
 			for (int i = 0; i < this->Progress.size(); i++) {
-				auto t = this->Progress[i];
-				if (t.first == who) {
+				auto& [fst, snd] = this->Progress[i];
+				if (fst == who) {
 					{
 						this->Progress[i] = std::pair{ who, when };
 					}
@@ -47,15 +31,15 @@ namespace GrassControl
 
 	void Profiler::End()
 	{
-		long long when = this->Timer->elapsed<stopwatch::ct>();
+		long long when = this->Timer->elapsed<stopwatch::ms>();
 		int who = GetCurrentThreadId();
 
 		{
-			std::lock_guard lock(this->Locker);
+			std::scoped_lock lock(this->Locker);
 			for (int i = 0; i < this->Progress.size(); i++) {
-				auto t = this->Progress[i];
-				if (t.first == who) {
-					long long diff = when - t.second;
+				auto& [fst, snd] = this->Progress[i];
+				if (fst == who) {
+					long long diff = when - snd;
 					this->Progress.erase(this->Progress.begin() + i);
 
 					this->Times.push_back(diff);
@@ -76,7 +60,7 @@ namespace GrassControl
 			std::lock_guard lock(this->Locker);
 			for (auto diff : this->Times) {
 				auto w = static_cast<double>(diff);
-				w /= static_cast<double>(this->Divide);
+				w /= this->Divide;
 				all.push_back(w);
 			}
 		}
@@ -86,30 +70,22 @@ namespace GrassControl
 			message = "No samples have been gathered yet.";
 		} else {
 			if (all.size() > 1) {
-				std::sort(all.begin(), all.end());
+				std::ranges::sort(all);
 			}
 
-			KahanAccumulation init = { 0 };
-			KahanAccumulation result =
-				std::accumulate(all.begin(), all.end(), init, KahanSum);
-
-			double sum = result.sum;
-			double avg = sum / static_cast<double>(all.size());
+			double sum = std::accumulate(all.begin(), all.end(), 0.0);
+			double avg = sum / all.size();
 			double med = all[all.size() / 2];
 			double min = all[0];
 			double max = all[all.size() - 1];
 
-			std::function<std::string(double)> fmt = [&](double v) {
-				return std::to_string(v);
-			};
-
 			std::vector<std::string> things;
-
+			auto timeTemplate = fmt::runtime("{:.3}ms");
 			things.emplace_back("Samples = " + std::to_string(all.size()));
-			things.emplace_back("Average = " + fmt(avg));
-			things.emplace_back("Median = " + fmt(med));
-			things.emplace_back("Min = " + fmt(min));
-			things.emplace_back("Max = " + fmt(max));
+			things.emplace_back("Average = " + format(timeTemplate, avg));
+			things.emplace_back("Median = " + format(timeTemplate, med));
+			things.emplace_back("Min = " + format(timeTemplate, min));
+			things.emplace_back("Max = " + format(timeTemplate, max));
 
 			message = Util::StringHelpers::Join(things, "; ");
 		}
