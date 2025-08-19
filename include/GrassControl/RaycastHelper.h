@@ -126,7 +126,7 @@ namespace Raycast
 
 	inline RE::hkpShapePhantom* phantom = nullptr;
 
-	inline RE::hkpShape* oldShape = nullptr;
+	inline RE::hkpShape* currentShape = nullptr;
 
 	inline int RaycastErrorCount = 0;
 

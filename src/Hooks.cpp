@@ -11,7 +11,7 @@ namespace GrassControl
 	static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z, uintptr_t param)
 	{
 		if (Config::RayCast) {
-			RE::GrassParam* grassParam;
+			RE::GrassParam* grassParam = nullptr;
 			if (REL::Module::IsSE()) {
 				auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
 				grassParam = *paramPtr;
@@ -30,7 +30,7 @@ namespace GrassControl
 	{
 		if (Config::GrassCliffs) {
 			if (GrassControlPlugin::Cache != nullptr) {
-				RE::GrassParam* grassParam;
+				RE::GrassParam* grassParam = nullptr;
 				if (REL::Module::IsSE()) {
 					auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
 					grassParam = *paramPtr;
@@ -44,9 +44,6 @@ namespace GrassControl
 		}
 		return z;
 	}
-
-	std::intptr_t GrassControlPlugin::addr_MaxGrassPerTexture;
-	int GrassControlPlugin::_did_mainMenu = 0;
 
 	void GrassControlPlugin::Update()
 	{
@@ -334,7 +331,6 @@ namespace GrassControl
 		}
 
 		if (Config::EnsureMaxGrassTypesPerTextureSetting > 0) {
-			addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
 			auto addr = RELOCATION_ID(18342, 18758).address() + REL::Relocate(0xD63 - 0xCF0, 0x68);
 

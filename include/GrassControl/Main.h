@@ -17,9 +17,9 @@ namespace GrassControl
 	{
 		inline static Profiler* profiler = new Profiler();
 
-		static std::intptr_t addr_MaxGrassPerTexture;
+		inline static std::intptr_t addr_MaxGrassPerTexture = RELOCATION_ID(501615, 360443).address();
 
-		static int _did_mainMenu;
+		inline static int _did_mainMenu = 0;
 
 		inline static auto normalBuffer = glm::vec3{ 0.0f };
 

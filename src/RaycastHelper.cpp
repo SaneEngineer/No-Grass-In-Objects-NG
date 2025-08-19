@@ -255,7 +255,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 				widthX = std::abs(static_cast<float>(grassForm->boundData.boundMax.x - grassForm->boundData.boundMin.x) / 2);
 				widthY = std::abs(static_cast<float>(grassForm->boundData.boundMax.y - grassForm->boundData.boundMin.y) / 2);
 				radius = std::max(widthX, widthY) / 2;
-			} 
+			}
 
 			radius *= GrassControl::Config::RayCastWidthMult;
 		}
@@ -266,18 +266,18 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		widthY = GrassControl::Config::RayCastWidth / 2.0f;
 	}
 
-	RE::hkpShape* shape = nullptr;
+	if (!currentShape) {
+		currentShape = RE::malloc<RE::hkpShape>(0x70);
+	}
 
 	if (!hkWorld->criticalOperationsLockCount) {
-		shape = RE::malloc<RE::hkpShape>(0x70);
-
 		if (GrassControl::Config::RayCastMode == 1) {
 			shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
 
 			using createCylinderShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, RE::hkVector4&, float, int);
 			REL::Relocation<createCylinderShape_t> createCylinderShape{ RELOCATION_ID(59971, 60720) };
 
-			shape = createCylinderShape(shape, vecBottom, vecTop, radius * hkpScale, shapeType);
+			currentShape = createCylinderShape(currentShape, vecBottom, vecTop, radius * hkpScale, shapeType);
 		} else if (GrassControl::Config::RayCastMode == 2) {
 			shapeType = Memory::Internal::read<int>(RELOCATION_ID(525125, 411600).address());
 
@@ -286,7 +286,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			using createBoxShape_t = RE::hkpShape* (*)(RE::hkpShape*, RE::hkVector4&, float);
 			REL::Relocation<createBoxShape_t> createBoxShape{ RELOCATION_ID(59603, 60287) };
 
-			shape = createBoxShape(shape, halfExtents, shapeType);
+			currentShape = createBoxShape(currentShape, halfExtents, shapeType);
 		}
 	}
 
@@ -295,12 +295,17 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		REL::Relocation<createSimpleShapePhantom_t> createSimpleShapePhantom{ RELOCATION_ID(60675, 61535) };
 		phantom = RE::malloc<RE::hkpShapePhantom>(0x1C0);
 
-		phantom = createSimpleShapePhantom(phantom, shape, transform, 0);
+		phantom = createSimpleShapePhantom(phantom, currentShape, transform, 0);
 
-		bhkWorld->worldLock.LockForWrite();
-		hkWorld->AddPhantom(phantom);
-		bhkWorld->worldLock.UnlockForWrite();
+		if (phantom->GetShape()) {
+			bhkWorld->worldLock.LockForWrite();
+			hkWorld->AddPhantom(phantom);
+			bhkWorld->worldLock.UnlockForWrite();
+		}
 	}
+
+	if (!std::ranges::contains(hkWorld->phantoms.begin(), hkWorld->phantoms.end(), phantom))
+		return {};
 
 	bhkWorld->worldLock.LockForWrite();
 
@@ -312,12 +317,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	using SetShape_t = RE::hkWorldOperation::Result (*)(RE::hkpShapePhantom*, RE::hkpShape*);
 	REL::Relocation<SetShape_t> SetShape{ RELOCATION_ID(60792, 61654) };
 
-	if (shape) {
-		auto hkResult = SetShape(phantom, shape);
-		if (hkResult == RE::hkWorldOperation::Result::kDone) {
-			RE::free(oldShape);
-			oldShape = shape;
-		}
+	if (currentShape) {
+		SetShape(phantom, currentShape);
 	}
 
 	if (!phantom->GetShape()) {
