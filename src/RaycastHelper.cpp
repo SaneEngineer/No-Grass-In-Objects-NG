@@ -244,17 +244,17 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	auto vecTop = RE::hkVector4(0.0f, 0.0f, dif.z * hkpScale, 1.0f);
 
 	float radius = 20.0f;
-	int shapeType = 0;
 	float widthX = 20.0f;
 	float widthY = 20.0f;
+	int shapeType = 0;
 
 	if (param) {
 		auto grassForm = RE::TESForm::LookupByID<RE::TESGrass>(param->grassFormID);
 		if (grassForm) {
 			if (grassForm->boundData.boundMax.x != 0 && grassForm->boundData.boundMin.x != 0) {
-				widthX = std::abs(static_cast<float>(grassForm->boundData.boundMax.x - grassForm->boundData.boundMin.x) / 2);
-				widthY = std::abs(static_cast<float>(grassForm->boundData.boundMax.y - grassForm->boundData.boundMin.y) / 2);
-				radius = std::max(widthX, widthY) / 2;
+				widthX = std::abs(static_cast<float>(grassForm->boundData.boundMax.x - grassForm->boundData.boundMin.x) * 0.5f);
+				widthY = std::abs(static_cast<float>(grassForm->boundData.boundMax.y - grassForm->boundData.boundMin.y) * 0.5f);
+				radius = std::max(widthX, widthY) * 0.5f;
 			}
 
 			radius *= GrassControl::Config::RayCastWidthMult;
@@ -262,15 +262,31 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 	}
 
 	if (GrassControl::Config::RayCastWidth > 0.0f) {
-		widthX = GrassControl::Config::RayCastWidth / 2.0f;
-		widthY = GrassControl::Config::RayCastWidth / 2.0f;
+		widthX = GrassControl::Config::RayCastWidth * 0.5f;
+		widthY = GrassControl::Config::RayCastWidth * 0.5f;
+	}
+
+	bool newShape = false;
+	newShape = std::abs(oldRadius - radius) > 1.0f;
+	if (newShape) {
+		if (GrassControl::Config::RayCastMode == 1 && currentShape) {
+			Memory::Internal::write<RE::hkVector4>(reinterpret_cast<uintptr_t>(currentShape) + 0x28, radius * hkpScale);  // Set Radius
+			Memory::Internal::write<RE::hkVector4>(reinterpret_cast<uintptr_t>(currentShape) + 0x40, vecTop);             // Set Top Vertex
+		} else if (currentShape) {
+			auto halfExtents = RE::hkVector4(widthX, widthY, dif.z * hkpScale / 2.0f, 0.0f);
+			Memory::Internal::write<RE::hkVector4>(reinterpret_cast<uintptr_t>(currentShape) + 0x30, halfExtents);  // Set halfExtent
+		}
+
+		oldRadius = radius;
 	}
 
 	if (!currentShape) {
 		currentShape = RE::malloc<RE::hkpShape>(0x70);
+		if (!currentShape)
+			return {};
 	}
 
-	if (!hkWorld->criticalOperationsLockCount) {
+	if (!createdShape) {
 		if (GrassControl::Config::RayCastMode == 1) {
 			shapeType = Memory::Internal::read<int>(RELOCATION_ID(511265, 385180).address());
 
@@ -278,7 +294,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			REL::Relocation<createCylinderShape_t> createCylinderShape{ RELOCATION_ID(59971, 60720) };
 
 			currentShape = createCylinderShape(currentShape, vecBottom, vecTop, radius * hkpScale, shapeType);
-		} else if (GrassControl::Config::RayCastMode == 2) {
+		} else {
 			shapeType = Memory::Internal::read<int>(RELOCATION_ID(525125, 411600).address());
 
 			auto halfExtents = RE::hkVector4(widthX, widthY, dif.z * hkpScale / 2.0f, 0.0f);
@@ -288,24 +304,34 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 			currentShape = createBoxShape(currentShape, halfExtents, shapeType);
 		}
+		createdShape = true;
 	}
 
 	if (!phantom) {
 		using createSimpleShapePhantom_t = RE::hkpShapePhantom* (*)(RE::hkpShapePhantom*, RE::hkpShape*, const RE::hkTransform&, uint32_t);
 		REL::Relocation<createSimpleShapePhantom_t> createSimpleShapePhantom{ RELOCATION_ID(60675, 61535) };
 		phantom = RE::malloc<RE::hkpShapePhantom>(0x1C0);
-
+		if (!phantom)
+			return {};
 		phantom = createSimpleShapePhantom(phantom, currentShape, transform, 0);
 
+		RE::hkpPhantom* returnPhantom = nullptr;
 		if (phantom->GetShape()) {
 			bhkWorld->worldLock.LockForWrite();
-			hkWorld->AddPhantom(phantom);
+			returnPhantom = hkWorld->AddPhantom(phantom);
 			bhkWorld->worldLock.UnlockForWrite();
 		}
+
+		if (!returnPhantom)
+			return {};
 	}
 
-	if (!std::ranges::contains(hkWorld->phantoms.begin(), hkWorld->phantoms.end(), phantom))
-		return {};
+	if (phantom->world != hkWorld) {
+		bhkWorld->worldLock.LockForWrite();
+		phantom->world->RemovePhantom(phantom);
+		hkWorld->AddPhantom(phantom);
+		bhkWorld->worldLock.UnlockForWrite();
+	}
 
 	bhkWorld->worldLock.LockForWrite();
 
@@ -313,19 +339,12 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 	auto collector = CdBodyPairCollector();
 	collector.Reset();
-
-	using SetShape_t = RE::hkWorldOperation::Result (*)(RE::hkpShapePhantom*, RE::hkpShape*);
-	REL::Relocation<SetShape_t> SetShape{ RELOCATION_ID(60792, 61654) };
-
-	if (currentShape) {
-		SetShape(phantom, currentShape);
-	}
-
+	
 	if (!phantom->GetShape()) {
 		bhkWorld->worldLock.UnlockForWrite();
 		return result;
 	}
-
+	
 	try {
 		using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
 		REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
@@ -345,7 +364,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			shownError = true;
 		}
 	}
-
+	
 	bhkWorld->worldLock.UnlockForWrite();
 
 	result.cdBodyHitArray = collector.GetHits();
@@ -383,28 +402,30 @@ namespace GrassControl
 		}
 
 		if (this->Textures != nullptr) {
-			std::array pts = { RE::NiPoint3{ x, y, z }, RE::NiPoint3{ x + static_cast<float>(Config::RayCastTextureWidth), y, z }, RE::NiPoint3{ x - static_cast<float>(Config::RayCastTextureWidth), y, z }, RE::NiPoint3{ x, y + static_cast<float>(Config::RayCastTextureWidth), z }, RE::NiPoint3{ x, y - static_cast<float>(Config::RayCastTextureWidth), z } };
-			std::array<RE::TESLandTexture*, 5> txts;
-
+			const auto width = static_cast<float>(Config::RayCastTextureWidth);
 			auto tes = RE::TES::GetSingleton();
 
-			if (Config::RayCastTextureWidth > 0.0f) {
-				for (int i = 0; i < pts.size(); i++) {
+			if (width > 0.0f) {
+				RE::TESLandTexture* txts[5];
+				std::array pts = { RE::NiPoint3{ x, y, z }, RE::NiPoint3{ x + width, y, z }, RE::NiPoint3{ x - width, y, z }, RE::NiPoint3{ x, y + width, z }, RE::NiPoint3{ x, y - width, z } };
+
+				for (int i = 0; i < 5; i++) {
 					txts[i] = tes->GetLandTexture(pts[i]);
 				}
-			} else {
-				txts[0] = tes->GetLandTexture(pts[0]);
-			}
 
-			RE::FormID ID = 0;
-			for (auto txt : txts) {
-				if (txt) {
-					ID = txt->GetFormID();
+				for (auto& txt : txts) {
+					if (txt && this->Textures->Contains(txt->GetFormID())) {
+						logger::debug("Detected hit with landscape texture in {} with 0x{:x}",
+							cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), txt->GetFormID());
+						return false;
+					}
 				}
-				if (this->Textures->Contains(ID)) {
-					//if (ID == 0x112D5520 || ID == 0x112D5521 || ID == 0x1148E3C8 || ID == 0x110425FE || ID == 0x1105190C || ID == 0x110A7B23 || ID == 0x112C6203 || ID == 0x112D551F || ID == 0x112DA624 || ID == 0x112DF729 || ID == 0x112DF72A || ID == 0x112DF72B || ID == 0x113684BB) {
-					logger::debug("Detected hit with landscape texture in {} with 0x{:x}", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), ID);
-					return false;
+			} else {
+				if (auto txt = tes->GetLandTexture(RE::NiPoint3{ x, y, z })) {
+					if (this->Textures->Contains(txt->GetFormID())) {
+						logger::debug("Detected hit with landscape texture in {} with 0x{:x}", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), txt->GetFormID());
+						return false;
+					}
 				}
 			}
 		}
@@ -429,21 +450,25 @@ namespace GrassControl
 					continue;
 				}
 
-				if (this->Ignore != nullptr && this->Ignore->Contains(GetRaycastHitBaseForm(body))) {
-					if (auto rsTESForm = GetRaycastHitBaseForm(body))
+				auto rsTESForm = GetRaycastHitBaseForm(body);
+				if (this->Ignore != nullptr && this->Ignore->Contains(rsTESForm)) {
+					if (Config::DebugLogEnable && rsTESForm)
 						logger::debug("Ignored 0x{:x} in {}", rsTESForm->formID, cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName());
 					continue;
 				}
 
-				auto sTemplate = fmt::runtime("{} {}(0x{:x})");
-				auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
-				auto rsTESForm = GetRaycastHitBaseForm(body);
-				auto hitObjectName = rsTESForm ? fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
-				logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+				if (Config::DebugLogEnable) {
+					auto sTemplate = fmt::runtime("{} {}(0x{:x})");
+					auto cellName = format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
+					auto hitObjectName = rsTESForm ? format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
+					logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+				}
 
 				return false;
 			}
 		} else {
+			rs = Raycast::hkpCastRay(begin, end);
+
 			for (auto& [normal, hitFraction, body] : rs.hitArray) {
 				if (body == nullptr) {
 					continue;
@@ -456,17 +481,19 @@ namespace GrassControl
 					continue;
 				}
 
-				if (this->Ignore != nullptr && this->Ignore->Contains(GetRaycastHitBaseForm(body))) {
-					if (auto rsTESForm = GetRaycastHitBaseForm(body))
+				auto rsTESForm = GetRaycastHitBaseForm(body);
+				if (this->Ignore != nullptr && this->Ignore->Contains(rsTESForm)) {
+					if (Config::DebugLogEnable && rsTESForm)
 						logger::debug("Ignored 0x{:x} in {}", rsTESForm->formID, cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName());
 					continue;
 				}
 
-				auto sTemplate = fmt::runtime("{} {}(0x{:x})");
-				auto cellName = fmt::format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
-				auto rsTESForm = GetRaycastHitBaseForm(body);
-				auto hitObjectName = rsTESForm ? fmt::format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
-				logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+				if (Config::DebugLogEnable) {
+					auto sTemplate = fmt::runtime("{} {}(0x{:x})");
+					auto cellName = format(sTemplate, "cell", cell->GetFormEditorID() ? cell->GetFormEditorID() : cell->GetName(), cell->formID);
+					auto hitObjectName = rsTESForm ? format(sTemplate, "with", rsTESForm->GetFormEditorID() ? rsTESForm->GetFormEditorID() : rsTESForm->GetName(), rsTESForm->formID) : "";
+					logger::debug("{}({},{},{}) detected hit {}", cellName, x, y, z, hitObjectName);
+				}
 
 				return false;
 			}

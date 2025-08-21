@@ -11,7 +11,7 @@ namespace GrassControl
 	static bool CanPlaceGrassWrapper(RE::TESObjectLAND* land, const float x, const float y, const float z, uintptr_t param)
 	{
 		if (Config::RayCast) {
-			RE::GrassParam* grassParam = nullptr;
+			RE::GrassParam* grassParam;
 			if (REL::Module::IsSE()) {
 				auto paramPtr = reinterpret_cast<RE::GrassParam**>(param);
 				grassParam = *paramPtr;

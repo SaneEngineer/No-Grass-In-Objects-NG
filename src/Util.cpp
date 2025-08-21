@@ -202,7 +202,7 @@ namespace Util
 		logger::info(fmt::runtime("Forms {} were successfully added to {}"), formIDs, settingNameForLog);
 	}
 
-	bool CachedFormList::Contains(RE::TESForm* form)
+	bool CachedFormList::Contains(RE::TESForm* form) const
 	{
 		if (form == nullptr)
 			return false;
@@ -210,9 +210,9 @@ namespace Util
 		return Contains(form->formID);
 	}
 
-	bool CachedFormList::Contains(unsigned int formId)
+	bool CachedFormList::Contains(unsigned int formId) const
 	{
-		return std::ranges::find(this->Ids.begin(), this->Ids.end(), formId) != this->Ids.end();
+		return this->Ids.contains(formId);
 	}
 
 	std::vector<RE::TESForm*> CachedFormList::getAll() const

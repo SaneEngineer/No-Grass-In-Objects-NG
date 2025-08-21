@@ -38,9 +38,9 @@ namespace Util
 
 		void printList(std::string settingNameForLog) const;
 
-		bool Contains(RE::TESForm* form);
+		bool Contains(RE::TESForm* form) const;
 
-		bool Contains(unsigned int formId);
+		bool Contains(unsigned int formId) const;
 
 		std::vector<RE::TESForm*> getAll() const;
 	};

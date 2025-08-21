@@ -9,7 +9,6 @@
 
 namespace Raycast
 {
-
 	struct hkpGenericShapeData
 	{
 		intptr_t* unk;
@@ -122,11 +121,15 @@ namespace Raycast
 	//		If the ray hit something, result.hit will be true.
 	RayResult hkpCastRay(const glm::vec4& start, const glm::vec4& end) noexcept;
 
-	Raycast::RayResult hkpPhantomCast(glm::vec4& start, const glm::vec4& end, RE::TESObjectCELL* cell,  RE::GrassParam* param);
+	RayResult hkpPhantomCast(glm::vec4& start, const glm::vec4& end, RE::TESObjectCELL* cell, RE::GrassParam* param);
 
 	inline RE::hkpShapePhantom* phantom = nullptr;
 
 	inline RE::hkpShape* currentShape = nullptr;
+
+	inline bool createdShape = false;
+
+	inline float oldRadius = -1.0f;
 
 	inline int RaycastErrorCount = 0;
 
