@@ -148,7 +148,7 @@ namespace GrassControl
 			delete Ignore;
 		}
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs, Util::CachedFormList* grassTypes);
 
 		const int Version = 0;
 
@@ -163,6 +163,8 @@ namespace GrassControl
 		Util::CachedFormList* const Textures = nullptr;
 
 		Util::CachedFormList* const Cliffs = nullptr;
+
+		Util::CachedFormList* const Grasses = nullptr;
 
 		bool CanPlaceGrass(RE::TESObjectLAND* land, float x, float y, float z, RE::GrassParam* param) const;
 		float CreateGrassCliff(float x, float y, float z, glm::vec3& Normal, RE::GrassParam* param) const;

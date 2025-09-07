@@ -47,6 +47,8 @@ namespace GrassControl
 
 	void GrassControlPlugin::Update()
 	{
+		GidFileGenerationTask::Update();
+
 		if (_did_mainMenu == 0)
 			return;
 
@@ -102,7 +104,15 @@ namespace GrassControl
 				cachedCliffsList->printList("Grass-cliffs-forms");
 			}
 
-			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList, cachedCliffsList);
+			std::string grassFormsStr = Config::RayCastIgnoreGrassForms;
+			auto cachedGrassFormsList = Util::CachedFormList::TryParse(grassFormsStr, "Ray-cast-ignore-grass-forms", true, false);
+			if (cachedGrassFormsList != nullptr && cachedGrassFormsList->getAll().empty()) {
+				cachedGrassFormsList = nullptr;
+			} else if (cachedGrassFormsList != nullptr) {
+				cachedGrassFormsList->printList("Grass-cliffs-forms");
+			}
+
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList, cachedCliffsList, cachedGrassFormsList);
 			logger::info("Created Cache for Raycasting Settings");
 		}
 

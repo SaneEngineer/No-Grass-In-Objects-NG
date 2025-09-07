@@ -159,16 +159,6 @@ namespace GrassControl
 				static inline REL::Relocation<decltype(thunk)> func;
 			};
 
-			struct MainUpdate_Nullsub
-			{
-				static void thunk(RE::Main* a_this, float a2)
-				{
-					Update();
-					func(a_this, a2);
-				}
-				static inline REL::Relocation<decltype(thunk)> func;
-			};
-
 			struct GrassCountIncrement
 			{
 				static void thunk(RE::TESObjectCELL* cell)
@@ -209,10 +199,9 @@ namespace GrassControl
 					}
 
 					stl::write_thunk_call<PathFileNameSave>(RELOCATION_ID(15204, 15372).address() + REL::Relocate(0x6A7, 0x6A3));
-					stl::write_thunk_call<MainUpdate_Nullsub>(RELOCATION_ID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
-					stl::write_thunk_call<GrassCountIncrement>(RELOCATION_ID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0xD0));
-
+			
 					if (exists(std::filesystem::path(Util::getProgressFilePath()))) {
+						stl::write_thunk_call<GrassCountIncrement>(RELOCATION_ID(13190, 13335).address() + REL::Relocate(0xD40 - 0xC70, 0xD0));
 						stl::write_thunk_jump<WriteProgress>(RELOCATION_ID(13138, 13278).address() + REL::Relocate(0xF, 0xF));
 					}
 				}

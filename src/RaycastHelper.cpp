@@ -339,12 +339,12 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 	auto collector = CdBodyPairCollector();
 	collector.Reset();
-	
+
 	if (!phantom->GetShape()) {
 		bhkWorld->worldLock.UnlockForWrite();
 		return result;
 	}
-	
+
 	try {
 		using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
 		REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
@@ -364,7 +364,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			shownError = true;
 		}
 	}
-	
+
 	bhkWorld->worldLock.UnlockForWrite();
 
 	result.cdBodyHitArray = collector.GetHits();
@@ -374,8 +374,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 namespace GrassControl
 {
-	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs) :
-		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored), Textures(textures), Cliffs(cliffs)
+	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs, Util::CachedFormList* grassTypes) :
+		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored), Textures(textures), Cliffs(cliffs), Grasses(grassTypes)
 	{
 		auto spl = Util::StringHelpers::Split_at_any(layers, { ' ', ',', '\t', '+' }, true);
 		unsigned long long mask = 0;
@@ -399,6 +399,11 @@ namespace GrassControl
 		// Currently not dealing with this.
 		if (cell->IsInteriorCell() || !cell->IsAttached()) {
 			return true;
+		}
+
+		if (param) {
+			if (this->Grasses != nullptr && this->Grasses->Contains(param->grassFormID))
+				return true;
 		}
 
 		if (this->Textures != nullptr) {
