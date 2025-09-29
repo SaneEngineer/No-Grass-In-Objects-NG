@@ -79,7 +79,7 @@ namespace GrassControl
 			Memory::Internal::write<uint8_t>(RELOCATION_ID(501125, 359439).address() + 8, 0);  // Skyrim.ini [Grass] bAllowLoadGrass=0
 		}
 
-		if (Config::RayCast) {
+		if (Config::RayCast || Config::GrassCliffs) {
 			std::string formsStr = Config::RayCastIgnoreForms;
 			auto cachedList = Util::CachedFormList::TryParse(formsStr, "Ray-cast-ignore-forms", true, false);
 			if (cachedList != nullptr && cachedList->getAll().empty()) {
