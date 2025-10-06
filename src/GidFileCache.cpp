@@ -134,7 +134,7 @@ namespace GrassControl
 			uint64_t last = InterlockedCompareExchange64(&_lastDidSomething, 0, 0);
 			uint64_t now = GetTickCount64();
 
-			if (now - last < 90000) {
+			if (now - last < Config::FreezeTime) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				continue;
 			}
