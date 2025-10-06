@@ -9,32 +9,12 @@ namespace Util
 
 	void nopBlock(uintptr_t addr, int size, int offset);
 
-	std::optional<bool> GetGameSettingBool(const std::string a_name);
-
-	std::optional<float> GetGameSettingFloat(const std::string a_name);
-
-	std::optional<int> GetGameSettingInt(const std::string a_name);
-
-	std::optional<std::string> GetGameSettingString(const std::string a_name);
-
-	void SetGameSettingBool(const std::string a_name, bool a_value);
-
-	void SetGameSettingFloat(const std::string a_name, float a_value);
-
-	void SetGameSettingInt(const std::string a_name, int a_value);
-
-	void SetGameSettingString(const std::string a_name, std::string a_value);
-
 	class CachedFormList final
 	{
+	public:
 		CachedFormList();
 
-		std::vector<RE::TESForm*> Forms = std::vector<RE::TESForm*>();
-
-		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
-
-	public:
-		static CachedFormList* TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
+		static std::unique_ptr<CachedFormList> TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm = true, bool dontWriteAnythingToLog = false);
 
 		void printList(std::string settingNameForLog) const;
 
@@ -43,6 +23,11 @@ namespace Util
 		bool Contains(unsigned int formId) const;
 
 		std::vector<RE::TESForm*> getAll() const;
+
+	private:
+		std::vector<RE::TESForm*> Forms = std::vector<RE::TESForm*>();
+
+		std::unordered_set<RE::FormID> Ids = std::unordered_set<RE::FormID>();
 	};
 
 	void report_and_fail_timed(const std::string& a_message);

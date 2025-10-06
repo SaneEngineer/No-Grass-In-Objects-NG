@@ -166,6 +166,14 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	glm::vec4 bestPos = start;
 
 	RayResult result;
+	
+	if (!lastCell) {
+		lastCell = cell;
+	} else if (lastCell->formID != cell->formID) {
+		lastCell = cell;
+		RaycastErrorCount = 0;
+		shownError = false;
+	}
 
 	try {
 		auto physicsWorld = cell->GetbhkWorld();
@@ -177,8 +185,8 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
 			RaycastErrorCount++;
 		} else if (!shownError) {
-			RE::DebugMessageBox("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
-			logger::error("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			RE::DebugMessageBox("NGIO has encountered more than 10 errors while attempting raycasting in this cell. There is likely an issue with your game, that could result in a crash. It is recommend to save your game. If you do not experience crashes, this can be ignored.");
+			logger::error("Raycast error count for this cell exceeded 10. There is likely an issue with your game, that could result in crashes. If you do not experience crashes, this can be ignored.");
 			shownError = true;
 		}
 	}
@@ -345,6 +353,14 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		return result;
 	}
 
+	if(!lastCell) {
+		lastCell = cell;
+	} else if (lastCell != cell) {
+		lastCell = cell;
+		RaycastErrorCount = 0;
+		shownError = false;
+	}
+
 	try {
 		using SetPosition_t = void (*)(RE::hkpShapePhantom*, RE::hkVector4);
 		REL::Relocation<SetPosition_t> SetPosition{ RELOCATION_ID(60791, 61653) };
@@ -359,8 +375,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
 			RaycastErrorCount++;
 		} else if (!shownError) {
-			RE::DebugMessageBox("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
-			logger::error("Raycast error count exceeded 10. There is likely an issue with your game, that may result in crashes.");
+			RE::DebugMessageBox("NGIO has encountered more than 10 errors while attempting raycasting in this cell. There is likely an issue with your game, that could result in a crash. It is recommend to save your game. If you do not experience crashes, this can be ignored.");
+			logger::error("Raycast error count for this cell exceeded 10. There is likely an issue with your game, that could result in crashes. If you do not experience crashes, this can be ignored.");
 			shownError = true;
 		}
 	}
@@ -374,8 +390,8 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 namespace GrassControl
 {
-	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs, Util::CachedFormList* grassTypes) :
-		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(ignored), Textures(textures), Cliffs(cliffs), Grasses(grassTypes)
+	RaycastHelper::RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, std::unique_ptr<Util::CachedFormList> ignored, std::unique_ptr<Util::CachedFormList> textures, std::unique_ptr<Util::CachedFormList> cliffs, std::unique_ptr<Util::CachedFormList> grassTypes) :
+		Version(version), RayHeight(rayHeight), RayDepth(rayDepth), Ignore(std::move(ignored)), Textures(std::move(textures)), Cliffs(std::move(cliffs)), Grasses(std::move(grassTypes))
 	{
 		auto spl = Util::StringHelpers::Split_at_any(layers, { ' ', ',', '\t', '+' }, true);
 		unsigned long long mask = 0;

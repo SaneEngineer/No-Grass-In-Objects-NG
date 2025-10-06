@@ -112,7 +112,7 @@ namespace GrassControl
 				cachedGrassFormsList->printList("Grass-cliffs-forms");
 			}
 
-			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, cachedList, cachedTextureList, cachedCliffsList, cachedGrassFormsList);
+			Cache = std::make_unique<RaycastHelper>(static_cast<int>(std::stof(SKSE::PluginDeclaration::GetSingleton()->GetVersion().string())), static_cast<float>(Config::RayCastHeight), static_cast<float>(Config::RayCastDepth), Config::RayCastCollisionLayers, std::move(cachedList),  std::move(cachedTextureList),  std::move(cachedCliffsList),  std::move(cachedGrassFormsList));
 			logger::info("Created Cache for Raycasting Settings");
 		}
 

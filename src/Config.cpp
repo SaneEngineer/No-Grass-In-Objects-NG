@@ -65,6 +65,7 @@ namespace GrassControl
 				ReadIntSetting(ini, "RayCastConfig", "Ray-cast-mode", EnsureMaxGrassTypesPerTextureSetting);
 				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-width", RayCastWidth);
 				ReadDoubleSetting(ini, "RayCastConfig", "Ray-cast-width-multiplier", RayCastWidthMult);
+				ReadBoolSetting(ini, "RayCastConfig", "Ray-cast-error-message", RayCastError);
 
 				//GrassConfig
 				ReadBoolSetting(ini, "GrassConfig", "Super-dense-grass", SuperDenseGrass);
@@ -126,6 +127,7 @@ namespace GrassControl
 		ini.SetLongValue("RayCastConfig", "Ray-cast-mode", RayCastMode, ";Switch how ray casting will work. Valid values: 0 = original simple ray-cast that check for collision above and below using a line; 1 = new shape based ray-cast method that uses a cylinder shape with a specified width or by default a width based upon the grass bounds. This is functionally very different from the original line method and will perform differently ; 2 = same as 1 with a box with by default the same dimensions as the grass bounds or a square that uses the specified width for width and length.");
 		ini.SetDoubleValue("RayCastConfig", "Ray-cast-width", RayCastWidth, ";The distance from the center or width of the shape used in ray cast modes 1 and 2. If this value is a 0, then a width will be calculated from the grass bounds for each grass type.");
 		ini.SetDoubleValue("RayCastConfig", "Ray-cast-width-multiplier", RayCastWidthMult, ";The amount the width calculated from the grass bounds will be multiplied by. Only applies when using the calucated with, otherwise use the set width above");
+		ini.SetBoolValue("RayCastConfig", "Ray-cast-error-message", RayCastError, ";Toggles the error messages for raycasting. It is recommend to leave this enabled, however if you repeatedly see the error message without a crashes then you will be safe in disabling the warning.");
 
 		//GrassConfig
 		ini.SetBoolValue("GrassConfig", "Super-dense-grass", SuperDenseGrass, ";Enable much more grass without having to change mod files.");

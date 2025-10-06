@@ -135,6 +135,7 @@ namespace Raycast
 
 	inline bool shownError = false;
 
+	inline RE::TESObjectCELL* lastCell = nullptr;
 }
 
 namespace GrassControl
@@ -143,12 +144,9 @@ namespace GrassControl
 	class RaycastHelper
 	{
 	public:
-		virtual ~RaycastHelper()
-		{
-			delete Ignore;
-		}
+		virtual ~RaycastHelper() = default;
 
-		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, Util::CachedFormList* ignored, Util::CachedFormList* textures, Util::CachedFormList* cliffs, Util::CachedFormList* grassTypes);
+		RaycastHelper(int version, float rayHeight, float rayDepth, const std::string& layers, std::unique_ptr<Util::CachedFormList> ignored, std::unique_ptr<Util::CachedFormList> textures, std::unique_ptr<Util::CachedFormList> cliffs, std::unique_ptr <Util::CachedFormList> grassTypes);
 
 		const int Version = 0;
 
@@ -158,13 +156,13 @@ namespace GrassControl
 
 		unsigned long long RaycastMask = 0;
 
-		Util::CachedFormList* const Ignore = nullptr;
+		std::unique_ptr<Util::CachedFormList> const Ignore;
 
-		Util::CachedFormList* const Textures = nullptr;
+		std::unique_ptr<Util::CachedFormList> const Textures;
 
-		Util::CachedFormList* const Cliffs = nullptr;
+		std::unique_ptr<Util::CachedFormList> const Cliffs;
 
-		Util::CachedFormList* const Grasses = nullptr;
+		std::unique_ptr<Util::CachedFormList> const Grasses;
 
 		bool CanPlaceGrass(RE::TESObjectLAND* land, float x, float y, float z, RE::GrassParam* param) const;
 		float CreateGrassCliff(float x, float y, float z, glm::vec3& Normal, RE::GrassParam* param) const;

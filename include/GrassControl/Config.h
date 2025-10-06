@@ -26,6 +26,7 @@ namespace GrassControl
 		static inline int RayCastMode = 1;
 		static inline double RayCastWidth = 0.0f;
 		static inline double RayCastWidthMult = 0.3f;
+		static inline bool RayCastError = true;
 
 		static inline bool SuperDenseGrass = false;
 		static inline int SuperDenseMode = 8;

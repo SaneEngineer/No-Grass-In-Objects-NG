@@ -49,13 +49,13 @@ namespace Util
 
 	CachedFormList::CachedFormList() = default;
 
-	CachedFormList* CachedFormList::TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
+	std::unique_ptr<CachedFormList> CachedFormList::TryParse(const std::string& input, std::string settingNameForLog, bool warnOnMissingForm, bool dontWriteAnythingToLog)
 	{
 		if (settingNameForLog.empty()) {
 			settingNameForLog = "unknown form list setting";
 		}
 
-		auto ls = new CachedFormList();
+		auto ls = std::make_unique<CachedFormList>();
 		char Char = ';';
 		auto spl = StringHelpers::split(input, Char, true);
 		for (auto& x : spl) {
@@ -68,8 +68,7 @@ namespace Util
 					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid input: `" + x + "`."));
 				}
 
-				delete ls;
-				return nullptr;
+				continue;
 			}
 
 			idstr = x.substr(0, ix);
@@ -80,8 +79,7 @@ namespace Util
 					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
-				delete ls;
-				return nullptr;
+				continue;
 			}
 
 			if (fileName.empty()) {
@@ -89,13 +87,19 @@ namespace Util
 					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Missing file name."));
 				}
 
-				delete ls;
-				return nullptr;
+				continue;
 			}
 
 			RE::FormID id = 0;
 			bool sucess;
 			try {
+				auto substr = idstr.substr(0, 2);
+				for (auto& c : substr)
+					c = static_cast<char>(std::tolower(c));
+
+				if (substr == "fe")
+					idstr.erase(0, 2);
+
 				id = stoi(idstr, nullptr, 16);
 				sucess = true;
 			} catch (std::exception&) {
@@ -106,28 +110,18 @@ namespace Util
 					logger::warn(fmt::runtime("Failed to parse form for " + settingNameForLog + "! Invalid form ID: `" + idstr + "`."));
 				}
 
-				delete ls;
-				return nullptr;
+				continue;
 			}
 
-			id &= 0x00FFFFFF;
 			auto file = RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(fileName);
-			if (!file)
+			if (!file) {
 				file = RE::TESDataHandler::GetSingleton()->LookupLoadedLightModByName(fileName);
+				id &= 0x00000FFF;
+			} else {
+				id &= 0x00FFFFFF;
+			}
+
 			if (file) {
-				for (int i = 0; i < file->masterCount; i++) {
-					auto masterFile = file->masterPtrs[i];
-
-					std::string_view masterName = fileName;
-					if (masterFile)
-						masterName = masterFile->GetFilename();
-
-					if (RE::TESDataHandler::GetSingleton()->LookupForm(id, masterName)) {
-						fileName = masterName;
-						break;
-					}
-				}
-
 				if (!RE::TESDataHandler::GetSingleton()->LookupForm(id, fileName)) {
 					if (!dontWriteAnythingToLog && warnOnMissingForm) {
 						logger::warn(fmt::runtime("Failed to find form for " + settingNameForLog + "! Form ID was 0x{:08x} and file was " + fileName + "."), id);
@@ -148,6 +142,11 @@ namespace Util
 					logger::warn(fmt::runtime("Invalid form detected while adding form to " + settingNameForLog + "! Possible invalid form ID: `0x{:08x}`."), formID);
 				}
 				continue;
+			}
+
+			auto baseFile = form->GetFile(0);
+			if(file != baseFile) {
+				formID = RE::TESDataHandler::GetSingleton()->LookupFormID(id, baseFile->GetFilename());
 			}
 
 			bool skip = false;
