@@ -87,6 +87,7 @@ namespace GrassControl
 				ReadBoolSetting(ini, "GrassConfig", "Freeze-check-enabled", FreezeCheck);
 				ReadIntSetting(ini, "GrassConfig", "Freeze-check-time", FreezeTime);
 				ReadBoolSetting(ini, "GrassConfig", "Updating-Cache", Updating);
+				ReadBoolSetting(ini, "GrassConfig", "Load-from-BSA", loadFromBSA);
 
 				return true;
 			}
@@ -150,6 +151,7 @@ namespace GrassControl
 		ini.SetBoolValue("GrassConfig", "Freeze-check-enabled", FreezeCheck, ";Enable or disable the freeze check that is run while generating a grass cache. Recommended to leave enabled unless the message repeately appears.");
 		ini.SetLongValue("GrassConfig", "Freeze-check-time", FreezeTime, ";Controls how long until the game is considered frozen in ms since the last file was created, default is a minute and a half.");
 		ini.SetBoolValue("GrassConfig", "Updating-Cache", Updating, ";If you are generating a cache for a worldspace you have not generated yet, set this true. Otherwise, the cache files in your grass folder will be deleted. If you are updating a worldspace, then move all files you do not want to be deleted to a new folder and replace the old files in the folder once you have generated new cache files. Then rename/move the folder back.");
+		ini.SetBoolValue("GrassConfig", "Load-from-BSA", loadFromBSA, ";Disables the empty grass folder/missing grass cache message displayed in the main menu when the grass folder is empty. If you pack your cache in to a BSA, you will want to enabled this to remove the message as it does not detect the packed cache files.");
 
 		ini.SaveFile(iniPath.data());
 

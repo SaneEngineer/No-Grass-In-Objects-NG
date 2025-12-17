@@ -47,6 +47,7 @@ namespace GrassControl
 		static inline bool FreezeCheck = true;
 		static inline int FreezeTime = 90000;
 		static inline bool Updating = false;
+		static inline bool loadFromBSA = false;
 
 		constexpr static inline std::string_view iniPath = "Data/SKSE/Plugins/GrassControl.ini";
 	};
