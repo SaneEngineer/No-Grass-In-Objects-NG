@@ -289,7 +289,7 @@ namespace GrassControl
 		if (Config::ExtendGrassCount) {
 			// Create more grass shapes if one becomes full.
 			auto addr = RELOCATION_ID(15220, 15385).address() + REL::Relocate(0x433 - 0x3C0, 0x68);
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation6);
+			REL::safe_write(addr, REL::NOP6, 6);
 
 			addr = RELOCATION_ID(15214, 15383).address() + REL::Relocate(0x960 - 0x830, 0x129);
 			struct Patch : CodeGenerator
@@ -367,7 +367,7 @@ namespace GrassControl
 			patch.ready();
 
 			auto& trampoline = SKSE::GetTrampoline();
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+			REL::safe_write(addr + 5, REL::NOP2, 2);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch));
 		}
 

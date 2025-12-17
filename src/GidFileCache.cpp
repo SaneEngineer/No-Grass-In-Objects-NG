@@ -96,7 +96,7 @@ namespace GrassControl
 		patch2.ready();
 
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch2));
-		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+		REL::safe_write(addr + 5, REL::NOP2, 2);
 	}
 
 	GidFileGenerationTask::GidFileGenerationTask() :
@@ -159,7 +159,7 @@ namespace GrassControl
 		unsigned long long addr;
 
 		if (addr = (RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2B25 - 0x2220, 0xB29)); REL::make_pattern<"E8">().match(addr)) {
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
+			REL::safe_write(addr, REL::NOP5, 5);
 		}
 
 		addr = RELOCATION_ID(13190, 13335).address() + REL::Relocate(0x106, 0x106);

@@ -7,9 +7,6 @@
 #include "GrassControl/Profiler.h"
 #include "GrassControl/RaycastHelper.h"
 
-#include "Shared/Utility/Assembly.h"
-#include "Shared/Utility/Memory.h"
-
 namespace GrassControl
 {
 

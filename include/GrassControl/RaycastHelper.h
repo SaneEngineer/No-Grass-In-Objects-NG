@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GrassControl/mmath.h"
 #include <GrassControl/Config.h>
 #include <GrassControl/Util.h>
 #include <cstdint>

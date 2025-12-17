@@ -354,7 +354,7 @@ namespace GrassControl
 			// There's a chance this below isn't actually used so if it fails no problem.
 			try {
 				if (addr = (RELOCATION_ID(13240, 13391).address() + (0x55E - 0x480)); REL::make_pattern<"E8">().match(addr)) {
-					Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
+					REL::safe_write(addr + 5, REL::NOP5, 5);
 				}
 			} catch (...) {
 			}
@@ -522,7 +522,7 @@ namespace GrassControl
 		// unloading cell
 		if (!load_only) {
 			addr = RELOCATION_ID(13623, 13721).address() + REL::Relocate(0xC0F8 - 0xBF90, 0x1E8);
-			Utility::Memory::SafeWrite(addr, Utility::Assembly::NoOperation5);
+			REL::safe_write(addr, REL::NOP5, 5);
 		}
 
 		// remove just before read grass so there's not so noticeable fade-in / fade-out, there is still somewhat noticeable effect though
@@ -588,8 +588,8 @@ namespace GrassControl
 			};
 			Patch6 patch6(addr);
 			patch6.ready();
-
-			Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
+			
+			REL::safe_write(addr + 5, REL::NOP4, 4);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch6));
 		}
 
@@ -612,7 +612,7 @@ namespace GrassControl
 		Patch7 patch7(addr);
 		patch7.ready();
 
-		Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
+		REL::safe_write(addr + 5, REL::NOP3, 3);
 		trampoline.write_branch<5>(addr, trampoline.allocate(patch7));
 
 		// Some reason in AE doesn't generate a functional hook, using a thunk instead should work the same
@@ -856,7 +856,7 @@ namespace GrassControl
 			patch13.ready();
 
 			if (!AE) {
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation3);
+				REL::safe_write(addr + 5, REL::NOP3, 3);
 			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch13));
 
@@ -895,9 +895,9 @@ namespace GrassControl
 			Patch14 patch14(reinterpret_cast<uintptr_t>(CellLoadHook), addr + REL::Relocate(0x7, 0xB), REL::Relocate(0x30, 0x30, 0x38));
 			patch14.ready();
 			if (!AE) {
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation2);
+				REL::safe_write(addr + 5, REL::NOP2, 2);
 			} else {
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation6);
+				REL::safe_write(addr + 5, REL::NOP6, 6);
 			}
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch14));
 
@@ -921,7 +921,7 @@ namespace GrassControl
 			Patch15 patch15(addr, REL::Relocate(0x3c, 0x3c, 0x44), Reg8(REL::Relocate(Reg::R15B, Reg::BPL)));
 			patch15.ready();
 
-			Utility::Memory::SafeWrite(addr + 6, Utility::Assembly::NoOperation2);
+			REL::safe_write(addr + 6, REL::NOP2, 2);
 			trampoline.write_branch<5>(addr, trampoline.allocate(patch15));
 
 			addr = RELOCATION_ID(13148, 13288).address() + REL::Relocate(0x2630 - 0x2220, 0x4D0);
@@ -996,7 +996,7 @@ namespace GrassControl
 			if (AE) {
 				trampoline.write_branch<6>(addr, trampoline.allocate(patch16));
 			} else {
-				Utility::Memory::SafeWrite(addr + 5, Utility::Assembly::NoOperation4);
+				REL::safe_write(addr + 5, REL::NOP4, 4);
 				trampoline.write_branch<5>(addr, trampoline.allocate(patch16));
 			}
 

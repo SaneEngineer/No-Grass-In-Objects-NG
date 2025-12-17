@@ -140,12 +140,6 @@ RE::NiAVObject* Raycast::getAVObject(const RE::hkpCdBody* body)
 
 Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& end) noexcept
 {
-#ifndef NDEBUG
-	if (!mmath::IsValid(start) || !mmath::IsValid(end)) {
-		__debugbreak();
-		return {};
-	}
-#endif
 	constexpr auto hkpScale = 0.0142875f;
 	const glm::vec4 dif = end - start;
 
