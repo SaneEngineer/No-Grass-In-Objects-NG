@@ -107,6 +107,8 @@ namespace Raycast
 
 #pragma warning(pop)
 
+	void HandleErrorMessage();
+
 	RE::NiAVObject* getAVObject(const RE::hkpCdBody* body);
 
 	// Cast a ray from 'start' to 'end', returning the first thing it hits

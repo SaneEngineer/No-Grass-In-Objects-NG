@@ -6,6 +6,18 @@
 Raycast::RayCollector::RayCollector() = default;
 Raycast::CdBodyPairCollector::CdBodyPairCollector() = default;
 
+void Raycast::HandleErrorMessage()
+{
+	if (RaycastErrorCount < 10) {
+		logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
+		RaycastErrorCount++;
+	} else if (!shownError) {
+		RE::DebugMessageBox("NGIO has encountered more than 10 errors while attempting raycasting in this cell. There is likely an issue with your game, that could result in a crash. It is recommend to save your game. If you do not experience crashes, this warning can be ignored and disabled in GrassControl.ini using the setting Ray-cast-error-message.");
+		logger::error("Raycast error count for this cell exceeded 10. There is likely an issue with your game, that could result in crashes. If you do not experience crashes, this warning can be ignored and disabled in GrassControl.ini using the setting Ray-cast-error-message.");
+		shownError = true;
+	}
+};
+
 void Raycast::RayCollector::AddRayHit(const RE::hkpCdBody& body, const RE::hkpShapeRayCastCollectorOutput& hitInfo)
 {
 	HitResult hit{};
@@ -166,7 +178,7 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 	glm::vec4 bestPos = start;
 
 	RayResult result;
-	
+
 	if (!lastCell) {
 		lastCell = cell;
 	} else if (lastCell->formID != cell->formID) {
@@ -181,14 +193,8 @@ Raycast::RayResult Raycast::hkpCastRay(const glm::vec4& start, const glm::vec4& 
 			physicsWorld->PickObject(pickData);
 		}
 	} catch (...) {
-		if (RaycastErrorCount < 10) {
-			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
-			RaycastErrorCount++;
-		} else if (!shownError) {
-			RE::DebugMessageBox("NGIO has encountered more than 10 errors while attempting raycasting in this cell. There is likely an issue with your game, that could result in a crash. It is recommend to save your game. If you do not experience crashes, this can be ignored.");
-			logger::error("Raycast error count for this cell exceeded 10. There is likely an issue with your game, that could result in crashes. If you do not experience crashes, this can be ignored.");
-			shownError = true;
-		}
+		HandleErrorMessage();
+		return result;
 	}
 
 	for (auto& hit : collector.GetHits()) {
@@ -353,7 +359,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 		return result;
 	}
 
-	if(!lastCell) {
+	if (!lastCell) {
 		lastCell = cell;
 	} else if (lastCell != cell) {
 		lastCell = cell;
@@ -371,14 +377,7 @@ Raycast::RayResult Raycast::hkpPhantomCast(glm::vec4& start, const glm::vec4& en
 
 		GetPenetrations(phantom, reinterpret_cast<RE::hkpCdBodyPairCollector*>(&collector), nullptr);
 	} catch (...) {
-		if (RaycastErrorCount < 10) {
-			logger::error("Exception occurred while attempting raycasting. Unless repeated within the same cell this unlikely to be a serious issue.");
-			RaycastErrorCount++;
-		} else if (!shownError) {
-			RE::DebugMessageBox("NGIO has encountered more than 10 errors while attempting raycasting in this cell. There is likely an issue with your game, that could result in a crash. It is recommend to save your game. If you do not experience crashes, this can be ignored.");
-			logger::error("Raycast error count for this cell exceeded 10. There is likely an issue with your game, that could result in crashes. If you do not experience crashes, this can be ignored.");
-			shownError = true;
-		}
+		HandleErrorMessage();
 	}
 
 	bhkWorld->worldLock.UnlockForWrite();
