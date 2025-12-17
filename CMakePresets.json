@@ -48,10 +48,10 @@
       "architecture": "x64"
     },
     {
-      "name": "generator-vs2022",
+      "name": "generator-vs2026",
       "inherits": "x64",
       "hidden": true,
-      "generator": "Visual Studio 17 2022"
+      "generator": "Visual Studio 18 2026"
     },
     {
       "name": "compiler-msvc",
@@ -73,7 +73,7 @@
         "common",
         "packaging-vcpkg",
         "buildtype-debug-msvc",
-        "generator-vs2022",
+        "generator-vs2026",
         "compiler-msvc"
       ]
     },
@@ -83,7 +83,7 @@
         "common",
         "packaging-vcpkg",
         "buildtype-release-msvc",
-        "generator-vs2022",
+        "generator-vs2026",
         "compiler-msvc"
       ]
     }
